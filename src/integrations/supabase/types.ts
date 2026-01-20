@@ -249,6 +249,7 @@ export type Database = {
         | "electricity"
         | "cable_tv"
         | "internet"
+        | "wallet_topup"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -404,6 +405,7 @@ export const Constants = {
         "electricity",
         "cable_tv",
         "internet",
+        "wallet_topup",
       ],
     },
   },

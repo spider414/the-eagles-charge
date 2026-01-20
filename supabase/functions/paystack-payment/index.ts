@@ -190,6 +190,13 @@ Deno.serve(async (req) => {
         transactionStatus = "processing";
       }
 
+      // Get transaction to check type
+      const { data: existingTx } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("paystack_reference", reference)
+        .single();
+
       // Update transaction status
       const { data: updatedTx, error: updateError } = await supabase
         .from("transactions")
@@ -205,14 +212,42 @@ Deno.serve(async (req) => {
         console.error("Transaction update error:", updateError);
       }
 
+      // Handle wallet top-up - credit wallet after successful payment
+      if (transactionStatus === "completed" && existingTx?.transaction_type === "wallet_topup") {
+        const amountToCredit = paystackData.data.amount / 100; // Convert from kobo to naira
+        
+        // Get current profile to update wallet
+        const { data: userProfile } = await supabase
+          .from("profiles")
+          .select("id, wallet_balance")
+          .eq("user_id", userId)
+          .single();
+
+        if (userProfile) {
+          const newBalance = (userProfile.wallet_balance || 0) + amountToCredit;
+          
+          const { error: walletError } = await supabase
+            .from("profiles")
+            .update({ wallet_balance: newBalance })
+            .eq("id", userProfile.id);
+
+          if (walletError) {
+            console.error("Wallet update error:", walletError);
+          } else {
+            console.log(`Wallet credited with ₦${amountToCredit}. New balance: ₦${newBalance}`);
+          }
+        }
+      }
+
       // If payment successful and first transaction, handle referral bonus
-      if (transactionStatus === "completed" && updatedTx) {
-        // Check if this is user's first completed transaction
+      if (transactionStatus === "completed" && updatedTx && existingTx?.transaction_type !== "wallet_topup") {
+        // Check if this is user's first completed transaction (excluding wallet top-ups)
         const { count } = await supabase
           .from("transactions")
           .select("*", { count: "exact", head: true })
           .eq("user_id", userId)
-          .eq("status", "completed");
+          .eq("status", "completed")
+          .neq("transaction_type", "wallet_topup");
 
         if (count === 1) {
           // First completed transaction - award referral bonus
@@ -226,14 +261,22 @@ Deno.serve(async (req) => {
             // Award ₦100 to both referrer and referee
             const bonusAmount = 100;
 
-            // Update referrer's earnings
-            const { error: rpcError } = await supabase.rpc("increment_wallet", {
-              profile_id: profile.referred_by,
-              amount: bonusAmount,
-            });
-            
-            if (rpcError) {
-              console.log("RPC not available:", rpcError.message);
+            // Get referrer profile to update wallet
+            const { data: referrerProfile } = await supabase
+              .from("profiles")
+              .select("id, wallet_balance, total_referral_earnings")
+              .eq("id", profile.referred_by)
+              .single();
+
+            if (referrerProfile) {
+              // Update referrer's wallet and earnings
+              await supabase
+                .from("profiles")
+                .update({
+                  wallet_balance: (referrerProfile.wallet_balance || 0) + bonusAmount,
+                  total_referral_earnings: (referrerProfile.total_referral_earnings || 0) + bonusAmount,
+                })
+                .eq("id", referrerProfile.id);
             }
 
             // Record the referral reward
@@ -254,7 +297,9 @@ Deno.serve(async (req) => {
           success: transactionStatus === "completed",
           status: transactionStatus,
           message: transactionStatus === "completed" 
-            ? "Payment successful! Your transaction is being processed."
+            ? existingTx?.transaction_type === "wallet_topup"
+              ? "Wallet funded successfully!"
+              : "Payment successful! Your transaction is being processed."
             : transactionStatus === "failed"
             ? "Payment failed. Please try again."
             : "Payment is being processed.",
