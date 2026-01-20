@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet } from "lucide-react";
+import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -54,16 +54,26 @@ const Dashboard = () => {
             </span>
           </Link>
 
-          <nav className="flex items-center gap-4">
-            <Link to="/history" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <nav className="flex items-center gap-2">
+            <Link to="/history" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <History className="h-4 w-4" />
               History
             </Link>
-            <Link to="/referrals" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <Link to="/referrals" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <Users className="h-4 w-4" />
               Referrals
             </Link>
-            <Button variant="ghost" size="sm" onClick={handleSignOut}>
+            <Link to="/profile" className="hidden md:flex">
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link to="/settings" className="hidden md:flex">
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Button variant="ghost" size="sm" onClick={handleSignOut} className="hidden md:flex">
               <LogOut className="h-4 w-4 mr-2" />
               Logout
             </Button>
@@ -71,7 +81,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container py-8">
+      <main className="container py-8 pb-24 md:pb-8">
         {/* Welcome Card */}
         <Card className="mb-8 gradient-hero text-primary-foreground">
           <CardContent className="p-6">
@@ -84,19 +94,28 @@ const Dashboard = () => {
                   Ready to recharge? Let's get you connected.
                 </p>
               </div>
-              <div className="flex items-center gap-3 bg-primary-foreground/10 rounded-xl px-4 py-3">
+              <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/10 rounded-xl px-4 py-3 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
                 <Wallet className="h-6 w-6" />
-                <div>
+                <div className="flex-1">
                   <p className="text-sm text-primary-foreground/80">Wallet Balance</p>
                   <p className="text-xl font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
                 </div>
-              </div>
+                <div className="p-2 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
+                  <Plus className="h-4 w-4" />
+                </div>
+              </Link>
             </div>
           </CardContent>
         </Card>
 
         {/* Quick Actions - Mobile Navigation */}
         <div className="md:hidden flex gap-2 mb-6 overflow-x-auto pb-2">
+          <Link to="/wallet/topup">
+            <Button variant="default" size="sm" className="whitespace-nowrap gradient-gold text-secondary-foreground">
+              <Plus className="h-4 w-4 mr-2" />
+              Fund Wallet
+            </Button>
+          </Link>
           <Link to="/history">
             <Button variant="outline" size="sm" className="whitespace-nowrap">
               <History className="h-4 w-4 mr-2" />
@@ -140,6 +159,32 @@ const Dashboard = () => {
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border z-50">
+        <div className="flex items-center justify-around py-2 px-4">
+          <Link to="/dashboard" className="flex flex-col items-center gap-1 py-2 px-3 text-primary">
+            <Wallet className="h-5 w-5" />
+            <span className="text-xs font-medium">Home</span>
+          </Link>
+          <Link to="/history" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
+            <History className="h-5 w-5" />
+            <span className="text-xs font-medium">History</span>
+          </Link>
+          <Link to="/referrals" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
+            <Users className="h-5 w-5" />
+            <span className="text-xs font-medium">Referrals</span>
+          </Link>
+          <Link to="/profile" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
+            <User className="h-5 w-5" />
+            <span className="text-xs font-medium">Profile</span>
+          </Link>
+          <Link to="/settings" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
+            <Settings className="h-5 w-5" />
+            <span className="text-xs font-medium">Settings</span>
+          </Link>
+        </div>
+      </nav>
     </div>
   );
 };
