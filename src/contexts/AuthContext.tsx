@@ -11,6 +11,8 @@ interface Profile {
   wallet_balance: number;
   referral_code: string | null;
   total_referral_earnings: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
