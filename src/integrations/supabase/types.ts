@@ -14,16 +14,241 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      favorite_numbers: {
+        Row: {
+          created_at: string
+          id: string
+          network: Database["public"]["Enums"]["network_provider"]
+          nickname: string | null
+          phone_number: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          network: Database["public"]["Enums"]["network_provider"]
+          nickname?: string | null
+          phone_number: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          network?: Database["public"]["Enums"]["network_provider"]
+          nickname?: string | null
+          phone_number?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          phone_number: string | null
+          referral_code: string | null
+          referred_by: string | null
+          total_referral_earnings: number | null
+          updated_at: string
+          user_id: string
+          wallet_balance: number | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          phone_number?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          total_referral_earnings?: number | null
+          updated_at?: string
+          user_id: string
+          wallet_balance?: number | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          phone_number?: string | null
+          referral_code?: string | null
+          referred_by?: string | null
+          total_referral_earnings?: number | null
+          updated_at?: string
+          user_id?: string
+          wallet_balance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referral_rewards: {
+        Row: {
+          created_at: string
+          id: string
+          referred_id: string
+          referrer_id: string
+          reward_amount: number
+          transaction_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referred_id: string
+          referrer_id: string
+          reward_amount: number
+          transaction_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referred_id?: string
+          referrer_id?: string
+          reward_amount?: number
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_rewards_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_rewards_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_rewards_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          amount: number
+          api_response: Json | null
+          cable_plan: string | null
+          cable_provider: Database["public"]["Enums"]["cable_provider"] | null
+          cable_smartcard: string | null
+          created_at: string
+          data_plan: string | null
+          electricity_provider:
+            | Database["public"]["Enums"]["electricity_provider"]
+            | null
+          id: string
+          meter_number: string | null
+          meter_type: string | null
+          network: Database["public"]["Enums"]["network_provider"] | null
+          paystack_access_code: string | null
+          paystack_reference: string | null
+          phone_number: string | null
+          status: Database["public"]["Enums"]["transaction_status"]
+          token: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          api_response?: Json | null
+          cable_plan?: string | null
+          cable_provider?: Database["public"]["Enums"]["cable_provider"] | null
+          cable_smartcard?: string | null
+          created_at?: string
+          data_plan?: string | null
+          electricity_provider?:
+            | Database["public"]["Enums"]["electricity_provider"]
+            | null
+          id?: string
+          meter_number?: string | null
+          meter_type?: string | null
+          network?: Database["public"]["Enums"]["network_provider"] | null
+          paystack_access_code?: string | null
+          paystack_reference?: string | null
+          phone_number?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          token?: string | null
+          transaction_type: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          api_response?: Json | null
+          cable_plan?: string | null
+          cable_provider?: Database["public"]["Enums"]["cable_provider"] | null
+          cable_smartcard?: string | null
+          created_at?: string
+          data_plan?: string | null
+          electricity_provider?:
+            | Database["public"]["Enums"]["electricity_provider"]
+            | null
+          id?: string
+          meter_number?: string | null
+          meter_type?: string | null
+          network?: Database["public"]["Enums"]["network_provider"] | null
+          paystack_access_code?: string | null
+          paystack_reference?: string | null
+          phone_number?: string | null
+          status?: Database["public"]["Enums"]["transaction_status"]
+          token?: string | null
+          transaction_type?: Database["public"]["Enums"]["transaction_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_referral_code: { Args: never; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      cable_provider: "dstv" | "gotv" | "startimes"
+      electricity_provider:
+        | "ekedc"
+        | "ikedc"
+        | "aedc"
+        | "phedc"
+        | "kedco"
+        | "ibedc"
+        | "eedc"
+        | "bedc"
+        | "jedc"
+        | "kaedco"
+        | "yedc"
+      network_provider: "mtn" | "glo" | "airtel" | "9mobile"
+      transaction_status:
+        | "pending"
+        | "processing"
+        | "completed"
+        | "failed"
+        | "refunded"
+      transaction_type:
+        | "airtime"
+        | "data"
+        | "electricity"
+        | "cable_tv"
+        | "internet"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +375,36 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      cable_provider: ["dstv", "gotv", "startimes"],
+      electricity_provider: [
+        "ekedc",
+        "ikedc",
+        "aedc",
+        "phedc",
+        "kedco",
+        "ibedc",
+        "eedc",
+        "bedc",
+        "jedc",
+        "kaedco",
+        "yedc",
+      ],
+      network_provider: ["mtn", "glo", "airtel", "9mobile"],
+      transaction_status: [
+        "pending",
+        "processing",
+        "completed",
+        "failed",
+        "refunded",
+      ],
+      transaction_type: [
+        "airtime",
+        "data",
+        "electricity",
+        "cable_tv",
+        "internet",
+      ],
+    },
   },
 } as const

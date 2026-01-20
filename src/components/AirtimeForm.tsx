@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,18 +7,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Phone, Wallet } from "lucide-react";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
 import { useToast } from "@/hooks/use-toast";
+import { usePaystack } from "@/hooks/usePaystack";
+import { useAuth } from "@/contexts/AuthContext";
 
 const quickAmounts = [100, 200, 500, 1000, 2000, 5000];
 
 const AirtimeForm = () => {
+  const navigate = useNavigate();
   const [network, setNetwork] = useState<NetworkType | null>(null);
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { initializePayment, isLoading } = usePaystack();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to make a purchase",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
 
     if (!network) {
       toast({
@@ -46,16 +61,15 @@ const AirtimeForm = () => {
       return;
     }
 
-    setIsLoading(true);
-    
-    // Simulate API call - will be replaced with actual Paystack integration
-    setTimeout(() => {
-      toast({
-        title: "Payment Required",
-        description: "Connect Lovable Cloud to enable Paystack payments",
-      });
-      setIsLoading(false);
-    }, 1000);
+    await initializePayment({
+      amount: Number(amount),
+      email: user.email || "",
+      metadata: {
+        transaction_type: "airtime",
+        phone_number: phone,
+        network: network,
+      },
+    });
   };
 
   return (

@@ -1,0 +1,165 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Bird, ArrowLeft, Globe, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { usePaystack } from "@/hooks/usePaystack";
+
+interface InternetPlan {
+  id: string;
+  name: string;
+  price: number;
+  data: string;
+  validity: string;
+}
+
+const internetPlans: InternetPlan[] = [
+  { id: "smile-1", name: "Smile 1.5GB", price: 1000, data: "1.5GB", validity: "30 Days" },
+  { id: "smile-2", name: "Smile 3GB", price: 1500, data: "3GB", validity: "30 Days" },
+  { id: "smile-3", name: "Smile 6.5GB", price: 2500, data: "6.5GB", validity: "30 Days" },
+  { id: "smile-4", name: "Smile 10GB", price: 3500, data: "10GB", validity: "30 Days" },
+  { id: "spectranet-1", name: "Spectranet 7GB", price: 3000, data: "7GB", validity: "30 Days" },
+  { id: "spectranet-2", name: "Spectranet 15GB", price: 5000, data: "15GB", validity: "30 Days" },
+  { id: "spectranet-3", name: "Spectranet 30GB", price: 8000, data: "30GB", validity: "30 Days" },
+  { id: "spectranet-4", name: "Spectranet Unlimited", price: 15000, data: "Unlimited", validity: "30 Days" },
+];
+
+const Internet = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { initializePayment, isLoading } = usePaystack();
+
+  const [selectedPlan, setSelectedPlan] = useState<InternetPlan | null>(null);
+  const [accountNumber, setAccountNumber] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to make a purchase",
+        variant: "destructive",
+      });
+      navigate("/auth");
+      return;
+    }
+
+    if (!selectedPlan || !accountNumber) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    await initializePayment({
+      amount: selectedPlan.price,
+      email: user.email || "",
+      metadata: {
+        transaction_type: "internet",
+        internet_plan: selectedPlan.name,
+        account_number: accountNumber,
+      },
+    });
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
+                <Bird className="h-6 w-6 text-secondary-foreground" />
+              </div>
+              <span className="text-xl font-bold text-foreground">
+                Internet <span className="text-gradient-gold">Subscription</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container py-8 max-w-lg">
+        <Card className="shadow-card border-2 border-border">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5 text-purple-600" />
+              Internet Subscription
+            </CardTitle>
+            <CardDescription>
+              Subscribe to Smile, Spectranet, and other ISPs
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Account Number */}
+              <div className="space-y-3">
+                <Label htmlFor="account">Account / Device Number</Label>
+                <Input
+                  id="account"
+                  type="text"
+                  placeholder="Enter account number"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  className="h-12"
+                />
+              </div>
+
+              {/* Plan Selection */}
+              <div className="space-y-3">
+                <Label>Select Plan</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {internetPlans.map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setSelectedPlan(plan)}
+                      className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                        selectedPlan?.id === plan.id
+                          ? "border-primary bg-accent shadow-card"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      }`}
+                    >
+                      {selectedPlan?.id === plan.id && (
+                        <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
+                      )}
+                      <div className="text-sm font-medium text-foreground">{plan.name}</div>
+                      <div className="text-lg font-bold text-primary">
+                        ₦{plan.price.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {plan.data} • {plan.validity}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Button type="submit" size="lg" className="w-full" disabled={isLoading || !selectedPlan}>
+                {isLoading
+                  ? "Processing..."
+                  : selectedPlan
+                  ? `Pay ₦${selectedPlan.price.toLocaleString()}`
+                  : "Select a Plan"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </main>
+    </div>
+  );
+};
+
+export default Internet;
