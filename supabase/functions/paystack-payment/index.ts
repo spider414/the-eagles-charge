@@ -32,7 +32,13 @@ interface VerifyRequest {
   reference: string;
 }
 
-type RequestBody = InitializeRequest | VerifyRequest;
+interface WalletPaymentRequest {
+  action: "wallet_payment";
+  amount: number;
+  metadata: PaystackMetadata;
+}
+
+type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest;
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -306,6 +312,119 @@ Deno.serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
+    }
+
+    if (body.action === "wallet_payment") {
+      const { amount, metadata } = body;
+
+      // Get user's profile and check wallet balance
+      const { data: userProfile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, wallet_balance")
+        .eq("user_id", userId)
+        .single();
+
+      if (profileError || !userProfile) {
+        throw new Error("Failed to retrieve user profile");
+      }
+
+      const walletBalance = userProfile.wallet_balance || 0;
+
+      if (walletBalance < amount) {
+        throw new Error(`Insufficient wallet balance. Available: ₦${walletBalance.toLocaleString()}`);
+      }
+
+      // Generate unique reference for wallet payment
+      const reference = `WALLET-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      // Create transaction record with processing status
+      const { data: transaction, error: txError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          transaction_type: metadata.transaction_type,
+          status: "processing",
+          amount: amount,
+          phone_number: metadata.phone_number || null,
+          network: metadata.network || null,
+          data_plan: metadata.data_plan || null,
+          electricity_provider: metadata.electricity_provider || null,
+          meter_number: metadata.meter_number || null,
+          meter_type: metadata.meter_type || null,
+          cable_provider: metadata.cable_provider || null,
+          cable_smartcard: metadata.cable_smartcard || null,
+          cable_plan: metadata.cable_plan || null,
+          paystack_reference: reference,
+        })
+        .select()
+        .single();
+
+      if (txError) {
+        console.error("Transaction creation error:", txError);
+        throw new Error("Failed to create transaction record");
+      }
+
+      try {
+        // Deduct from wallet immediately
+        const newBalance = walletBalance - amount;
+        const { error: walletError } = await supabase
+          .from("profiles")
+          .update({ wallet_balance: newBalance })
+          .eq("id", userProfile.id);
+
+        if (walletError) {
+          throw new Error("Failed to deduct from wallet");
+        }
+
+        console.log(`Wallet payment: Deducted ₦${amount} from wallet. New balance: ₦${newBalance}`);
+
+        // TODO: Here you would integrate with the actual VTU/bills API provider
+        // For now, we'll simulate a successful transaction
+        // In production, call the real API here and handle response
+
+        // Update transaction to completed
+        await supabase
+          .from("transactions")
+          .update({ 
+            status: "completed",
+            api_response: { 
+              payment_method: "wallet",
+              wallet_balance_before: walletBalance,
+              wallet_balance_after: newBalance,
+              processed_at: new Date().toISOString()
+            }
+          })
+          .eq("id", transaction.id);
+
+        console.log(`Wallet payment completed for transaction ${transaction.id}`);
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: `Payment successful! ₦${amount.toLocaleString()} deducted from wallet.`,
+            transaction_id: transaction.id,
+            reference: reference,
+            new_balance: newBalance,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (processingError) {
+        // If processing fails, refund the wallet and mark transaction as failed
+        await supabase
+          .from("profiles")
+          .update({ wallet_balance: walletBalance }) // Restore original balance
+          .eq("id", userProfile.id);
+
+        await supabase
+          .from("transactions")
+          .update({ 
+            status: "failed",
+            api_response: { error: processingError instanceof Error ? processingError.message : "Processing failed" }
+          })
+          .eq("id", transaction.id);
+
+        throw processingError;
+      }
     }
 
     throw new Error("Invalid action");
