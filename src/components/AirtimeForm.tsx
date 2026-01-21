@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Phone, Wallet } from "lucide-react";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
+import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
+import FavoriteNumbersSelector from "./FavoriteNumbersSelector";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
+import { useWalletPayment } from "@/hooks/useWalletPayment";
+import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
+import { detectNetwork } from "@/utils/phoneUtils";
 
 const quickAmounts = [100, 200, 500, 1000, 2000, 5000];
 
@@ -17,9 +22,40 @@ const AirtimeForm = () => {
   const [network, setNetwork] = useState<NetworkType | null>(null);
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
   const { toast } = useToast();
   const { user } = useAuth();
-  const { initializePayment, isLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+  const { addFavorite } = useFavoriteNumbers();
+
+  const isLoading = paystackLoading || walletLoading;
+
+  // Auto-detect network when phone number changes
+  useEffect(() => {
+    if (phone.length >= 4) {
+      const detected = detectNetwork(phone);
+      if (detected) {
+        setNetwork(detected);
+      }
+    }
+  }, [phone]);
+
+  const handlePhoneChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 11);
+    setPhone(cleaned);
+  };
+
+  const handleFavoriteSelect = (selectedPhone: string, selectedNetwork: NetworkType) => {
+    setPhone(selectedPhone);
+    setNetwork(selectedNetwork);
+  };
+
+  const handleSaveNumber = async () => {
+    if (phone.length === 11 && network) {
+      await addFavorite(phone, network);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,15 +97,29 @@ const AirtimeForm = () => {
       return;
     }
 
-    await initializePayment({
-      amount: Number(amount),
-      email: user.email || "",
-      metadata: {
-        transaction_type: "airtime",
-        phone_number: phone,
-        network: network,
-      },
-    });
+    const metadata = {
+      transaction_type: "airtime" as const,
+      phone_number: phone,
+      network: network,
+    };
+
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: Number(amount),
+        metadata,
+      });
+      if (success) {
+        setPhone("");
+        setAmount("");
+        setNetwork(null);
+      }
+    } else {
+      await initializePayment({
+        amount: Number(amount),
+        email: user.email || "",
+        metadata,
+      });
+    }
   };
 
   return (
@@ -97,8 +147,15 @@ const AirtimeForm = () => {
               type="tel"
               placeholder="08012345678"
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+              onChange={(e) => handlePhoneChange(e.target.value)}
               className="h-12"
+            />
+            <FavoriteNumbersSelector
+              onSelect={handleFavoriteSelect}
+              currentPhone={phone}
+              currentNetwork={network}
+              onSaveCurrentNumber={handleSaveNumber}
+              canSave={true}
             />
           </div>
 
@@ -135,8 +192,22 @@ const AirtimeForm = () => {
             </div>
           </div>
 
+          {user && (
+            <PaymentMethodSelector
+              selected={paymentMethod}
+              onSelect={setPaymentMethod}
+              walletBalance={walletBalance}
+              amount={Number(amount) || 0}
+            />
+          )}
+
           <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-            {isLoading ? "Processing..." : `Pay ₦${Number(amount || 0).toLocaleString()}`}
+            {isLoading 
+              ? "Processing..." 
+              : paymentMethod === "wallet"
+              ? `Pay ₦${Number(amount || 0).toLocaleString()} from Wallet`
+              : `Pay ₦${Number(amount || 0).toLocaleString()}`
+            }
           </Button>
         </form>
       </CardContent>
