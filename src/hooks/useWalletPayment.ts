@@ -14,6 +14,8 @@ interface WalletPaymentMetadata {
   cable_provider?: string;
   cable_smartcard?: string;
   cable_plan?: string;
+  internet_plan?: string;
+  account_number?: string;
 }
 
 interface WalletPaymentParams {
@@ -50,49 +52,28 @@ export const useWalletPayment = () => {
     setIsLoading(true);
 
     try {
-      // Create transaction record
-      const { data: transaction, error: txError } = await supabase
-        .from("transactions")
-        .insert({
-          user_id: user.id,
-          transaction_type: metadata.transaction_type,
-          amount: amount,
-          status: "processing",
-          phone_number: metadata.phone_number,
-          network: metadata.network as "mtn" | "glo" | "airtel" | "9mobile" | undefined,
-          data_plan: metadata.data_plan,
-          electricity_provider: metadata.electricity_provider as any,
-          meter_number: metadata.meter_number,
-          meter_type: metadata.meter_type,
-          cable_provider: metadata.cable_provider as "dstv" | "gotv" | "startimes" | undefined,
-          cable_smartcard: metadata.cable_smartcard,
-          cable_plan: metadata.cable_plan,
-        })
-        .select()
-        .single();
+      // Call edge function for real-time wallet payment processing via Paystack
+      const { data, error } = await supabase.functions.invoke("paystack-payment", {
+        body: {
+          action: "wallet_payment",
+          amount,
+          metadata,
+        },
+      });
 
-      if (txError) throw txError;
+      if (error) {
+        throw new Error(error.message);
+      }
 
-      // Deduct from wallet
-      const newBalance = walletBalance - amount;
-      const { error: walletError } = await supabase
-        .from("profiles")
-        .update({ wallet_balance: newBalance })
-        .eq("id", profile.id);
-
-      if (walletError) throw walletError;
-
-      // Update transaction to completed (in real app, this would happen after API call to provider)
-      await supabase
-        .from("transactions")
-        .update({ status: "completed" })
-        .eq("id", transaction.id);
+      if (!data.success) {
+        throw new Error(data.error || "Payment processing failed");
+      }
 
       await refreshProfile();
 
       toast({
         title: "Payment Successful",
-        description: `₦${amount.toLocaleString()} has been deducted from your wallet`,
+        description: data.message || `₦${amount.toLocaleString()} has been deducted from your wallet`,
       });
 
       return true;
