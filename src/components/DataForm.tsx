@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,9 +6,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Wifi, Check } from "lucide-react";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
+import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
+import FavoriteNumbersSelector from "./FavoriteNumbersSelector";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
+import { useWalletPayment } from "@/hooks/useWalletPayment";
+import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
+import { detectNetwork } from "@/utils/phoneUtils";
 
 interface DataPlan {
   id: string;
@@ -54,9 +59,42 @@ const DataForm = () => {
   const [network, setNetwork] = useState<NetworkType | null>(null);
   const [phone, setPhone] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<DataPlan | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
   const { toast } = useToast();
   const { user } = useAuth();
-  const { initializePayment, isLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+  const { addFavorite } = useFavoriteNumbers();
+
+  const isLoading = paystackLoading || walletLoading;
+
+  // Auto-detect network when phone number changes
+  useEffect(() => {
+    if (phone.length >= 4) {
+      const detected = detectNetwork(phone);
+      if (detected && detected !== network) {
+        setNetwork(detected);
+        setSelectedPlan(null);
+      }
+    }
+  }, [phone]);
+
+  const handlePhoneChange = (value: string) => {
+    const cleaned = value.replace(/\D/g, "").slice(0, 11);
+    setPhone(cleaned);
+  };
+
+  const handleFavoriteSelect = (selectedPhone: string, selectedNetwork: NetworkType) => {
+    setPhone(selectedPhone);
+    setNetwork(selectedNetwork);
+    setSelectedPlan(null);
+  };
+
+  const handleSaveNumber = async () => {
+    if (phone.length === 11 && network) {
+      await addFavorite(phone, network);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,16 +136,30 @@ const DataForm = () => {
       return;
     }
 
-    await initializePayment({
-      amount: selectedPlan.price,
-      email: user.email || "",
-      metadata: {
-        transaction_type: "data",
-        phone_number: phone,
-        network: network,
-        data_plan: selectedPlan.size,
-      },
-    });
+    const metadata = {
+      transaction_type: "data" as const,
+      phone_number: phone,
+      network: network,
+      data_plan: selectedPlan.size,
+    };
+
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: selectedPlan.price,
+        metadata,
+      });
+      if (success) {
+        setPhone("");
+        setSelectedPlan(null);
+        setNetwork(null);
+      }
+    } else {
+      await initializePayment({
+        amount: selectedPlan.price,
+        email: user.email || "",
+        metadata,
+      });
+    }
   };
 
   const currentPlans = network ? dataPlans[network] : [];
@@ -143,8 +195,15 @@ const DataForm = () => {
               type="tel"
               placeholder="08012345678"
               value={phone}
-              onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
+              onChange={(e) => handlePhoneChange(e.target.value)}
               className="h-12"
+            />
+            <FavoriteNumbersSelector
+              onSelect={handleFavoriteSelect}
+              currentPhone={phone}
+              currentNetwork={network}
+              onSaveCurrentNumber={handleSaveNumber}
+              canSave={true}
             />
           </div>
 
@@ -177,11 +236,22 @@ const DataForm = () => {
             </div>
           )}
 
+          {user && selectedPlan && (
+            <PaymentMethodSelector
+              selected={paymentMethod}
+              onSelect={setPaymentMethod}
+              walletBalance={walletBalance}
+              amount={selectedPlan.price}
+            />
+          )}
+
           <Button type="submit" size="lg" className="w-full" disabled={isLoading || !selectedPlan}>
             {isLoading
               ? "Processing..."
               : selectedPlan
-              ? `Pay ₦${selectedPlan.price.toLocaleString()}`
+              ? paymentMethod === "wallet"
+                ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
+                : `Pay ₦${selectedPlan.price.toLocaleString()}`
               : "Select a Plan"}
           </Button>
         </form>
