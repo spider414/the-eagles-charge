@@ -44,7 +44,19 @@ interface BankTransferRequest {
   email: string;
 }
 
-type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest;
+interface CreateDVARequest {
+  action: "create_dva";
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+}
+
+interface GetDVARequest {
+  action: "get_dva";
+}
+
+type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest | CreateDVARequest | GetDVARequest;
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -503,6 +515,115 @@ Deno.serve(async (req) => {
           authorization_url: paystackData.data.authorization_url,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create Dedicated Virtual Account for user
+    if (body.action === "create_dva") {
+      const { email, first_name, last_name, phone } = body;
+
+      // First, create or get customer
+      const customerResponse = await fetch("https://api.paystack.co/customer", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          first_name,
+          last_name,
+          phone,
+        }),
+      });
+
+      const customerData = await customerResponse.json();
+      console.log("Paystack customer response:", customerData);
+
+      if (!customerData.status) {
+        throw new Error(customerData.message || "Failed to create customer");
+      }
+
+      const customerCode = customerData.data.customer_code;
+
+      // Create dedicated virtual account
+      const dvaResponse = await fetch("https://api.paystack.co/dedicated_account", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer: customerCode,
+          preferred_bank: "wema-bank", // Wema Bank is commonly used for DVA
+        }),
+      });
+
+      const dvaData = await dvaResponse.json();
+      console.log("Paystack DVA response:", dvaData);
+
+      if (!dvaData.status) {
+        throw new Error(dvaData.message || "Failed to create virtual account");
+      }
+
+      // Store DVA details in user profile (we'll add a column for this)
+      const dvaDetails = {
+        account_number: dvaData.data.account_number,
+        account_name: dvaData.data.account_name,
+        bank_name: dvaData.data.bank?.name || "Wema Bank",
+        customer_code: customerCode,
+        dva_id: dvaData.data.id,
+      };
+
+      // Update user profile with DVA details
+      await supabase
+        .from("profiles")
+        .update({ 
+          paystack_customer_code: customerCode,
+          dva_account_number: dvaDetails.account_number,
+          dva_account_name: dvaDetails.account_name,
+          dva_bank_name: dvaDetails.bank_name,
+        })
+        .eq("user_id", userId);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "Virtual account created successfully!",
+          data: dvaDetails,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Get user's Dedicated Virtual Account
+    if (body.action === "get_dva") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("paystack_customer_code, dva_account_number, dva_account_name, dva_bank_name")
+        .eq("user_id", userId)
+        .single();
+
+      if (profile?.dva_account_number) {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: {
+              account_number: profile.dva_account_number,
+              account_name: profile.dva_account_name,
+              bank_name: profile.dva_bank_name,
+            },
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "No virtual account found. Please create one first.",
+        }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
