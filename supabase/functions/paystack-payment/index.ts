@@ -555,28 +555,56 @@ Deno.serve(async (req) => {
       }
 
       const customerCode = customerData.data.customer_code;
+      const isAlreadyIdentified = customerData.data.identified === true;
 
-      // Step 2: Validate customer with BVN
-      const validateResponse = await fetch(`https://api.paystack.co/customer/${customerCode}/identification`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          country: "NG",
-          type: "bvn",
-          value: bvn,
-          first_name,
-          last_name,
-        }),
-      });
+      // Step 2: Validate customer with BVN (skip if already identified)
+      if (!isAlreadyIdentified) {
+        const validateResponse = await fetch(`https://api.paystack.co/customer/${customerCode}/identification`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${paystackSecretKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            country: "NG",
+            type: "bvn",
+            value: bvn,
+            first_name,
+            last_name,
+          }),
+        });
 
-      const validateData = await validateResponse.json();
-      console.log("Paystack BVN validation response:", validateData);
+        const validateData = await validateResponse.json();
+        console.log("Paystack BVN validation response:", validateData);
 
-      if (!validateData.status) {
-        throw new Error(validateData.message || "BVN validation failed. Please check your details.");
+        // Check if validation failed
+        if (!validateData.status) {
+          const errorMsg = validateData.message?.toLowerCase() || "";
+          // "Customer already identified" is okay - proceed to DVA
+          if (errorMsg.includes("already identified")) {
+            console.log("Customer already identified, proceeding to DVA creation");
+          } else if (errorMsg.includes("in progress") || errorMsg.includes("processing")) {
+            // Store customer code, verification is pending
+            await supabase
+              .from("profiles")
+              .update({ paystack_customer_code: customerCode })
+              .eq("user_id", userId);
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                pending: true,
+                message: "BVN verification is being processed. Your virtual account will be ready shortly.",
+                customer_code: customerCode,
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          } else {
+            throw new Error(validateData.message || "BVN validation failed. Please check your details.");
+          }
+        }
+      } else {
+        console.log("Customer already identified via previous verification, skipping BVN step");
       }
 
       // Step 3: Create dedicated virtual account
