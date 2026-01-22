@@ -48,6 +48,18 @@ const WalletTopUp = () => {
     }
   }, [user]);
 
+  // Auto-poll for DVA when verification is pending
+  useEffect(() => {
+    if (!dvaPending || dvaDetails) return;
+
+    const pollInterval = setInterval(() => {
+      console.log("Polling for DVA status...");
+      fetchDVA();
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [dvaPending, dvaDetails]);
+
   // Pre-fill form with profile data
   useEffect(() => {
     if (profile) {
@@ -71,6 +83,8 @@ const WalletTopUp = () => {
 
       if (response.data?.success && response.data?.data) {
         setDvaDetails(response.data.data);
+        setDvaPending(false); // Stop polling
+        toast({ title: "Account Ready!", description: "Your virtual account is now active" });
       } else if (response.data?.pending) {
         setDvaPending(true);
       }
