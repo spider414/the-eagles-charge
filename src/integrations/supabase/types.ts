@@ -44,9 +44,13 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          dva_account_name: string | null
+          dva_account_number: string | null
+          dva_bank_name: string | null
           email: string
           full_name: string | null
           id: string
+          paystack_customer_code: string | null
           phone_number: string | null
           referral_code: string | null
           referred_by: string | null
@@ -57,9 +61,13 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          dva_account_name?: string | null
+          dva_account_number?: string | null
+          dva_bank_name?: string | null
           email: string
           full_name?: string | null
           id?: string
+          paystack_customer_code?: string | null
           phone_number?: string | null
           referral_code?: string | null
           referred_by?: string | null
@@ -70,9 +78,13 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          dva_account_name?: string | null
+          dva_account_number?: string | null
+          dva_bank_name?: string | null
           email?: string
           full_name?: string | null
           id?: string
+          paystack_customer_code?: string | null
           phone_number?: string | null
           referral_code?: string | null
           referred_by?: string | null
