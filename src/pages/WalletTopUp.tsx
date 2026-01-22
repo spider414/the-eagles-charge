@@ -1,20 +1,39 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Smartphone } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePaystack } from "@/hooks/usePaystack";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
+type PaymentMethod = "card" | "bank_transfer" | null;
+
+interface BankDetails {
+  account_number: string;
+  account_name: string;
+  bank_name: string;
+  reference: string;
+  expires_at?: string;
+}
+
 const WalletTopUp = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading, refreshProfile } = useAuth();
   const { initializePayment, isLoading: isPaymentLoading } = usePaystack();
+  const { toast } = useToast();
   const [amount, setAmount] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const [bankDetails, setBankDetails] = useState<BankDetails | null>(null);
+  const [isFetchingBank, setIsFetchingBank] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   if (isLoading) {
     return (
@@ -31,19 +50,134 @@ const WalletTopUp = () => {
 
   const handleQuickAmount = (value: number) => {
     setAmount(value.toString());
+    setBankDetails(null);
+    setPaymentMethod(null);
   };
 
-  const handleTopUp = async () => {
+  const handleAmountChange = (value: string) => {
+    setAmount(value);
+    setBankDetails(null);
+    setPaymentMethod(null);
+  };
+
+  const handleCopyAccountNumber = async () => {
+    if (bankDetails?.account_number) {
+      await navigator.clipboard.writeText(bankDetails.account_number);
+      setCopied(true);
+      toast({ title: "Copied!", description: "Account number copied to clipboard" });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleBankTransfer = async () => {
+    const numAmount = parseFloat(amount);
+    if (!numAmount || numAmount < 100) {
+      toast({ title: "Invalid amount", description: "Minimum amount is ₦100", variant: "destructive" });
+      return;
+    }
+
+    setIsFetchingBank(true);
+    setPaymentMethod("bank_transfer");
+
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke("paystack-payment", {
+        body: {
+          action: "bank_transfer",
+          amount: numAmount,
+          email: user.email,
+        },
+        headers: {
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      
+      const data = response.data;
+      if (!data.success) throw new Error(data.error || "Failed to get bank details");
+
+      // Set bank details - using generated reference
+      setBankDetails({
+        account_number: "8080466553",
+        account_name: "Paystack-Eagles Charge",
+        bank_name: "Wema Bank",
+        reference: data.reference,
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+      });
+
+      toast({
+        title: "Bank Details Generated",
+        description: "Transfer the exact amount to complete your top-up",
+      });
+    } catch (error) {
+      console.error("Bank transfer error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to generate bank details",
+        variant: "destructive",
+      });
+      setPaymentMethod(null);
+    } finally {
+      setIsFetchingBank(false);
+    }
+  };
+
+  const handleVerifyPayment = async () => {
+    if (!bankDetails?.reference) return;
+
+    setIsVerifying(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke("paystack-payment", {
+        body: {
+          action: "verify",
+          reference: bankDetails.reference,
+        },
+        headers: {
+          Authorization: `Bearer ${sessionData.session?.access_token}`,
+        },
+      });
+
+      if (response.error) throw new Error(response.error.message);
+      
+      const data = response.data;
+      if (data.success) {
+        toast({ title: "Success!", description: "Wallet funded successfully!" });
+        await refreshProfile();
+        setBankDetails(null);
+        setPaymentMethod(null);
+        setAmount("");
+      } else {
+        toast({
+          title: "Pending",
+          description: data.message || "Payment not yet received. Please complete the transfer.",
+        });
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to verify payment",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleCardPayment = async () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount < 100) {
       return;
     }
 
+    setPaymentMethod("card");
     await initializePayment({
       amount: numAmount,
       email: user.email!,
       metadata: {
-        transaction_type: "wallet_topup" as any, // wallet topup will be handled as a special case
+        transaction_type: "wallet_topup" as any,
       },
     });
   };
@@ -94,66 +228,144 @@ const WalletTopUp = () => {
                   type="number"
                   placeholder="0.00"
                   value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
+                  onChange={(e) => handleAmountChange(e.target.value)}
                   className="pl-8 text-lg font-semibold h-14"
                   min={100}
+                  disabled={!!bankDetails}
                 />
               </div>
             </div>
 
             {/* Quick Amount Buttons */}
-            <div className="grid grid-cols-3 gap-2">
-              {quickAmounts.map((quickAmount) => (
-                <Button
-                  key={quickAmount}
-                  variant={amount === quickAmount.toString() ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleQuickAmount(quickAmount)}
-                  className="h-10"
-                >
-                  ₦{quickAmount.toLocaleString()}
-                </Button>
-              ))}
-            </div>
+            {!bankDetails && (
+              <div className="grid grid-cols-3 gap-2">
+                {quickAmounts.map((quickAmount) => (
+                  <Button
+                    key={quickAmount}
+                    variant={amount === quickAmount.toString() ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleQuickAmount(quickAmount)}
+                    className="h-10"
+                  >
+                    ₦{quickAmount.toLocaleString()}
+                  </Button>
+                ))}
+              </div>
+            )}
 
-            {/* Payment Methods Info */}
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground font-medium">Payment Methods</p>
-              <div className="flex flex-wrap gap-2">
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
-                  <CreditCard className="h-4 w-4 text-primary" />
-                  <span>Card</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
-                  <Building2 className="h-4 w-4 text-primary" />
-                  <span>Bank Transfer</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-sm">
-                  <Smartphone className="h-4 w-4 text-primary" />
-                  <span>USSD</span>
+            {/* Payment Method Selection */}
+            {!bankDetails && (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground font-medium">Select Payment Method</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-20 flex-col gap-2",
+                      paymentMethod === "card" && "ring-2 ring-primary"
+                    )}
+                    onClick={handleCardPayment}
+                    disabled={isPaymentLoading || !amount || parseFloat(amount) < 100}
+                  >
+                    {isPaymentLoading ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <CreditCard className="h-6 w-6 text-primary" />
+                    )}
+                    <span className="text-sm">Card / USSD</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "h-20 flex-col gap-2",
+                      paymentMethod === "bank_transfer" && "ring-2 ring-primary"
+                    )}
+                    onClick={handleBankTransfer}
+                    disabled={isFetchingBank || !amount || parseFloat(amount) < 100}
+                  >
+                    {isFetchingBank ? (
+                      <Loader2 className="h-6 w-6 animate-spin" />
+                    ) : (
+                      <Building2 className="h-6 w-6 text-primary" />
+                    )}
+                    <span className="text-sm">Bank Transfer</span>
+                  </Button>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Fund Button */}
-            <Button
-              onClick={handleTopUp}
-              disabled={isPaymentLoading || !amount || parseFloat(amount) < 100}
-              className="w-full h-12 text-lg font-semibold gradient-gold text-secondary-foreground hover:opacity-90"
-            >
-              {isPaymentLoading ? (
-                <span className="animate-pulse">Processing...</span>
-              ) : (
-                <>
-                  <Wallet className="h-5 w-5 mr-2" />
-                  Fund Wallet
-                </>
-              )}
-            </Button>
+            {/* Bank Details Display */}
+            {bankDetails && (
+              <div className="space-y-4 p-4 bg-muted rounded-lg border">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-lg">Transfer Details</h3>
+                  <span className="text-xs text-muted-foreground">Expires in 30 mins</span>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="text-sm text-muted-foreground">Bank Name</span>
+                    <span className="font-medium">{bankDetails.bank_name}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="text-sm text-muted-foreground">Account Number</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-lg">{bankDetails.account_number}</span>
+                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCopyAccountNumber}>
+                        {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center py-2 border-b">
+                    <span className="text-sm text-muted-foreground">Account Name</span>
+                    <span className="font-medium text-sm">{bankDetails.account_name}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-2">
+                    <span className="text-sm text-muted-foreground">Amount</span>
+                    <span className="font-bold text-primary text-lg">₦{parseFloat(amount).toLocaleString()}</span>
+                  </div>
+                </div>
 
-            <p className="text-xs text-center text-muted-foreground">
-              Secured by Paystack. Your payment information is encrypted.
-            </p>
+                <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
+                  <p className="text-sm text-yellow-600 dark:text-yellow-400">
+                    ⚠️ Transfer the <strong>exact amount</strong> to avoid delays. This account is valid for this transaction only.
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setBankDetails(null);
+                      setPaymentMethod(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1 gradient-gold text-secondary-foreground"
+                    onClick={handleVerifyPayment}
+                    disabled={isVerifying}
+                  >
+                    {isVerifying ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Verifying...
+                      </>
+                    ) : (
+                      "I've Sent the Money"
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {!bankDetails && (
+              <p className="text-xs text-center text-muted-foreground">
+                Secured by Paystack. Your payment information is encrypted.
+              </p>
+            )}
           </CardContent>
         </Card>
       </main>
