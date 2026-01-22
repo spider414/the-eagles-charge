@@ -38,7 +38,13 @@ interface WalletPaymentRequest {
   metadata: PaystackMetadata;
 }
 
-type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest;
+interface BankTransferRequest {
+  action: "bank_transfer";
+  amount: number;
+  email: string;
+}
+
+type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest;
 
 Deno.serve(async (req) => {
   // Handle CORS preflight
@@ -425,6 +431,79 @@ Deno.serve(async (req) => {
 
         throw processingError;
       }
+    }
+
+    if (body.action === "bank_transfer") {
+      const { amount, email } = body;
+      
+      // Generate unique reference
+      const reference = `BANK-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Create a pending transaction record
+      const { data: transaction, error: txError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: userId,
+          transaction_type: "wallet_topup",
+          status: "pending",
+          amount: amount,
+          paystack_reference: reference,
+        })
+        .select()
+        .single();
+
+      if (txError) {
+        console.error("Transaction creation error:", txError);
+        throw new Error("Failed to create transaction record");
+      }
+
+      // Initialize Paystack payment with bank transfer channel only
+      const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${paystackSecretKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          amount: amount * 100, // Paystack uses kobo
+          reference,
+          channels: ["bank_transfer"], // Only bank transfer
+          metadata: {
+            transaction_type: "wallet_topup",
+            transaction_id: transaction.id,
+            user_id: userId,
+          },
+        }),
+      });
+
+      const paystackData = await paystackResponse.json();
+      console.log("Paystack bank transfer response:", paystackData);
+
+      if (!paystackData.status) {
+        await supabase
+          .from("transactions")
+          .update({ status: "failed" })
+          .eq("id", transaction.id);
+
+        throw new Error(paystackData.message || "Failed to initialize bank transfer");
+      }
+
+      // Update transaction with access code
+      await supabase
+        .from("transactions")
+        .update({ paystack_access_code: paystackData.data.access_code })
+        .eq("id", transaction.id);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          reference,
+          access_code: paystackData.data.access_code,
+          authorization_url: paystackData.data.authorization_url,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     throw new Error("Invalid action");
