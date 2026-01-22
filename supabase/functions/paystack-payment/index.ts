@@ -518,7 +518,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create Dedicated Virtual Account for user
+    // Create Paystack customer (for future use)
     if (body.action === "create_dva") {
       const { email, first_name, last_name, phone } = body;
 
@@ -546,83 +546,36 @@ Deno.serve(async (req) => {
 
       const customerCode = customerData.data.customer_code;
 
-      // Create dedicated virtual account
-      const dvaResponse = await fetch("https://api.paystack.co/dedicated_account", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${paystackSecretKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          customer: customerCode,
-          preferred_bank: "wema-bank", // Wema Bank is commonly used for DVA
-        }),
-      });
-
-      const dvaData = await dvaResponse.json();
-      console.log("Paystack DVA response:", dvaData);
-
-      if (!dvaData.status) {
-        throw new Error(dvaData.message || "Failed to create virtual account");
-      }
-
-      // Store DVA details in user profile (we'll add a column for this)
-      const dvaDetails = {
-        account_number: dvaData.data.account_number,
-        account_name: dvaData.data.account_name,
-        bank_name: dvaData.data.bank?.name || "Wema Bank",
-        customer_code: customerCode,
-        dva_id: dvaData.data.id,
-      };
-
-      // Update user profile with DVA details
+      // Store customer code in profile for future transactions
       await supabase
         .from("profiles")
         .update({ 
           paystack_customer_code: customerCode,
-          dva_account_number: dvaDetails.account_number,
-          dva_account_name: dvaDetails.account_name,
-          dva_bank_name: dvaDetails.bank_name,
         })
         .eq("user_id", userId);
 
+      // Note: DVA requires BVN verification in Nigeria
+      // For now, we'll use the bank_transfer channel per transaction instead
       return new Response(
         JSON.stringify({
           success: true,
-          message: "Virtual account created successfully!",
-          data: dvaDetails,
+          message: "Customer account created! Use bank transfer option to get account details for each transaction.",
+          requires_verification: true,
+          customer_code: customerCode,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get user's Dedicated Virtual Account
+    // Get bank transfer details for a specific amount
     if (body.action === "get_dva") {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("paystack_customer_code, dva_account_number, dva_account_name, dva_bank_name")
-        .eq("user_id", userId)
-        .single();
-
-      if (profile?.dva_account_number) {
-        return new Response(
-          JSON.stringify({
-            success: true,
-            data: {
-              account_number: profile.dva_account_number,
-              account_name: profile.dva_account_name,
-              bank_name: profile.dva_bank_name,
-            },
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
+      // Since DVA requires BVN, we return info about using bank_transfer instead
       return new Response(
         JSON.stringify({
           success: false,
           data: null,
-          message: "No virtual account found. Please create one first.",
+          message: "Use the bank transfer option when funding to get temporary account details.",
+          use_bank_transfer: true,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
