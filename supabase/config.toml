@@ -1,1 +1,7 @@
 project_id = "gwyjgljnpntorbjphnbq"
+
+[functions.paystack-payment]
+verify_jwt = false
+
+[functions.vtu-service]
+verify_jwt = false
