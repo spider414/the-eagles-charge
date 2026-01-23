@@ -406,19 +406,114 @@ Deno.serve(async (req) => {
 
         console.log(`Wallet payment: Deducted ₦${amount} from wallet. New balance: ₦${newBalance}`);
 
-        // TODO: Here you would integrate with the actual VTU/bills API provider
-        // For now, we'll simulate a successful transaction
-        // In production, call the real API here and handle response
+        // Call VTU service for real transaction processing
+        let vtuResult: any = null;
+        const vtuApiKey = Deno.env.get("CHEAPDATAHUB_API_KEY");
+        const vtuBaseUrl = Deno.env.get("VTU_BASE_URL") || "https://vtu.ng/wp-json/api/v2";
+        
+        if (metadata.transaction_type === "airtime" && metadata.phone_number && metadata.network) {
+          const requestId = `AIR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+          console.log(`Processing airtime via VTU API: ${metadata.network} ₦${amount} for ${metadata.phone_number}`);
+          
+          const vtuResponse = await fetch(`${vtuBaseUrl}/airtime`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${vtuApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              request_id: requestId,
+              phone: metadata.phone_number,
+              service_id: metadata.network.toLowerCase(),
+              amount: amount,
+            }),
+          });
+          vtuResult = await vtuResponse.json();
+          console.log("VTU Airtime Response:", JSON.stringify(vtuResult));
+          
+        } else if (metadata.transaction_type === "data" && metadata.phone_number && metadata.network && metadata.data_plan) {
+          const requestId = `DATA-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+          console.log(`Processing data via VTU API: ${metadata.network} ${metadata.data_plan} for ${metadata.phone_number}`);
+          
+          const vtuResponse = await fetch(`${vtuBaseUrl}/data`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${vtuApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              request_id: requestId,
+              phone: metadata.phone_number,
+              service_id: metadata.network.toLowerCase(),
+              variation_id: metadata.data_plan,
+            }),
+          });
+          vtuResult = await vtuResponse.json();
+          console.log("VTU Data Response:", JSON.stringify(vtuResult));
+          
+        } else if (metadata.transaction_type === "electricity" && metadata.meter_number && metadata.electricity_provider) {
+          const requestId = `ELEC-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+          console.log(`Processing electricity via VTU API: ${metadata.electricity_provider} ₦${amount} for meter ${metadata.meter_number}`);
+          
+          const vtuResponse = await fetch(`${vtuBaseUrl}/electricity`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${vtuApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              request_id: requestId,
+              meter_number: metadata.meter_number,
+              service_id: metadata.electricity_provider.toLowerCase(),
+              amount: amount,
+              meter_type: metadata.meter_type || "prepaid",
+            }),
+          });
+          vtuResult = await vtuResponse.json();
+          console.log("VTU Electricity Response:", JSON.stringify(vtuResult));
+          
+        } else if (metadata.transaction_type === "cable_tv" && metadata.cable_smartcard && metadata.cable_provider && metadata.cable_plan) {
+          const requestId = `TV-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+          console.log(`Processing cable TV via VTU API: ${metadata.cable_provider} ${metadata.cable_plan} for ${metadata.cable_smartcard}`);
+          
+          const vtuResponse = await fetch(`${vtuBaseUrl}/tv`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${vtuApiKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              request_id: requestId,
+              smartcard_number: metadata.cable_smartcard,
+              service_id: metadata.cable_provider.toLowerCase(),
+              variation_id: metadata.cable_plan,
+            }),
+          });
+          vtuResult = await vtuResponse.json();
+          console.log("VTU Cable TV Response:", JSON.stringify(vtuResult));
+        }
 
-        // Update transaction to completed
+        // Check VTU result and update transaction accordingly
+        const isVtuSuccess = vtuResult?.code === "success" || vtuResult?.status === "success";
+        const vtuToken = vtuResult?.data?.token || null;
+        
+        if (vtuResult && !isVtuSuccess) {
+          // VTU call failed - refund wallet
+          console.error("VTU API failed:", vtuResult);
+          throw new Error(vtuResult?.message || vtuResult?.error || "Service delivery failed");
+        }
+
+        // Update transaction to completed with VTU response
         await supabase
           .from("transactions")
           .update({ 
             status: "completed",
+            token: vtuToken,
             api_response: { 
               payment_method: "wallet",
               wallet_balance_before: walletBalance,
               wallet_balance_after: newBalance,
+              vtu_response: vtuResult,
               processed_at: new Date().toISOString()
             }
           })
@@ -429,15 +524,19 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: `Payment successful! ₦${amount.toLocaleString()} deducted from wallet.`,
+            message: vtuResult?.message || `Payment successful! ₦${amount.toLocaleString()} deducted from wallet.`,
             transaction_id: transaction.id,
             reference: reference,
             new_balance: newBalance,
+            token: vtuToken,
+            data: vtuResult?.data,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (processingError) {
         // If processing fails, refund the wallet and mark transaction as failed
+        console.error("Processing error, refunding wallet:", processingError);
+        
         await supabase
           .from("profiles")
           .update({ wallet_balance: walletBalance }) // Restore original balance
