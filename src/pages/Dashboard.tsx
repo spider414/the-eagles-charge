@@ -8,20 +8,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import AirtimeForm from "@/components/AirtimeForm";
 import DataForm from "@/components/DataForm";
-
 interface DVADetails {
   account_number: string;
   account_name: string;
   bank_name: string;
 }
-
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading, signOut } = useAuth();
-  const { toast } = useToast();
+  const {
+    user,
+    profile,
+    isLoading,
+    signOut
+  } = useAuth();
+  const {
+    toast
+  } = useToast();
   const [dvaDetails, setDvaDetails] = useState<DVADetails | null>(null);
   const [copied, setCopied] = useState(false);
-
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/auth");
@@ -34,45 +38,50 @@ const Dashboard = () => {
       setDvaDetails({
         account_number: profile.dva_account_number,
         account_name: profile.dva_account_name || profile.full_name || "",
-        bank_name: profile.dva_bank_name,
+        bank_name: profile.dva_bank_name
       });
     }
   }, [profile]);
-
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
   };
-
   const handleCopyAccount = async () => {
     if (dvaDetails?.account_number) {
       await navigator.clipboard.writeText(dvaDetails.account_number);
       setCopied(true);
-      toast({ title: "Copied!", description: "Account number copied" });
+      toast({
+        title: "Copied!",
+        description: "Account number copied"
+      });
       setTimeout(() => setCopied(false), 2000);
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+    return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse-soft text-primary">Loading...</div>
-      </div>
-    );
+      </div>;
   }
-
   if (!user) {
     return null;
   }
-
-  const services = [
-    { name: "Electricity", icon: Zap, href: "/bills/electricity", color: "text-yellow-600" },
-    { name: "Cable TV", icon: Tv, href: "/bills/cable", color: "text-blue-600" },
-    { name: "Internet", icon: Globe, href: "/bills/internet", color: "text-purple-600" },
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
+  const services = [{
+    name: "Electricity",
+    icon: Zap,
+    href: "/bills/electricity",
+    color: "text-yellow-600"
+  }, {
+    name: "Cable TV",
+    icon: Tv,
+    href: "/bills/cable",
+    color: "text-blue-600"
+  }, {
+    name: "Internet",
+    icon: Globe,
+    href: "/bills/internet",
+    color: "text-purple-600"
+  }];
+  return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
@@ -139,37 +148,25 @@ const Dashboard = () => {
               </div>
               
               {/* Virtual Account Section */}
-              {dvaDetails ? (
-                <div className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-primary-foreground/20">
+              {dvaDetails ? <div className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-primary-foreground/20">
                   <Building2 className="h-5 w-5 text-primary-foreground/70" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-primary-foreground/60">Your Virtual Account</p>
+                    <p className="text-xs text-primary-foreground/60">Your Account</p>
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold">{dvaDetails.account_number}</span>
                       <span className="text-sm text-primary-foreground/70">• {dvaDetails.bank_name}</span>
                     </div>
                   </div>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-                    onClick={handleCopyAccount}
-                  >
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={handleCopyAccount}>
                     {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   </Button>
-                </div>
-              ) : (
-                <Link 
-                  to="/wallet/topup" 
-                  className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-dashed border-primary-foreground/30 hover:bg-primary-foreground/10 transition-colors"
-                >
+                </div> : <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-dashed border-primary-foreground/30 hover:bg-primary-foreground/10 transition-colors">
                   <Building2 className="h-5 w-5 text-primary-foreground/50" />
                   <div className="flex-1">
                     <p className="text-sm text-primary-foreground/70">Get a dedicated bank account for instant wallet funding</p>
                   </div>
                   <Plus className="h-4 w-4 text-primary-foreground/50" />
-                </Link>
-              )}
+                </Link>}
             </div>
           </CardContent>
         </Card>
@@ -200,8 +197,7 @@ const Dashboard = () => {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Bill Payments</h2>
           <div className="grid grid-cols-3 gap-4">
-            {services.map((service) => (
-              <Link key={service.name} to={service.href}>
+            {services.map(service => <Link key={service.name} to={service.href}>
                 <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
                   <CardContent className="p-4 flex flex-col items-center text-center">
                     <div className={`p-3 rounded-xl bg-muted mb-2 ${service.color}`}>
@@ -210,17 +206,20 @@ const Dashboard = () => {
                     <span className="text-sm font-medium">{service.name}</span>
                   </CardContent>
                 </Card>
-              </Link>
-            ))}
+              </Link>)}
           </div>
         </div>
 
         {/* Airtime & Data Forms */}
         <div className="grid lg:grid-cols-2 gap-8">
-          <div className="animate-fade-in" style={{ animationDelay: "100ms" }}>
+          <div className="animate-fade-in" style={{
+          animationDelay: "100ms"
+        }}>
             <AirtimeForm />
           </div>
-          <div className="animate-fade-in" style={{ animationDelay: "200ms" }}>
+          <div className="animate-fade-in" style={{
+          animationDelay: "200ms"
+        }}>
             <DataForm />
           </div>
         </div>
@@ -251,8 +250,6 @@ const Dashboard = () => {
           </Link>
         </div>
       </nav>
-    </div>
-  );
+    </div>;
 };
-
 export default Dashboard;
