@@ -1,15 +1,26 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings } from "lucide-react";
+import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import AirtimeForm from "@/components/AirtimeForm";
 import DataForm from "@/components/DataForm";
+
+interface DVADetails {
+  account_number: string;
+  account_name: string;
+  bank_name: string;
+}
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { user, profile, isLoading, signOut } = useAuth();
+  const { toast } = useToast();
+  const [dvaDetails, setDvaDetails] = useState<DVADetails | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -17,9 +28,29 @@ const Dashboard = () => {
     }
   }, [user, isLoading, navigate]);
 
+  // Fetch DVA details from profile
+  useEffect(() => {
+    if (profile?.dva_account_number && profile?.dva_bank_name) {
+      setDvaDetails({
+        account_number: profile.dva_account_number,
+        account_name: profile.dva_account_name || profile.full_name || "",
+        bank_name: profile.dva_bank_name,
+      });
+    }
+  }, [profile]);
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleCopyAccount = async () => {
+    if (dvaDetails?.account_number) {
+      await navigator.clipboard.writeText(dvaDetails.account_number);
+      setCopied(true);
+      toast({ title: "Copied!", description: "Account number copied" });
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   if (isLoading) {
@@ -85,25 +116,60 @@ const Dashboard = () => {
         {/* Welcome Card */}
         <Card className="mb-8 gradient-hero text-primary-foreground">
           <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold mb-1">
-                  Welcome, {profile?.full_name || user.email?.split("@")[0]}! 👋
-                </h1>
-                <p className="text-primary-foreground/80">
-                  Ready to recharge? Let's get you connected.
-                </p>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl font-bold mb-1">
+                    Welcome, {profile?.full_name || user.email?.split("@")[0]}! 👋
+                  </h1>
+                  <p className="text-primary-foreground/80">
+                    Ready to recharge? Let's get you connected.
+                  </p>
+                </div>
+                <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/10 rounded-xl px-4 py-3 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
+                  <Wallet className="h-6 w-6" />
+                  <div className="flex-1">
+                    <p className="text-sm text-primary-foreground/80">Wallet Balance</p>
+                    <p className="text-xl font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
+                  </div>
+                  <div className="p-2 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
+                    <Plus className="h-4 w-4" />
+                  </div>
+                </Link>
               </div>
-              <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/10 rounded-xl px-4 py-3 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
-                <Wallet className="h-6 w-6" />
-                <div className="flex-1">
-                  <p className="text-sm text-primary-foreground/80">Wallet Balance</p>
-                  <p className="text-xl font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
+              
+              {/* Virtual Account Section */}
+              {dvaDetails ? (
+                <div className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-primary-foreground/20">
+                  <Building2 className="h-5 w-5 text-primary-foreground/70" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-primary-foreground/60">Your Virtual Account</p>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold">{dvaDetails.account_number}</span>
+                      <span className="text-sm text-primary-foreground/70">• {dvaDetails.bank_name}</span>
+                    </div>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                    onClick={handleCopyAccount}
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
                 </div>
-                <div className="p-2 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
-                  <Plus className="h-4 w-4" />
-                </div>
-              </Link>
+              ) : (
+                <Link 
+                  to="/wallet/topup" 
+                  className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-dashed border-primary-foreground/30 hover:bg-primary-foreground/10 transition-colors"
+                >
+                  <Building2 className="h-5 w-5 text-primary-foreground/50" />
+                  <div className="flex-1">
+                    <p className="text-sm text-primary-foreground/70">Get a dedicated bank account for instant wallet funding</p>
+                  </div>
+                  <Plus className="h-4 w-4 text-primary-foreground/50" />
+                </Link>
+              )}
             </div>
           </CardContent>
         </Card>
