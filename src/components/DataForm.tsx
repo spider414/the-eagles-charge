@@ -22,35 +22,36 @@ interface DataPlan {
   validity: string;
 }
 
+// Data plans with VTU API variation codes
 const dataPlans: Record<NetworkType, DataPlan[]> = {
   mtn: [
-    { id: "mtn-1", size: "500MB", price: 150, validity: "30 days" },
-    { id: "mtn-2", size: "1GB", price: 300, validity: "30 days" },
-    { id: "mtn-3", size: "2GB", price: 500, validity: "30 days" },
-    { id: "mtn-4", size: "3GB", price: 800, validity: "30 days" },
-    { id: "mtn-5", size: "5GB", price: 1200, validity: "30 days" },
-    { id: "mtn-6", size: "10GB", price: 2500, validity: "30 days" },
+    { id: "mtn-500mb", size: "500MB", price: 150, validity: "30 days" },
+    { id: "mtn-1gb", size: "1GB", price: 300, validity: "30 days" },
+    { id: "mtn-2gb", size: "2GB", price: 500, validity: "30 days" },
+    { id: "mtn-3gb", size: "3GB", price: 800, validity: "30 days" },
+    { id: "mtn-5gb", size: "5GB", price: 1200, validity: "30 days" },
+    { id: "mtn-10gb", size: "10GB", price: 2500, validity: "30 days" },
   ],
   glo: [
-    { id: "glo-1", size: "500MB", price: 100, validity: "30 days" },
-    { id: "glo-2", size: "1GB", price: 200, validity: "30 days" },
-    { id: "glo-3", size: "2GB", price: 400, validity: "30 days" },
-    { id: "glo-4", size: "5GB", price: 1000, validity: "30 days" },
-    { id: "glo-5", size: "10GB", price: 2000, validity: "30 days" },
+    { id: "glo-500mb", size: "500MB", price: 100, validity: "30 days" },
+    { id: "glo-1gb", size: "1GB", price: 200, validity: "30 days" },
+    { id: "glo-2gb", size: "2GB", price: 400, validity: "30 days" },
+    { id: "glo-5gb", size: "5GB", price: 1000, validity: "30 days" },
+    { id: "glo-10gb", size: "10GB", price: 2000, validity: "30 days" },
   ],
   airtel: [
-    { id: "airtel-1", size: "500MB", price: 150, validity: "30 days" },
-    { id: "airtel-2", size: "1GB", price: 300, validity: "30 days" },
-    { id: "airtel-3", size: "2GB", price: 500, validity: "30 days" },
-    { id: "airtel-4", size: "5GB", price: 1200, validity: "30 days" },
-    { id: "airtel-5", size: "10GB", price: 2500, validity: "30 days" },
+    { id: "airtel-500mb", size: "500MB", price: 150, validity: "30 days" },
+    { id: "airtel-1gb", size: "1GB", price: 300, validity: "30 days" },
+    { id: "airtel-2gb", size: "2GB", price: 500, validity: "30 days" },
+    { id: "airtel-5gb", size: "5GB", price: 1200, validity: "30 days" },
+    { id: "airtel-10gb", size: "10GB", price: 2500, validity: "30 days" },
   ],
   "9mobile": [
-    { id: "9mobile-1", size: "500MB", price: 100, validity: "30 days" },
-    { id: "9mobile-2", size: "1GB", price: 200, validity: "30 days" },
-    { id: "9mobile-3", size: "2.5GB", price: 500, validity: "30 days" },
-    { id: "9mobile-4", size: "5GB", price: 1000, validity: "30 days" },
-    { id: "9mobile-5", size: "11.5GB", price: 2000, validity: "30 days" },
+    { id: "9mobile-500mb", size: "500MB", price: 100, validity: "30 days" },
+    { id: "9mobile-1gb", size: "1GB", price: 200, validity: "30 days" },
+    { id: "9mobile-2.5gb", size: "2.5GB", price: 500, validity: "30 days" },
+    { id: "9mobile-5gb", size: "5GB", price: 1000, validity: "30 days" },
+    { id: "9mobile-11.5gb", size: "11.5GB", price: 2000, validity: "30 days" },
   ],
 };
 
