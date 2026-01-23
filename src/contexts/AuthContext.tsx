@@ -11,6 +11,10 @@ interface Profile {
   wallet_balance: number;
   referral_code: string | null;
   total_referral_earnings: number;
+  paystack_customer_code: string | null;
+  dva_account_number: string | null;
+  dva_account_name: string | null;
+  dva_bank_name: string | null;
   created_at: string;
   updated_at: string;
 }
