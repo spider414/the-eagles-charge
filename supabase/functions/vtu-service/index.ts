@@ -52,8 +52,9 @@ interface DataPlansRequest {
 type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | BalanceRequest | DataPlansRequest;
 
 // VTU Provider configuration - CheapDataHub API
+// NOTE: Update VTU_BASE_URL secret if using a different VTU provider
 const VTU_CONFIG = {
-  baseUrl: Deno.env.get("VTU_BASE_URL") || "https://www.cheapdatahub.com/api",
+  baseUrl: Deno.env.get("VTU_BASE_URL") || "https://www.cheapdatahub.ng/api/v1",
   apiKey: Deno.env.get("CHEAPDATAHUB_API_KEY") || "",
 };
 
@@ -68,14 +69,24 @@ async function callVtuApi(endpoint: string, params: Record<string, string | numb
     url.searchParams.append(key, String(value));
   });
 
-  console.log(`VTU API Call: ${url.toString().replace(VTU_CONFIG.apiKey, "***")}`);
+  const logUrl = url.toString().replace(VTU_CONFIG.apiKey, "***");
+  console.log(`VTU API Call: ${logUrl}`);
 
   const response = await fetch(url.toString(), {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
+      "Accept": "application/json",
     },
   });
+
+  // Check if response is JSON
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    console.error("VTU API returned non-JSON response:", text.substring(0, 200));
+    throw new Error(`VTU API returned invalid response (${response.status}). Check API URL and key configuration.`);
+  }
 
   const data = await response.json();
   console.log("VTU API Response:", JSON.stringify(data));
@@ -98,9 +109,18 @@ async function callVtuApiPost(endpoint: string, body: Record<string, string | nu
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      "Accept": "application/json",
     },
     body: JSON.stringify(requestBody),
   });
+
+  // Check if response is JSON
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    console.error("VTU API returned non-JSON response:", text.substring(0, 200));
+    throw new Error(`VTU API returned invalid response (${response.status}). Check API URL and key configuration.`);
+  }
 
   const data = await response.json();
   console.log("VTU API Response:", JSON.stringify(data));

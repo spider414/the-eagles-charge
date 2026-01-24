@@ -11,16 +11,18 @@ interface VtuBalanceData {
 export const useVtuBalance = () => {
   const [balance, setBalance] = useState<VtuBalanceData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const checkBalance = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase.functions.invoke("vtu-service", {
+      const { data, error: fetchError } = await supabase.functions.invoke("vtu-service", {
         body: { action: "balance" },
       });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
       if (data.success) {
         const balanceData: VtuBalanceData = {
@@ -29,6 +31,7 @@ export const useVtuBalance = () => {
           lastChecked: new Date(),
         };
         setBalance(balanceData);
+        setError(null);
         
         // Check for low balance alert (threshold: ₦5,000)
         if (balanceData.balance < 5000) {
@@ -43,11 +46,13 @@ export const useVtuBalance = () => {
       } else {
         throw new Error(data.error || "Failed to check balance");
       }
-    } catch (error) {
-      console.error("VTU balance check error:", error);
+    } catch (err) {
+      console.error("VTU balance check error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Could not fetch VTU balance";
+      setError(errorMessage);
       toast({
         title: "Balance Check Failed",
-        description: error instanceof Error ? error.message : "Could not fetch VTU balance",
+        description: errorMessage,
         variant: "destructive",
       });
       return null;
@@ -59,6 +64,7 @@ export const useVtuBalance = () => {
   return {
     balance,
     isLoading,
+    error,
     checkBalance,
   };
 };
