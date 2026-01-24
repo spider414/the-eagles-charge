@@ -44,29 +44,35 @@ interface BalanceRequest {
   action: "balance";
 }
 
-type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | BalanceRequest;
+interface DataPlansRequest {
+  action: "data_plans";
+  network: string;
+}
 
-// VTU Provider configuration - Update these based on your provider
+type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | BalanceRequest | DataPlansRequest;
+
+// VTU Provider configuration - CheapDataHub API
 const VTU_CONFIG = {
-  baseUrl: Deno.env.get("VTU_BASE_URL") || "https://vtu.ng/wp-json/api/v2",
+  baseUrl: Deno.env.get("VTU_BASE_URL") || "https://www.cheapdatahub.com/api",
   apiKey: Deno.env.get("CHEAPDATAHUB_API_KEY") || "",
 };
 
-// Helper to call VTU API
-async function callVtuApi(endpoint: string, params: Record<string, string | number>) {
+// Helper to call VTU API with GET
+async function callVtuApi(endpoint: string, params: Record<string, string | number> = {}) {
   const url = new URL(`${VTU_CONFIG.baseUrl}${endpoint}`);
   
-  // For GET requests, append params to URL
+  // Add API key to params
+  url.searchParams.append("api_key", VTU_CONFIG.apiKey);
+  
   Object.entries(params).forEach(([key, value]) => {
     url.searchParams.append(key, String(value));
   });
 
-  console.log(`VTU API Call: ${url.toString()}`);
+  console.log(`VTU API Call: ${url.toString().replace(VTU_CONFIG.apiKey, "***")}`);
 
   const response = await fetch(url.toString(), {
     method: "GET",
     headers: {
-      "Authorization": `Bearer ${VTU_CONFIG.apiKey}`,
       "Content-Type": "application/json",
     },
   });
@@ -76,19 +82,24 @@ async function callVtuApi(endpoint: string, params: Record<string, string | numb
   return data;
 }
 
-// Alternative POST method for APIs that require POST
+// POST method for APIs that require POST
 async function callVtuApiPost(endpoint: string, body: Record<string, string | number>) {
   const url = `${VTU_CONFIG.baseUrl}${endpoint}`;
   
-  console.log(`VTU API POST: ${url}`, JSON.stringify(body));
+  // Add API key to body
+  const requestBody = {
+    ...body,
+    api_key: VTU_CONFIG.apiKey,
+  };
+  
+  console.log(`VTU API POST: ${url}`, JSON.stringify({ ...requestBody, api_key: "***" }));
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${VTU_CONFIG.apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(requestBody),
   });
 
   const data = await response.json();
@@ -132,15 +143,86 @@ Deno.serve(async (req) => {
     // Check VTU Balance
     if (body.action === "balance") {
       try {
-        const result = await callVtuApi("/balance", {});
+        const result = await callVtuApi("/balance");
+        
+        // CheapDataHub returns balance in a specific format
         return new Response(
-          JSON.stringify({ success: true, data: result }),
+          JSON.stringify({ 
+            success: true, 
+            data: {
+              balance: result.balance || result.data?.balance || 0,
+              currency: "NGN",
+              raw: result
+            }
+          }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (error) {
         console.error("Balance check error:", error);
         return new Response(
           JSON.stringify({ success: false, error: "Failed to check VTU balance" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Fetch Data Plans for a network
+    if (body.action === "data_plans") {
+      const { network } = body;
+      
+      try {
+        // CheapDataHub endpoint for data plans
+        const result = await callVtuApi("/data", { network: network.toLowerCase() });
+        
+        // Transform the response to a standard format
+        let plans = [];
+        
+        if (result.status === "success" && result.data) {
+          plans = result.data.map((plan: {
+            variation_id: string;
+            name: string;
+            variation_amount: number;
+            fixedPrice: string;
+            validity?: string;
+          }) => ({
+            id: plan.variation_id,
+            name: plan.name,
+            size: plan.name,
+            price: parseFloat(plan.fixedPrice) || plan.variation_amount,
+            validity: plan.validity || "30 days",
+            variation_id: plan.variation_id,
+          }));
+        } else if (Array.isArray(result)) {
+          // Alternative response format
+          plans = result.map((plan: {
+            id: string;
+            variation_id: string;
+            name: string;
+            price: number;
+            amount: number;
+            validity?: string;
+          }) => ({
+            id: plan.id || plan.variation_id,
+            name: plan.name,
+            size: plan.name,
+            price: plan.price || plan.amount,
+            validity: plan.validity || "30 days",
+            variation_id: plan.variation_id || plan.id,
+          }));
+        }
+        
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            data: plans,
+            raw: result
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        console.error("Data plans fetch error:", error);
+        return new Response(
+          JSON.stringify({ success: false, error: "Failed to fetch data plans" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -153,13 +235,12 @@ Deno.serve(async (req) => {
       console.log(`Processing airtime: ${network} ${amount} for ${phone}`);
 
       try {
-        // Generate unique request ID
         const requestId = `AIR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
         
         const result = await callVtuApiPost("/airtime", {
           request_id: requestId,
           phone: phone,
-          service_id: network.toLowerCase(),
+          network: network.toLowerCase(),
           amount: amount,
         });
 
@@ -168,11 +249,11 @@ Deno.serve(async (req) => {
           .from("transactions")
           .update({
             api_response: result,
-            status: result.code === "success" ? "completed" : "failed",
+            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
           })
           .eq("id", transaction_id);
 
-        if (result.code === "success") {
+        if (result.status === "success" || result.code === "success") {
           return new Response(
             JSON.stringify({ 
               success: true, 
@@ -182,12 +263,11 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || "Airtime purchase failed");
+          throw new Error(result.message || result.error || "Airtime purchase failed");
         }
       } catch (error) {
         console.error("Airtime purchase error:", error);
         
-        // Update transaction as failed
         await supabase
           .from("transactions")
           .update({
@@ -218,19 +298,19 @@ Deno.serve(async (req) => {
         const result = await callVtuApiPost("/data", {
           request_id: requestId,
           phone: phone,
-          service_id: network.toLowerCase(),
-          variation_id: plan_code,
+          network: network.toLowerCase(),
+          plan: plan_code,
         });
 
         await supabase
           .from("transactions")
           .update({
             api_response: result,
-            status: result.code === "success" ? "completed" : "failed",
+            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
           })
           .eq("id", transaction_id);
 
-        if (result.code === "success") {
+        if (result.status === "success" || result.code === "success") {
           return new Response(
             JSON.stringify({ 
               success: true, 
@@ -240,7 +320,7 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || "Data purchase failed");
+          throw new Error(result.message || result.error || "Data purchase failed");
         }
       } catch (error) {
         console.error("Data purchase error:", error);
@@ -275,7 +355,7 @@ Deno.serve(async (req) => {
         const result = await callVtuApiPost("/electricity", {
           request_id: requestId,
           meter_number: meter_number,
-          service_id: provider.toLowerCase(),
+          disco: provider.toLowerCase(),
           amount: amount,
           meter_type: meter_type,
         });
@@ -284,23 +364,23 @@ Deno.serve(async (req) => {
           .from("transactions")
           .update({
             api_response: result,
-            status: result.code === "success" ? "completed" : "failed",
-            token: result.data?.token || null,
+            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
+            token: result.data?.token || result.token || null,
           })
           .eq("id", transaction_id);
 
-        if (result.code === "success") {
+        if (result.status === "success" || result.code === "success") {
           return new Response(
             JSON.stringify({ 
               success: true, 
               message: "Electricity payment successful!",
               data: result.data,
-              token: result.data?.token
+              token: result.data?.token || result.token
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || "Electricity payment failed");
+          throw new Error(result.message || result.error || "Electricity payment failed");
         }
       } catch (error) {
         console.error("Electricity payment error:", error);
@@ -335,19 +415,19 @@ Deno.serve(async (req) => {
         const result = await callVtuApiPost("/tv", {
           request_id: requestId,
           smartcard_number: smartcard_number,
-          service_id: provider.toLowerCase(),
-          variation_id: plan_code,
+          cable: provider.toLowerCase(),
+          plan: plan_code,
         });
 
         await supabase
           .from("transactions")
           .update({
             api_response: result,
-            status: result.code === "success" ? "completed" : "failed",
+            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
           })
           .eq("id", transaction_id);
 
-        if (result.code === "success") {
+        if (result.status === "success" || result.code === "success") {
           return new Response(
             JSON.stringify({ 
               success: true, 
@@ -357,7 +437,7 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || "Cable TV subscription failed");
+          throw new Error(result.message || result.error || "Cable TV subscription failed");
         }
       } catch (error) {
         console.error("Cable TV subscription error:", error);

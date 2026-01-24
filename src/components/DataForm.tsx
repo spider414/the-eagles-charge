@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wifi, Check } from "lucide-react";
+import { Wifi, Check, Loader2 } from "lucide-react";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import FavoriteNumbersSelector from "./FavoriteNumbersSelector";
@@ -14,46 +14,7 @@ import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
 import { detectNetwork } from "@/utils/phoneUtils";
-
-interface DataPlan {
-  id: string;
-  size: string;
-  price: number;
-  validity: string;
-}
-
-// Data plans with VTU API variation codes
-const dataPlans: Record<NetworkType, DataPlan[]> = {
-  mtn: [
-    { id: "mtn-500mb", size: "500MB", price: 150, validity: "30 days" },
-    { id: "mtn-1gb", size: "1GB", price: 300, validity: "30 days" },
-    { id: "mtn-2gb", size: "2GB", price: 500, validity: "30 days" },
-    { id: "mtn-3gb", size: "3GB", price: 800, validity: "30 days" },
-    { id: "mtn-5gb", size: "5GB", price: 1200, validity: "30 days" },
-    { id: "mtn-10gb", size: "10GB", price: 2500, validity: "30 days" },
-  ],
-  glo: [
-    { id: "glo-500mb", size: "500MB", price: 100, validity: "30 days" },
-    { id: "glo-1gb", size: "1GB", price: 200, validity: "30 days" },
-    { id: "glo-2gb", size: "2GB", price: 400, validity: "30 days" },
-    { id: "glo-5gb", size: "5GB", price: 1000, validity: "30 days" },
-    { id: "glo-10gb", size: "10GB", price: 2000, validity: "30 days" },
-  ],
-  airtel: [
-    { id: "airtel-500mb", size: "500MB", price: 150, validity: "30 days" },
-    { id: "airtel-1gb", size: "1GB", price: 300, validity: "30 days" },
-    { id: "airtel-2gb", size: "2GB", price: 500, validity: "30 days" },
-    { id: "airtel-5gb", size: "5GB", price: 1200, validity: "30 days" },
-    { id: "airtel-10gb", size: "10GB", price: 2500, validity: "30 days" },
-  ],
-  "9mobile": [
-    { id: "9mobile-500mb", size: "500MB", price: 100, validity: "30 days" },
-    { id: "9mobile-1gb", size: "1GB", price: 200, validity: "30 days" },
-    { id: "9mobile-2.5gb", size: "2.5GB", price: 500, validity: "30 days" },
-    { id: "9mobile-5gb", size: "5GB", price: 1000, validity: "30 days" },
-    { id: "9mobile-11.5gb", size: "11.5GB", price: 2000, validity: "30 days" },
-  ],
-};
+import { useDataPlans, DataPlan } from "@/hooks/useDataPlans";
 
 const DataForm = () => {
   const navigate = useNavigate();
@@ -66,8 +27,17 @@ const DataForm = () => {
   const { initializePayment, isLoading: paystackLoading } = usePaystack();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
   const { addFavorite } = useFavoriteNumbers();
+  const { plans: currentPlans, isLoading: plansLoading, fetchPlans } = useDataPlans();
 
   const isLoading = paystackLoading || walletLoading;
+
+  // Fetch plans when network changes
+  useEffect(() => {
+    if (network) {
+      fetchPlans(network);
+      setSelectedPlan(null);
+    }
+  }, [network, fetchPlans]);
 
   // Auto-detect network when phone number changes
   useEffect(() => {
@@ -75,10 +45,9 @@ const DataForm = () => {
       const detected = detectNetwork(phone);
       if (detected && detected !== network) {
         setNetwork(detected);
-        setSelectedPlan(null);
       }
     }
-  }, [phone]);
+  }, [phone, network]);
 
   const handlePhoneChange = (value: string) => {
     const cleaned = value.replace(/\D/g, "").slice(0, 11);
@@ -142,6 +111,7 @@ const DataForm = () => {
       phone_number: phone,
       network: network,
       data_plan: selectedPlan.size,
+      variation_id: selectedPlan.variation_id,
     };
 
     if (paymentMethod === "wallet") {
@@ -162,8 +132,6 @@ const DataForm = () => {
       });
     }
   };
-
-  const currentPlans = network ? dataPlans[network] : [];
 
   return (
     <Card className="shadow-card border-2 border-border hover:border-primary/20 transition-colors">
@@ -211,29 +179,36 @@ const DataForm = () => {
           {network && (
             <div className="space-y-3 animate-fade-in">
               <Label>Select Data Plan</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {currentPlans.map((plan) => (
-                  <button
-                    key={plan.id}
-                    type="button"
-                    onClick={() => setSelectedPlan(plan)}
-                    className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                      selectedPlan?.id === plan.id
-                        ? "border-primary bg-accent shadow-card"
-                        : "border-border hover:border-primary/50 hover:bg-muted/50"
-                    }`}
-                  >
-                    {selectedPlan?.id === plan.id && (
-                      <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
-                    )}
-                    <div className="text-lg font-bold text-foreground">{plan.size}</div>
-                    <div className="text-xl font-extrabold text-primary">
-                      ₦{plan.price.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-muted-foreground">{plan.validity}</div>
-                  </button>
-                ))}
-              </div>
+              {plansLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Loading plans...</span>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {currentPlans.map((plan) => (
+                    <button
+                      key={plan.id}
+                      type="button"
+                      onClick={() => setSelectedPlan(plan)}
+                      className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                        selectedPlan?.id === plan.id
+                          ? "border-primary bg-accent shadow-card"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                      }`}
+                    >
+                      {selectedPlan?.id === plan.id && (
+                        <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
+                      )}
+                      <div className="text-lg font-bold text-foreground">{plan.size}</div>
+                      <div className="text-xl font-extrabold text-primary">
+                        ₦{plan.price.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{plan.validity}</div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

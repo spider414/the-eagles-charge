@@ -14,12 +14,14 @@ import {
   Smartphone,
   Fingerprint,
   Vibrate,
+  Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import VtuBalanceCard from "@/components/VtuBalanceCard";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -182,6 +184,9 @@ const Settings = () => {
       </header>
 
       <main className="container py-6 max-w-lg mx-auto space-y-4">
+        {/* VTU Admin Balance */}
+        <VtuBalanceCard lowBalanceThreshold={5000} />
+
         {/* App Settings */}
         <Card>
           <CardHeader className="pb-2">
