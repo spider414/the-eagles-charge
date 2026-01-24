@@ -48,6 +48,9 @@ const fallbackPlans: Record<NetworkType, DataPlan[]> = {
 const plansCache: Record<string, { plans: DataPlan[]; timestamp: number }> = {};
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
+// Flag to enable/disable API fetching (disable if VTU provider API is not configured)
+const USE_API_FETCH = false;
+
 export const useDataPlans = () => {
   const [plans, setPlans] = useState<DataPlan[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -59,6 +62,20 @@ export const useDataPlans = () => {
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       setPlans(cached.plans);
       return cached.plans;
+    }
+
+    // If API fetch is disabled, use fallback plans immediately
+    if (!USE_API_FETCH) {
+      const fallback = fallbackPlans[network] || [];
+      setPlans(fallback);
+      
+      // Cache the fallback plans
+      plansCache[network] = {
+        plans: fallback,
+        timestamp: Date.now(),
+      };
+      
+      return fallback;
     }
 
     setIsLoading(true);
