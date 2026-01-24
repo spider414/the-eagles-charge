@@ -48,8 +48,8 @@ const fallbackPlans: Record<NetworkType, DataPlan[]> = {
 const plansCache: Record<string, { plans: DataPlan[]; timestamp: number }> = {};
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Flag to enable/disable API fetching (disable if VTU provider API is not configured)
-const USE_API_FETCH = false;
+// Flag to enable/disable API fetching - set to true to use CheapDataHub API
+const USE_API_FETCH = true;
 
 export const useDataPlans = () => {
   const [plans, setPlans] = useState<DataPlan[]>([]);

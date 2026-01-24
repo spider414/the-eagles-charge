@@ -51,80 +51,79 @@ interface DataPlansRequest {
 
 type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | BalanceRequest | DataPlansRequest;
 
-// VTU Provider configuration - CheapDataHub API
-// NOTE: Update VTU_BASE_URL secret if using a different VTU provider
+// CheapDataHub API Configuration
 const VTU_CONFIG = {
-  baseUrl: Deno.env.get("VTU_BASE_URL") || "https://www.cheapdatahub.ng/api/v1",
+  baseUrl: "https://www.cheapdatahub.ng/api/v1/resellers",
   apiKey: Deno.env.get("CHEAPDATAHUB_API_KEY") || "",
 };
 
-// Helper to call VTU API with GET
-async function callVtuApi(endpoint: string, params: Record<string, string | number> = {}) {
-  const url = new URL(`${VTU_CONFIG.baseUrl}${endpoint}`);
-  
-  // Add API key to params
-  url.searchParams.append("api_key", VTU_CONFIG.apiKey);
-  
-  Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.append(key, String(value));
-  });
-
-  const logUrl = url.toString().replace(VTU_CONFIG.apiKey, "***");
-  console.log(`VTU API Call: ${logUrl}`);
-
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-    },
-  });
-
-  // Check if response is JSON
-  const contentType = response.headers.get("content-type");
-  if (!contentType || !contentType.includes("application/json")) {
-    const text = await response.text();
-    console.error("VTU API returned non-JSON response:", text.substring(0, 200));
-    throw new Error(`VTU API returned invalid response (${response.status}). Check API URL and key configuration.`);
-  }
-
-  const data = await response.json();
-  console.log("VTU API Response:", JSON.stringify(data));
-  return data;
-}
-
-// POST method for APIs that require POST
+// POST method for CheapDataHub API
 async function callVtuApiPost(endpoint: string, body: Record<string, string | number>) {
   const url = `${VTU_CONFIG.baseUrl}${endpoint}`;
   
-  // Add API key to body
-  const requestBody = {
-    ...body,
-    api_key: VTU_CONFIG.apiKey,
-  };
-  
-  console.log(`VTU API POST: ${url}`, JSON.stringify({ ...requestBody, api_key: "***" }));
+  // CheapDataHub uses Authorization header with API key
+  console.log(`VTU API POST: ${url}`, JSON.stringify({ ...body, api_key: "***" }));
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",
+      "Authorization": `Token ${VTU_CONFIG.apiKey}`,
     },
-    body: JSON.stringify(requestBody),
+    body: JSON.stringify(body),
   });
 
   // Check if response is JSON
   const contentType = response.headers.get("content-type");
+  const responseText = await response.text();
+  
+  console.log(`VTU API Response Status: ${response.status}`);
+  console.log(`VTU API Response: ${responseText.substring(0, 500)}`);
+
   if (!contentType || !contentType.includes("application/json")) {
-    const text = await response.text();
-    console.error("VTU API returned non-JSON response:", text.substring(0, 200));
+    console.error("VTU API returned non-JSON response:", responseText.substring(0, 200));
     throw new Error(`VTU API returned invalid response (${response.status}). Check API URL and key configuration.`);
   }
 
-  const data = await response.json();
-  console.log("VTU API Response:", JSON.stringify(data));
-  return data;
+  try {
+    const data = JSON.parse(responseText);
+    return data;
+  } catch {
+    throw new Error(`Failed to parse VTU API response: ${responseText.substring(0, 100)}`);
+  }
+}
+
+// GET method for fetching data (balance, plans, etc.)
+async function callVtuApiGet(endpoint: string) {
+  const url = `${VTU_CONFIG.baseUrl}${endpoint}`;
+  
+  console.log(`VTU API GET: ${url}`);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json",
+      "Authorization": `Token ${VTU_CONFIG.apiKey}`,
+    },
+  });
+
+  const responseText = await response.text();
+  console.log(`VTU API Response Status: ${response.status}`);
+  console.log(`VTU API Response: ${responseText.substring(0, 500)}`);
+
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    console.error("VTU API returned non-JSON response:", responseText.substring(0, 200));
+    throw new Error(`VTU API returned invalid response (${response.status}).`);
+  }
+
+  try {
+    const data = JSON.parse(responseText);
+    return data;
+  } catch {
+    throw new Error(`Failed to parse VTU API response: ${responseText.substring(0, 100)}`);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -163,14 +162,14 @@ Deno.serve(async (req) => {
     // Check VTU Balance
     if (body.action === "balance") {
       try {
-        const result = await callVtuApi("/balance");
+        // Try to get balance from user profile endpoint
+        const result = await callVtuApiGet("/user/");
         
-        // CheapDataHub returns balance in a specific format
         return new Response(
           JSON.stringify({ 
             success: true, 
             data: {
-              balance: result.balance || result.data?.balance || 0,
+              balance: result.wallet_balance || result.balance || 0,
               currency: "NGN",
               raw: result
             }
@@ -180,7 +179,7 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error("Balance check error:", error);
         return new Response(
-          JSON.stringify({ success: false, error: "Failed to check VTU balance" }),
+          JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Failed to check VTU balance" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -192,42 +191,44 @@ Deno.serve(async (req) => {
       
       try {
         // CheapDataHub endpoint for data plans
-        const result = await callVtuApi("/data", { network: network.toLowerCase() });
+        const result = await callVtuApiGet(`/data/plans/?network=${network.toLowerCase()}`);
         
         // Transform the response to a standard format
         let plans = [];
         
-        if (result.status === "success" && result.data) {
-          plans = result.data.map((plan: {
-            variation_id: string;
-            name: string;
-            variation_amount: number;
-            fixedPrice: string;
-            validity?: string;
-          }) => ({
-            id: plan.variation_id,
-            name: plan.name,
-            size: plan.name,
-            price: parseFloat(plan.fixedPrice) || plan.variation_amount,
-            validity: plan.validity || "30 days",
-            variation_id: plan.variation_id,
-          }));
-        } else if (Array.isArray(result)) {
-          // Alternative response format
+        if (Array.isArray(result)) {
           plans = result.map((plan: {
             id: string;
-            variation_id: string;
+            plan_id: string;
             name: string;
             price: number;
             amount: number;
             validity?: string;
+            duration?: string;
           }) => ({
-            id: plan.id || plan.variation_id,
+            id: plan.id || plan.plan_id,
             name: plan.name,
             size: plan.name,
             price: plan.price || plan.amount,
-            validity: plan.validity || "30 days",
-            variation_id: plan.variation_id || plan.id,
+            validity: plan.validity || plan.duration || "30 days",
+            variation_id: plan.plan_id || plan.id,
+          }));
+        } else if (result.data && Array.isArray(result.data)) {
+          plans = result.data.map((plan: {
+            id: string;
+            plan_id: string;
+            name: string;
+            price: number;
+            amount: number;
+            validity?: string;
+            duration?: string;
+          }) => ({
+            id: plan.id || plan.plan_id,
+            name: plan.name,
+            size: plan.name,
+            price: plan.price || plan.amount,
+            validity: plan.validity || plan.duration || "30 days",
+            variation_id: plan.plan_id || plan.id,
           }));
         }
         
@@ -242,43 +243,42 @@ Deno.serve(async (req) => {
       } catch (error) {
         console.error("Data plans fetch error:", error);
         return new Response(
-          JSON.stringify({ success: false, error: "Failed to fetch data plans" }),
+          JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Failed to fetch data plans" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
     }
 
-    // Purchase Airtime
+    // Purchase Airtime - POST /resellers/airtime/purchase/
     if (body.action === "airtime") {
       const { phone, network, amount, transaction_id } = body;
       
       console.log(`Processing airtime: ${network} ${amount} for ${phone}`);
 
       try {
-        const requestId = `AIR-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        
-        const result = await callVtuApiPost("/airtime", {
-          request_id: requestId,
+        const result = await callVtuApiPost("/airtime/purchase/", {
           phone: phone,
-          network: network.toLowerCase(),
+          network: network.toUpperCase(), // MTN, GLO, AIRTEL, 9MOBILE
           amount: amount,
         });
 
         // Update transaction with API response
+        const isSuccess = result.status === "success" || result.success === true;
+        
         await supabase
           .from("transactions")
           .update({
             api_response: result,
-            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
+            status: isSuccess ? "completed" : "failed",
           })
           .eq("id", transaction_id);
 
-        if (result.status === "success" || result.code === "success") {
+        if (isSuccess) {
           return new Response(
             JSON.stringify({ 
               success: true, 
               message: "Airtime delivered successfully!",
-              data: result.data 
+              data: result 
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
@@ -306,36 +306,35 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Purchase Data
+    // Purchase Data - POST /resellers/data/purchase/
     if (body.action === "data") {
-      const { phone, network, plan_code, amount, transaction_id } = body;
+      const { phone, network, plan_code, transaction_id } = body;
       
       console.log(`Processing data: ${network} ${plan_code} for ${phone}`);
 
       try {
-        const requestId = `DATA-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        
-        const result = await callVtuApiPost("/data", {
-          request_id: requestId,
+        const result = await callVtuApiPost("/data/purchase/", {
           phone: phone,
-          network: network.toLowerCase(),
-          plan: plan_code,
+          network: network.toUpperCase(),
+          plan_id: plan_code,
         });
+
+        const isSuccess = result.status === "success" || result.success === true;
 
         await supabase
           .from("transactions")
           .update({
             api_response: result,
-            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
+            status: isSuccess ? "completed" : "failed",
           })
           .eq("id", transaction_id);
 
-        if (result.status === "success" || result.code === "success") {
+        if (isSuccess) {
           return new Response(
             JSON.stringify({ 
               success: true, 
               message: "Data bundle delivered successfully!",
-              data: result.data 
+              data: result 
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
@@ -363,39 +362,38 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Electricity Bill Payment
+    // Electricity Bill Payment - POST /resellers/electricity/purchase/
     if (body.action === "electricity") {
       const { meter_number, provider, amount, meter_type, transaction_id } = body;
       
       console.log(`Processing electricity: ${provider} ${amount} for meter ${meter_number}`);
 
       try {
-        const requestId = `ELEC-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        
-        const result = await callVtuApiPost("/electricity", {
-          request_id: requestId,
+        const result = await callVtuApiPost("/electricity/purchase/", {
           meter_number: meter_number,
-          disco: provider.toLowerCase(),
+          disco: provider.toUpperCase(),
           amount: amount,
           meter_type: meter_type,
         });
+
+        const isSuccess = result.status === "success" || result.success === true;
 
         await supabase
           .from("transactions")
           .update({
             api_response: result,
-            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
-            token: result.data?.token || result.token || null,
+            status: isSuccess ? "completed" : "failed",
+            token: result.token || result.data?.token || null,
           })
           .eq("id", transaction_id);
 
-        if (result.status === "success" || result.code === "success") {
+        if (isSuccess) {
           return new Response(
             JSON.stringify({ 
               success: true, 
               message: "Electricity payment successful!",
-              data: result.data,
-              token: result.data?.token || result.token
+              data: result,
+              token: result.token || result.data?.token
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
@@ -423,36 +421,35 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Cable TV Subscription
+    // Cable TV Subscription - POST /resellers/cable/purchase/
     if (body.action === "cable_tv") {
-      const { smartcard_number, provider, plan_code, amount, transaction_id } = body;
+      const { smartcard_number, provider, plan_code, transaction_id } = body;
       
       console.log(`Processing cable TV: ${provider} ${plan_code} for ${smartcard_number}`);
 
       try {
-        const requestId = `TV-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
-        
-        const result = await callVtuApiPost("/tv", {
-          request_id: requestId,
+        const result = await callVtuApiPost("/cable/purchase/", {
           smartcard_number: smartcard_number,
-          cable: provider.toLowerCase(),
-          plan: plan_code,
+          cable: provider.toUpperCase(),
+          plan_id: plan_code,
         });
+
+        const isSuccess = result.status === "success" || result.success === true;
 
         await supabase
           .from("transactions")
           .update({
             api_response: result,
-            status: result.status === "success" || result.code === "success" ? "completed" : "failed",
+            status: isSuccess ? "completed" : "failed",
           })
           .eq("id", transaction_id);
 
-        if (result.status === "success" || result.code === "success") {
+        if (isSuccess) {
           return new Response(
             JSON.stringify({ 
               success: true, 
               message: "Cable TV subscription successful!",
-              data: result.data 
+              data: result 
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
