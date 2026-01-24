@@ -14,7 +14,16 @@ export const useVtuBalance = () => {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Flag to enable/disable VTU balance check (disable if VTU API is not configured)
+  const VTU_API_ENABLED = false;
+
   const checkBalance = useCallback(async () => {
+    // If VTU API is not configured, show configuration message
+    if (!VTU_API_ENABLED) {
+      setError("VTU API not configured. Add VTU_BASE_URL secret with your provider's API endpoint.");
+      return null;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
