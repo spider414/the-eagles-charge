@@ -21,7 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import VtuBalanceCard from "@/components/VtuBalanceCard";
+
 
 interface SettingItem {
   icon: React.ElementType;
@@ -184,8 +184,6 @@ const Settings = () => {
       </header>
 
       <main className="container py-6 max-w-lg mx-auto space-y-4">
-        {/* VTU Admin Balance */}
-        <VtuBalanceCard lowBalanceThreshold={5000} />
 
         {/* App Settings */}
         <Card>
