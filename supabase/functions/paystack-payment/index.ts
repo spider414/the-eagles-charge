@@ -503,13 +503,25 @@ Deno.serve(async (req) => {
 
         // Check VTU result and update transaction accordingly
         // CheapDataHub returns "Status": "successful" for success
-        const isVtuSuccess = vtuResult?.Status === "successful" || vtuResult?.status === "successful" || vtuResult?.code === "success";
+        const isVtuSuccess = vtuResult?.Status === "successful" || vtuResult?.status === "successful" || vtuResult?.code === "success" || vtuResult?.success === true;
         const vtuToken = vtuResult?.token || vtuResult?.data?.token || null;
         
         if (vtuResult && !isVtuSuccess) {
           // VTU call failed - refund wallet
           console.error("CheapDataHub API failed:", vtuResult);
-          throw new Error(vtuResult?.message || vtuResult?.error || vtuResult?.Status || "Service delivery failed");
+          
+          // Check if it's a server error (HTML response or 500 error)
+          if (vtuResult?.raw?.includes("<!doctype") || vtuResult?.raw?.includes("Server Error")) {
+            throw new Error("VTU provider is temporarily unavailable. Please try again in a few minutes.");
+          }
+          
+          // Check for specific error messages
+          const errorMsg = vtuResult?.detail || vtuResult?.message || vtuResult?.error || vtuResult?.Status;
+          if (errorMsg === "Authentication credentials were not provided." || errorMsg === "Invalid API token.") {
+            throw new Error("VTU service configuration error. Please contact support.");
+          }
+          
+          throw new Error(errorMsg || "Service delivery failed. Please try again.");
         }
 
         // Update transaction to completed with VTU response
