@@ -408,88 +408,96 @@ Deno.serve(async (req) => {
 
         // Call VTU service for real transaction processing
         let vtuResult: any = null;
-        const vtuApiKey = Deno.env.get("CHEAPDATAHUB_API_KEY");
+        const vtuApiKey = (Deno.env.get("CHEAPDATAHUB_API_KEY") || "").trim();
+        // NOTE: non-www SSL cert is expired; keep www.
         const vtuBaseUrl = "https://www.cheapdatahub.ng/api/v1/resellers";
-        
+
         console.log(`VTU API Key exists: ${!!vtuApiKey}`);
+        console.log(`VTU API Key length: ${vtuApiKey.length}`);
+
+        if (!vtuApiKey) {
+          throw new Error("CHEAPDATAHUB_API_KEY not configured");
+        }
+
+        const cheapDataHubPost = async (path: string, payload: Record<string, unknown>) => {
+          const url = `${vtuBaseUrl}${path}`;
+
+          const doFetch = async (u: string) =>
+            await fetch(u, {
+              method: "POST",
+              redirect: "manual",
+              headers: {
+                // CheapDataHub auth scheme can differ by account; try Bearer (Token was not being recognized).
+                Authorization: `Bearer ${vtuApiKey}`,
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+          let res = await doFetch(url);
+
+          // Follow a single redirect manually (Authorization can be dropped on auto-follow)
+          if ([301, 302, 307, 308].includes(res.status)) {
+            const location = res.headers.get("location");
+            if (location) {
+              const redirectedUrl = new URL(location, url).toString();
+              console.log(`CheapDataHub redirect: ${url} -> ${redirectedUrl}`);
+              res = await doFetch(redirectedUrl);
+            }
+          }
+
+          const text = await res.text();
+          console.log(`CheapDataHub HTTP ${res.status} for ${path}: ${text.substring(0, 300)}`);
+
+          try {
+            return JSON.parse(text);
+          } catch {
+            return { status: "error", error: "Non-JSON response", raw: text };
+          }
+        };
         
         if (metadata.transaction_type === "airtime" && metadata.phone_number && metadata.network) {
           console.log(`Processing airtime via CheapDataHub: ${metadata.network} ₦${amount} for ${metadata.phone_number}`);
           
-          const vtuResponse = await fetch(`${vtuBaseUrl}/airtime/purchase/`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Token ${vtuApiKey}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify({
-              mobile_number: metadata.phone_number,
-              network: metadata.network.toUpperCase(), // MTN, GLO, AIRTEL, 9MOBILE
-              amount: amount,
-              airtime_type: "VTU",
-            }),
+          vtuResult = await cheapDataHubPost("/airtime/purchase/", {
+            mobile_number: metadata.phone_number,
+            network: metadata.network.toUpperCase(), // MTN, GLO, AIRTEL, 9MOBILE
+            amount: amount,
+            airtime_type: "VTU",
           });
-          vtuResult = await vtuResponse.json();
           console.log("CheapDataHub Airtime Response:", JSON.stringify(vtuResult));
           
         } else if (metadata.transaction_type === "data" && metadata.phone_number && metadata.network && metadata.data_plan) {
           console.log(`Processing data via CheapDataHub: ${metadata.network} ${metadata.data_plan} for ${metadata.phone_number}`);
           
-          const vtuResponse = await fetch(`${vtuBaseUrl}/data/purchase/`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Token ${vtuApiKey}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify({
-              mobile_number: metadata.phone_number,
-              network: metadata.network.toUpperCase(),
-              plan: metadata.data_plan,
-              ported_number: "true",
-            }),
+          vtuResult = await cheapDataHubPost("/data/purchase/", {
+            mobile_number: metadata.phone_number,
+            network: metadata.network.toUpperCase(),
+            plan: metadata.data_plan,
+            ported_number: "true",
           });
-          vtuResult = await vtuResponse.json();
           console.log("CheapDataHub Data Response:", JSON.stringify(vtuResult));
           
         } else if (metadata.transaction_type === "electricity" && metadata.meter_number && metadata.electricity_provider) {
           console.log(`Processing electricity via CheapDataHub: ${metadata.electricity_provider} ₦${amount} for meter ${metadata.meter_number}`);
           
-          const vtuResponse = await fetch(`${vtuBaseUrl}/electricity/purchase/`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Token ${vtuApiKey}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify({
-              meter_number: metadata.meter_number,
-              disco_name: metadata.electricity_provider.toUpperCase(),
-              amount: amount,
-              meter_type: (metadata.meter_type || "prepaid").toLowerCase(),
-            }),
+          vtuResult = await cheapDataHubPost("/electricity/purchase/", {
+            meter_number: metadata.meter_number,
+            disco_name: metadata.electricity_provider.toUpperCase(),
+            amount: amount,
+            meter_type: (metadata.meter_type || "prepaid").toLowerCase(),
           });
-          vtuResult = await vtuResponse.json();
           console.log("CheapDataHub Electricity Response:", JSON.stringify(vtuResult));
           
         } else if (metadata.transaction_type === "cable_tv" && metadata.cable_smartcard && metadata.cable_provider && metadata.cable_plan) {
           console.log(`Processing cable TV via CheapDataHub: ${metadata.cable_provider} ${metadata.cable_plan} for ${metadata.cable_smartcard}`);
           
-          const vtuResponse = await fetch(`${vtuBaseUrl}/cable/purchase/`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Token ${vtuApiKey}`,
-              "Content-Type": "application/json",
-              "Accept": "application/json",
-            },
-            body: JSON.stringify({
-              iuc_number: metadata.cable_smartcard,
-              cable_name: metadata.cable_provider.toUpperCase(), // DSTV, GOTV, STARTIMES
-              cable_plan: metadata.cable_plan,
-            }),
+          vtuResult = await cheapDataHubPost("/cable/purchase/", {
+            iuc_number: metadata.cable_smartcard,
+            cable_name: metadata.cable_provider.toUpperCase(), // DSTV, GOTV, STARTIMES
+            cable_plan: metadata.cable_plan,
           });
-          vtuResult = await vtuResponse.json();
           console.log("CheapDataHub Cable TV Response:", JSON.stringify(vtuResult));
         }
 
