@@ -249,7 +249,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Purchase Airtime - POST /resellers/airtime/purchase/
+    // Purchase Airtime - POST https://www.cheapdatahub.ng/api/v1/resellers/airtime/purchase/
     if (body.action === "airtime") {
       const { phone, network, amount, transaction_id } = body;
       
@@ -257,13 +257,14 @@ Deno.serve(async (req) => {
 
       try {
         const result = await callVtuApiPost("/airtime/purchase/", {
-          phone: phone,
+          mobile_number: phone,
           network: network.toUpperCase(), // MTN, GLO, AIRTEL, 9MOBILE
           amount: amount,
+          airtime_type: "VTU",
         });
 
         // Update transaction with API response
-        const isSuccess = result.status === "success" || result.success === true;
+        const isSuccess = result.status === "success" || result.Status === "successful" || result.success === true;
         
         await supabase
           .from("transactions")
@@ -283,7 +284,7 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || result.error || "Airtime purchase failed");
+          throw new Error(result.message || result.error || result.api_response || "Airtime purchase failed");
         }
       } catch (error) {
         console.error("Airtime purchase error:", error);
@@ -306,7 +307,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Purchase Data - POST /resellers/data/purchase/
+    // Purchase Data - POST https://www.cheapdatahub.ng/api/v1/resellers/data/purchase/
     if (body.action === "data") {
       const { phone, network, plan_code, transaction_id } = body;
       
@@ -314,12 +315,13 @@ Deno.serve(async (req) => {
 
       try {
         const result = await callVtuApiPost("/data/purchase/", {
-          phone: phone,
+          mobile_number: phone,
           network: network.toUpperCase(),
-          plan_id: plan_code,
+          plan: plan_code,
+          ported_number: "true",
         });
 
-        const isSuccess = result.status === "success" || result.success === true;
+        const isSuccess = result.status === "success" || result.Status === "successful" || result.success === true;
 
         await supabase
           .from("transactions")
@@ -339,7 +341,7 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || result.error || "Data purchase failed");
+          throw new Error(result.message || result.error || result.api_response || "Data purchase failed");
         }
       } catch (error) {
         console.error("Data purchase error:", error);
@@ -362,7 +364,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Electricity Bill Payment - POST /resellers/electricity/purchase/
+    // Electricity Bill Payment - POST https://www.cheapdatahub.ng/api/v1/resellers/electricity/purchase/
     if (body.action === "electricity") {
       const { meter_number, provider, amount, meter_type, transaction_id } = body;
       
@@ -371,19 +373,19 @@ Deno.serve(async (req) => {
       try {
         const result = await callVtuApiPost("/electricity/purchase/", {
           meter_number: meter_number,
-          disco: provider.toUpperCase(),
+          disco_name: provider.toUpperCase(),
           amount: amount,
-          meter_type: meter_type,
+          meter_type: meter_type.toLowerCase(), // prepaid or postpaid
         });
 
-        const isSuccess = result.status === "success" || result.success === true;
+        const isSuccess = result.status === "success" || result.Status === "successful" || result.success === true;
 
         await supabase
           .from("transactions")
           .update({
             api_response: result,
             status: isSuccess ? "completed" : "failed",
-            token: result.token || result.data?.token || null,
+            token: result.token || result.Token || result.data?.token || null,
           })
           .eq("id", transaction_id);
 
@@ -393,12 +395,12 @@ Deno.serve(async (req) => {
               success: true, 
               message: "Electricity payment successful!",
               data: result,
-              token: result.token || result.data?.token
+              token: result.token || result.Token || result.data?.token
             }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || result.error || "Electricity payment failed");
+          throw new Error(result.message || result.error || result.api_response || "Electricity payment failed");
         }
       } catch (error) {
         console.error("Electricity payment error:", error);
@@ -421,7 +423,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Cable TV Subscription - POST /resellers/cable/purchase/
+    // Cable TV Subscription - POST https://www.cheapdatahub.ng/api/v1/resellers/cable/purchase/
     if (body.action === "cable_tv") {
       const { smartcard_number, provider, plan_code, transaction_id } = body;
       
@@ -429,12 +431,12 @@ Deno.serve(async (req) => {
 
       try {
         const result = await callVtuApiPost("/cable/purchase/", {
-          smartcard_number: smartcard_number,
-          cable: provider.toUpperCase(),
-          plan_id: plan_code,
+          iuc_number: smartcard_number,
+          cable_name: provider.toUpperCase(), // DSTV, GOTV, STARTIMES
+          cable_plan: plan_code,
         });
 
-        const isSuccess = result.status === "success" || result.success === true;
+        const isSuccess = result.status === "success" || result.Status === "successful" || result.success === true;
 
         await supabase
           .from("transactions")
@@ -454,7 +456,7 @@ Deno.serve(async (req) => {
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         } else {
-          throw new Error(result.message || result.error || "Cable TV subscription failed");
+          throw new Error(result.message || result.error || result.api_response || "Cable TV subscription failed");
         }
       } catch (error) {
         console.error("Cable TV subscription error:", error);
