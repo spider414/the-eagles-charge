@@ -411,28 +411,21 @@ Deno.serve(async (req) => {
         const vtuApiKey = Deno.env.get("CHEAPDATAHUB_API_KEY");
         const vtuBaseUrl = "https://www.cheapdatahub.ng/api/v1/resellers";
         
-        // Network mapping for CheapDataHub
-        const networkMap: Record<string, number> = {
-          "mtn": 1,
-          "airtel": 2,
-          "glo": 3,
-          "9mobile": 4,
-        };
+        console.log(`VTU API Key exists: ${!!vtuApiKey}`);
         
         if (metadata.transaction_type === "airtime" && metadata.phone_number && metadata.network) {
           console.log(`Processing airtime via CheapDataHub: ${metadata.network} ₦${amount} for ${metadata.phone_number}`);
-          
-          const networkId = networkMap[metadata.network.toLowerCase()] || 1;
           
           const vtuResponse = await fetch(`${vtuBaseUrl}/airtime/purchase/`, {
             method: "POST",
             headers: {
               "Authorization": `Token ${vtuApiKey}`,
               "Content-Type": "application/json",
+              "Accept": "application/json",
             },
             body: JSON.stringify({
-              network: networkId,
-              phone_number: metadata.phone_number,
+              mobile_number: metadata.phone_number,
+              network: metadata.network.toUpperCase(), // MTN, GLO, AIRTEL, 9MOBILE
               amount: amount,
               airtime_type: "VTU",
             }),
@@ -443,18 +436,18 @@ Deno.serve(async (req) => {
         } else if (metadata.transaction_type === "data" && metadata.phone_number && metadata.network && metadata.data_plan) {
           console.log(`Processing data via CheapDataHub: ${metadata.network} ${metadata.data_plan} for ${metadata.phone_number}`);
           
-          const networkId = networkMap[metadata.network.toLowerCase()] || 1;
-          
           const vtuResponse = await fetch(`${vtuBaseUrl}/data/purchase/`, {
             method: "POST",
             headers: {
               "Authorization": `Token ${vtuApiKey}`,
               "Content-Type": "application/json",
+              "Accept": "application/json",
             },
             body: JSON.stringify({
-              network: networkId,
-              phone_number: metadata.phone_number,
-              plan_id: metadata.data_plan,
+              mobile_number: metadata.phone_number,
+              network: metadata.network.toUpperCase(),
+              plan: metadata.data_plan,
+              ported_number: "true",
             }),
           });
           vtuResult = await vtuResponse.json();
@@ -468,12 +461,13 @@ Deno.serve(async (req) => {
             headers: {
               "Authorization": `Token ${vtuApiKey}`,
               "Content-Type": "application/json",
+              "Accept": "application/json",
             },
             body: JSON.stringify({
-              disco: metadata.electricity_provider.toLowerCase(),
               meter_number: metadata.meter_number,
+              disco_name: metadata.electricity_provider.toUpperCase(),
               amount: amount,
-              meter_type: metadata.meter_type || "prepaid",
+              meter_type: (metadata.meter_type || "prepaid").toLowerCase(),
             }),
           });
           vtuResult = await vtuResponse.json();
@@ -487,11 +481,12 @@ Deno.serve(async (req) => {
             headers: {
               "Authorization": `Token ${vtuApiKey}`,
               "Content-Type": "application/json",
+              "Accept": "application/json",
             },
             body: JSON.stringify({
-              cable: metadata.cable_provider.toLowerCase(),
-              smartcard_number: metadata.cable_smartcard,
-              plan_id: metadata.cable_plan,
+              iuc_number: metadata.cable_smartcard,
+              cable_name: metadata.cable_provider.toUpperCase(), // DSTV, GOTV, STARTIMES
+              cable_plan: metadata.cable_plan,
             }),
           });
           vtuResult = await vtuResponse.json();
