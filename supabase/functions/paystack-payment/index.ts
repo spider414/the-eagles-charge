@@ -571,7 +571,19 @@ Deno.serve(async (req) => {
           })
           .eq("id", transaction.id);
 
-        throw processingError;
+         // IMPORTANT: don't throw here. Returning a 2xx with success:false allows the web client
+         // to show the real error message instead of "Edge Function returned a non-2xx".
+         return new Response(
+           JSON.stringify({
+             success: false,
+             error: processingError instanceof Error ? processingError.message : "Processing failed",
+             refunded: true,
+             transaction_id: transaction.id,
+             reference,
+             new_balance: walletBalance,
+           }),
+           { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+         );
       }
     }
 
@@ -881,13 +893,19 @@ Deno.serve(async (req) => {
 
     throw new Error("Invalid action");
   } catch (error) {
+    const message = error instanceof Error ? error.message : "An error occurred";
+
+    // Keep auth failures as non-2xx, but return 2xx for business/process errors so the
+    // frontend can reliably read the JSON payload.
+    const status = message === "Unauthorized" || message === "Invalid token" ? 401 : 200;
+
     console.error("Paystack payment error:", error);
     return new Response(
       JSON.stringify({
         success: false,
-        error: error instanceof Error ? error.message : "An error occurred",
+        error: message,
       }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
