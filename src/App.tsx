@@ -18,6 +18,9 @@ import PaymentCallback from "./pages/PaymentCallback";
 import WalletTopUp from "./pages/WalletTopUp";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
+import Support from "./pages/Support";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 
 const App = () => {
@@ -44,6 +47,9 @@ const App = () => {
                 <Route path="/wallet/topup" element={<WalletTopUp />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/settings" element={<Settings />} />
+                <Route path="/support" element={<Support />} />
+                <Route path="/terms" element={<Terms />} />
+                <Route path="/privacy" element={<Privacy />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
