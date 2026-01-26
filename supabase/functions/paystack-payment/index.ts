@@ -408,7 +408,8 @@ Deno.serve(async (req) => {
 
         // Call VTU service for real transaction processing
         let vtuResult: any = null;
-        const vtuApiKey = (Deno.env.get("CHEAPDATAHUB_API_KEY") || "").trim();
+        // Use CheapDataHub 2 API key
+        const vtuApiKey = (Deno.env.get("CHEAPDATAHUB2_API_KEY") || Deno.env.get("CHEAPDATAHUB_API_KEY") || "").trim();
         // NOTE: non-www SSL cert is expired; keep www.
         const vtuBaseUrl = "https://www.cheapdatahub.ng/api/v1/resellers";
 
@@ -416,7 +417,7 @@ Deno.serve(async (req) => {
         console.log(`VTU API Key length: ${vtuApiKey.length}`);
 
         if (!vtuApiKey) {
-          throw new Error("CHEAPDATAHUB_API_KEY not configured");
+          throw new Error("VTU API key not configured. Please set CHEAPDATAHUB2_API_KEY.");
         }
 
         const cheapDataHubPost = async (path: string, payload: Record<string, unknown>) => {
