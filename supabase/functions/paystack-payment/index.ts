@@ -556,7 +556,7 @@ Deno.serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (processingError) {
-        // If processing fails, refund the wallet and mark transaction as failed
+        // If processing fails, refund the wallet and mark transaction as refunded
         console.error("Processing error, refunding wallet:", processingError);
         
         await supabase
@@ -567,8 +567,12 @@ Deno.serve(async (req) => {
         await supabase
           .from("transactions")
           .update({ 
-            status: "failed",
-            api_response: { error: processingError instanceof Error ? processingError.message : "Processing failed" }
+            status: "refunded",
+            api_response: {
+              payment_method: "wallet",
+              refunded: true,
+              error: processingError instanceof Error ? processingError.message : "Processing failed",
+            }
           })
           .eq("id", transaction.id);
 
