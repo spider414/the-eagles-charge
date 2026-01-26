@@ -203,7 +203,15 @@ const WalletTopUp = () => {
       amount: numAmount,
       email: user.email!,
       metadata: {
-        transaction_type: "wallet_topup" as any,
+        transaction_type: "wallet_topup",
+      },
+      onSuccess: (reference) => {
+        console.log("Payment completed:", reference);
+        setAmount("");
+        setPaymentMethod(null);
+      },
+      onClose: () => {
+        setPaymentMethod(null);
       },
     });
   };
