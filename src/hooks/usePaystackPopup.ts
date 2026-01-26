@@ -102,6 +102,10 @@ export const usePaystackPopup = () => {
         }
 
         // Use Paystack popup instead of redirect
+        if (!data.public_key) {
+          throw new Error("Payment configuration missing (public key)");
+        }
+
         const handler = window.PaystackPop.setup({
           key: data.public_key,
           email,
@@ -114,42 +118,44 @@ export const usePaystackPopup = () => {
               value: String(value ?? ""),
             })),
           },
-          callback: async (response) => {
-            console.log("Payment successful:", response.reference);
-            
-            // Verify the payment
-            try {
-              const verifyResult = await supabase.functions.invoke("paystack-payment", {
-                body: {
-                  action: "verify",
-                  reference: response.reference,
-                },
-              });
+          // Paystack's validator doesn't accept async functions here.
+          callback: (response) => {
+            void (async () => {
+              console.log("Payment successful:", response.reference);
 
-              if (verifyResult.data?.success) {
-                toast({
-                  title: "Payment Successful!",
-                  description: `₦${amount.toLocaleString()} has been added to your wallet`,
+              try {
+                const verifyResult = await supabase.functions.invoke("paystack-payment", {
+                  body: {
+                    action: "verify",
+                    reference: response.reference,
+                  },
                 });
-                refreshProfile();
-                onSuccess?.(response.reference);
-              } else {
+
+                if (verifyResult.data?.success) {
+                  toast({
+                    title: "Payment Successful!",
+                    description: `₦${amount.toLocaleString()} has been added to your wallet`,
+                  });
+                  refreshProfile();
+                  onSuccess?.(response.reference);
+                } else {
+                  toast({
+                    title: "Verification Failed",
+                    description: "Payment was made but verification failed. Please contact support.",
+                    variant: "destructive",
+                  });
+                }
+              } catch (verifyError) {
+                console.error("Verification error:", verifyError);
                 toast({
-                  title: "Verification Failed",
-                  description: "Payment was made but verification failed. Please contact support.",
+                  title: "Verification Error",
+                  description: "Could not verify payment. Please check your balance.",
                   variant: "destructive",
                 });
+              } finally {
+                setIsLoading(false);
               }
-            } catch (verifyError) {
-              console.error("Verification error:", verifyError);
-              toast({
-                title: "Verification Error",
-                description: "Could not verify payment. Please check your balance.",
-                variant: "destructive",
-              });
-            }
-            
-            setIsLoading(false);
+            })();
           },
           onClose: () => {
             console.log("Payment popup closed");
