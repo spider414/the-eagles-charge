@@ -34,6 +34,7 @@ declare global {
         email: string;
         amount: number;
         ref: string;
+        channels?: string[];
         metadata?: Record<string, unknown>;
         callback: (response: { reference: string }) => void;
         onClose: () => void;
@@ -111,6 +112,7 @@ export const usePaystackPopup = () => {
           email,
           amount: amount * 100, // Paystack expects amount in kobo
           ref: data.reference,
+          channels: ["card"], // Only show card payment option
           metadata: {
             custom_fields: Object.entries(metadata).map(([key, value]) => ({
               display_name: key,
