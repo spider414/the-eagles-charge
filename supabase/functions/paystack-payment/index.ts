@@ -457,14 +457,32 @@ Deno.serve(async (req) => {
             return { status: "error", error: "Non-JSON response", raw: text };
           }
         };
+
+        const providerIdByNetwork: Record<string, number> = {
+          mtn: 1,
+          glo: 2,
+          airtel: 3,
+          "9mobile": 4,
+        };
         
         if (metadata.transaction_type === "airtime" && metadata.phone_number && metadata.network) {
           console.log(`Processing airtime via CheapDataHub: ${metadata.network} ₦${amount} for ${metadata.phone_number}`);
+
+          const providerId = providerIdByNetwork[String(metadata.network).toLowerCase()];
+          if (!providerId) {
+            throw new Error(`Unsupported network provider: ${metadata.network}`);
+          }
           
           vtuResult = await cheapDataHubPost("/airtime/purchase/", {
+            // CheapDataHub reseller API expects a numeric provider_id for airtime/data.
+            // (MTN: 1, Glo: 2, Airtel: 3, 9mobile: 4)
+            provider_id: providerId,
+            phone_number: metadata.phone_number,
+            amount,
+
+            // Keep legacy keys too (some accounts/docs reference these)
             mobile_number: metadata.phone_number,
-            network: metadata.network.toUpperCase(), // MTN, GLO, AIRTEL, 9MOBILE
-            amount: amount,
+            network: metadata.network.toUpperCase(),
             airtime_type: "VTU",
           });
           console.log("CheapDataHub Airtime Response:", JSON.stringify(vtuResult));
@@ -503,9 +521,23 @@ Deno.serve(async (req) => {
         }
 
         // Check VTU result and update transaction accordingly
-        // CheapDataHub returns "Status": "successful" for success
-        const isVtuSuccess = vtuResult?.Status === "successful" || vtuResult?.status === "successful" || vtuResult?.code === "success" || vtuResult?.success === true;
-        const vtuToken = vtuResult?.token || vtuResult?.data?.token || null;
+        // CheapDataHub can return variants like:
+        //  - { status: "true", message: "Airtime Purchase Successful", details: { Status: "successful", ... } }
+        //  - { Status: "successful", ... }
+        const detailsStatusRaw = vtuResult?.details?.Status ?? vtuResult?.details?.status;
+        const detailsStatus = detailsStatusRaw ? String(detailsStatusRaw).toLowerCase() : null;
+        const topStatusRaw = vtuResult?.Status ?? vtuResult?.status;
+        const topStatus = topStatusRaw ? String(topStatusRaw).toLowerCase() : "";
+
+        const isVtuSuccess = detailsStatus
+          ? detailsStatus === "successful"
+          : topStatus === "successful" ||
+            topStatus === "success" ||
+            topStatus === "true" ||
+            vtuResult?.code === "success" ||
+            vtuResult?.success === true;
+
+        const vtuToken = vtuResult?.token || vtuResult?.data?.token || vtuResult?.details?.token || null;
         
         if (vtuResult && !isVtuSuccess) {
           // VTU call failed - refund wallet
@@ -546,12 +578,12 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: vtuResult?.message || `Payment successful! ₦${amount.toLocaleString()} deducted from wallet.`,
+            message: vtuResult?.message || vtuResult?.details?.api_response || `Payment successful! ₦${amount.toLocaleString()} deducted from wallet.`,
             transaction_id: transaction.id,
             reference: reference,
             new_balance: newBalance,
             token: vtuToken,
-            data: vtuResult?.data,
+            data: vtuResult?.data ?? vtuResult?.details,
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
