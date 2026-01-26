@@ -11,36 +11,61 @@ export interface DataPlan {
   variation_id: string;
 }
 
-// Fallback plans if API fails
+// Updated fallback plans with CheapDataHub bundle IDs
 const fallbackPlans: Record<NetworkType, DataPlan[]> = {
   mtn: [
-    { id: "mtn-500mb", name: "500MB", size: "500MB", price: 150, validity: "30 days", variation_id: "mtn-500mb" },
-    { id: "mtn-1gb", name: "1GB", size: "1GB", price: 300, validity: "30 days", variation_id: "mtn-1gb" },
-    { id: "mtn-2gb", name: "2GB", size: "2GB", price: 500, validity: "30 days", variation_id: "mtn-2gb" },
-    { id: "mtn-3gb", name: "3GB", size: "3GB", price: 800, validity: "30 days", variation_id: "mtn-3gb" },
-    { id: "mtn-5gb", name: "5GB", size: "5GB", price: 1200, validity: "30 days", variation_id: "mtn-5gb" },
-    { id: "mtn-10gb", name: "10GB", size: "10GB", price: 2500, validity: "30 days", variation_id: "mtn-10gb" },
+    { id: "43", name: "110MB - 1 Day", size: "110MB", price: 99, validity: "1 Day", variation_id: "43" },
+    { id: "44", name: "500MB - 30 Days", size: "500MB", price: 385, validity: "30 Days", variation_id: "44" },
+    { id: "45", name: "1GB - 7 Days", size: "1GB", price: 455, validity: "7 Days", variation_id: "45" },
+    { id: "46", name: "1GB - 30 Days", size: "1GB", price: 560, validity: "30 Days", variation_id: "46" },
+    { id: "47", name: "2GB - 7 Days", size: "2GB", price: 930, validity: "7 Days", variation_id: "47" },
+    { id: "27", name: "2.5GB - 2 Days", size: "2.5GB", price: 900, validity: "2 Days", variation_id: "27" },
+    { id: "60", name: "3.5GB - 1 Day", size: "3.5GB", price: 980, validity: "1 Day", variation_id: "60" },
+    { id: "48", name: "2GB - 30 Days", size: "2GB", price: 1150, validity: "30 Days", variation_id: "48" },
+    { id: "61", name: "4GB - 2 Days", size: "4GB", price: 1175, validity: "2 Days", variation_id: "61" },
+    { id: "49", name: "3GB - 30 Days", size: "3GB", price: 1370, validity: "30 Days", variation_id: "49" },
+    { id: "50", name: "5GB - 30 Days", size: "5GB", price: 2050, validity: "30 Days", variation_id: "50" },
+    { id: "53", name: "6GB - 7 Days", size: "6GB", price: 2495, validity: "7 Days", variation_id: "53" },
+    { id: "55", name: "11GB - 7 Days", size: "11GB", price: 3430, validity: "7 Days", variation_id: "55" },
+    { id: "33", name: "7GB - 30 Days", size: "7GB", price: 3499, validity: "30 Days", variation_id: "33" },
+    { id: "57", name: "36GB - 30 Days", size: "36GB", price: 10800, validity: "30 Days", variation_id: "57" },
+    { id: "51", name: "75GB - 30 Days", size: "75GB", price: 17990, validity: "30 Days", variation_id: "51" },
+    { id: "56", name: "165GB - 30 Days", size: "165GB", price: 34300, validity: "30 Days", variation_id: "56" },
   ],
   glo: [
-    { id: "glo-500mb", name: "500MB", size: "500MB", price: 100, validity: "30 days", variation_id: "glo-500mb" },
-    { id: "glo-1gb", name: "1GB", size: "1GB", price: 200, validity: "30 days", variation_id: "glo-1gb" },
-    { id: "glo-2gb", name: "2GB", size: "2GB", price: 400, validity: "30 days", variation_id: "glo-2gb" },
-    { id: "glo-5gb", name: "5GB", size: "5GB", price: 1000, validity: "30 days", variation_id: "glo-5gb" },
-    { id: "glo-10gb", name: "10GB", size: "10GB", price: 2000, validity: "30 days", variation_id: "glo-10gb" },
+    { id: "42", name: "200MB - 1 Day", size: "200MB", price: 89, validity: "1 Day", variation_id: "42" },
+    { id: "35", name: "500MB - 30 Days", size: "500MB", price: 225, validity: "30 Days", variation_id: "35" },
+    { id: "36", name: "1GB - 30 Days", size: "1GB", price: 425, validity: "30 Days", variation_id: "36" },
+    { id: "41", name: "1GB - 14 Days", size: "1GB", price: 485, validity: "14 Days", variation_id: "41" },
+    { id: "40", name: "2GB - 30 Days", size: "2GB", price: 840, validity: "30 Days", variation_id: "40" },
+    { id: "37", name: "3GB - 30 Days", size: "3GB", price: 1290, validity: "30 Days", variation_id: "37" },
+    { id: "54", name: "5GB - 7 Days", size: "5GB", price: 1690, validity: "7 Days", variation_id: "54" },
+    { id: "38", name: "5GB - 30 Days", size: "5GB", price: 2190, validity: "30 Days", variation_id: "38" },
+    { id: "39", name: "10GB - 30 Days", size: "10GB", price: 4390, validity: "30 Days", variation_id: "39" },
+    { id: "59", name: "20.5GB - 30 Days", size: "20.5GB", price: 5300, validity: "30 Days", variation_id: "59" },
+    { id: "58", name: "107GB - 30 Days", size: "107GB", price: 19300, validity: "30 Days", variation_id: "58" },
   ],
   airtel: [
-    { id: "airtel-500mb", name: "500MB", size: "500MB", price: 150, validity: "30 days", variation_id: "airtel-500mb" },
-    { id: "airtel-1gb", name: "1GB", size: "1GB", price: 300, validity: "30 days", variation_id: "airtel-1gb" },
-    { id: "airtel-2gb", name: "2GB", size: "2GB", price: 500, validity: "30 days", variation_id: "airtel-2gb" },
-    { id: "airtel-5gb", name: "5GB", size: "5GB", price: 1200, validity: "30 days", variation_id: "airtel-5gb" },
-    { id: "airtel-10gb", name: "10GB", size: "10GB", price: 2500, validity: "30 days", variation_id: "airtel-10gb" },
+    { id: "13", name: "500MB - 7 Days", size: "500MB", price: 490, validity: "7 Days", variation_id: "13" },
+    { id: "14", name: "1.5GB - 2 Days", size: "1.5GB", price: 599, validity: "2 Days", variation_id: "14" },
+    { id: "15", name: "1GB - 7 Days", size: "1GB", price: 785, validity: "7 Days", variation_id: "15" },
+    { id: "17", name: "2GB - 30 Days", size: "2GB", price: 1470, validity: "30 Days", variation_id: "17" },
+    { id: "52", name: "5GB - 7 Days", size: "5GB", price: 1570, validity: "7 Days", variation_id: "52" },
+    { id: "18", name: "3GB - 30 Days", size: "3GB", price: 1960, validity: "30 Days", variation_id: "18" },
+    { id: "22", name: "6GB - 7 Days", size: "6GB", price: 2455, validity: "7 Days", variation_id: "22" },
+    { id: "19", name: "4GB - 30 Days", size: "4GB", price: 2570, validity: "30 Days", variation_id: "19" },
+    { id: "20", name: "8GB - 30 Days", size: "8GB", price: 2999, validity: "30 Days", variation_id: "20" },
+    { id: "21", name: "10GB - 30 Days", size: "10GB", price: 4070, validity: "30 Days", variation_id: "21" },
   ],
   "9mobile": [
-    { id: "9mobile-500mb", name: "500MB", size: "500MB", price: 100, validity: "30 days", variation_id: "9mobile-500mb" },
-    { id: "9mobile-1gb", name: "1GB", size: "1GB", price: 200, validity: "30 days", variation_id: "9mobile-1gb" },
-    { id: "9mobile-2.5gb", name: "2.5GB", size: "2.5GB", price: 500, validity: "30 days", variation_id: "9mobile-2.5gb" },
-    { id: "9mobile-5gb", name: "5GB", size: "5GB", price: 1000, validity: "30 days", variation_id: "9mobile-5gb" },
-    { id: "9mobile-11.5gb", name: "11.5GB", size: "11.5GB", price: 2000, validity: "30 days", variation_id: "9mobile-11.5gb" },
+    { id: "70", name: "500MB - 30 Days", size: "500MB", price: 450, validity: "30 Days", variation_id: "70" },
+    { id: "71", name: "1GB - 30 Days", size: "1GB", price: 800, validity: "30 Days", variation_id: "71" },
+    { id: "72", name: "1.5GB - 30 Days", size: "1.5GB", price: 1000, validity: "30 Days", variation_id: "72" },
+    { id: "73", name: "2GB - 30 Days", size: "2GB", price: 1200, validity: "30 Days", variation_id: "73" },
+    { id: "74", name: "3GB - 30 Days", size: "3GB", price: 1500, validity: "30 Days", variation_id: "74" },
+    { id: "75", name: "4.5GB - 30 Days", size: "4.5GB", price: 2000, validity: "30 Days", variation_id: "75" },
+    { id: "76", name: "11GB - 30 Days", size: "11GB", price: 4000, validity: "30 Days", variation_id: "76" },
+    { id: "77", name: "15GB - 30 Days", size: "15GB", price: 5000, validity: "30 Days", variation_id: "77" },
   ],
 };
 
@@ -48,7 +73,7 @@ const fallbackPlans: Record<NetworkType, DataPlan[]> = {
 const plansCache: Record<string, { plans: DataPlan[]; timestamp: number }> = {};
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-// Flag to enable/disable API fetching - set to true to use CheapDataHub API
+// Flag to enable/disable API fetching - using hardcoded plans from edge function
 const USE_API_FETCH = true;
 
 export const useDataPlans = () => {
