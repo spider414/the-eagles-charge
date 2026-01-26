@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck, AlertCircle } from "lucide-react";
+import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePaystack } from "@/hooks/usePaystack";
+import { usePaystackPopup } from "@/hooks/usePaystackPopup";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
@@ -24,7 +23,7 @@ interface DVADetails {
 const WalletTopUp = () => {
   const navigate = useNavigate();
   const { user, profile, isLoading, refreshProfile } = useAuth();
-  const { initializePayment, isLoading: isPaymentLoading } = usePaystack();
+  const { initializePayment, isLoading: isPaymentLoading } = usePaystackPopup();
   const { toast } = useToast();
   const [amount, setAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);

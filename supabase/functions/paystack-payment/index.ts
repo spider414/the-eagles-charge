@@ -182,12 +182,16 @@ Deno.serve(async (req) => {
         .update({ paystack_access_code: paystackData.data.access_code })
         .eq("id", transaction.id);
 
+      // Get Paystack public key for inline popup
+      const paystackPublicKey = Deno.env.get("PAYSTACK_PUBLIC_KEY");
+
       return new Response(
         JSON.stringify({
           success: true,
           authorization_url: paystackData.data.authorization_url,
           access_code: paystackData.data.access_code,
           reference,
+          public_key: paystackPublicKey,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
