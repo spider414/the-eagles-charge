@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, Phone, Lock, User, Gift } from "lucide-react";
+import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const phoneSchema = z.string()
   .min(10, "Phone number must be at least 10 digits")
@@ -16,24 +18,100 @@ const phoneSchema = z.string()
   .regex(/^[0-9+]+$/, "Please enter a valid phone number");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
+type AuthStep = "login" | "signup-phone" | "signup-otp" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-security" | "forgot-reset";
+
 const Auth = () => {
   const navigate = useNavigate();
   const { user, signUp, signIn, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [step, setStep] = useState<AuthStep>("login");
+  
+  // Login state
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  
+  // Signup state
   const [signupPhone, setSignupPhone] = useState("");
+  const [signupOtp, setSignupOtp] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [securityQuestion, setSecurityQuestion] = useState("");
+  const [securityAnswer, setSecurityAnswer] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  
+  // Forgot password state
+  const [forgotPhone, setForgotPhone] = useState("");
+  const [forgotOtp, setForgotOtp] = useState("");
+  const [forgotSecurityAnswer, setForgotSecurityAnswer] = useState("");
+  const [forgotSecurityQuestion, setForgotSecurityQuestion] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [verificationId, setVerificationId] = useState("");
+  const [recoveryMethod, setRecoveryMethod] = useState<"otp" | "security">("otp");
 
   useEffect(() => {
     if (user && !authLoading) {
       navigate("/dashboard");
     }
   }, [user, authLoading, navigate]);
+
+  const sendOtp = async (phone: string, purpose: "signup" | "password_reset") => {
+    try {
+      phoneSchema.parse(phone);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: err.errors[0].message,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    setIsLoading(true);
+    const { data, error } = await supabase.functions.invoke("send-otp", {
+      body: { phone_number: phone, purpose },
+    });
+    setIsLoading(false);
+
+    if (error || data?.error) {
+      toast({
+        title: "Error",
+        description: data?.error || "Failed to send OTP. Please try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    toast({
+      title: "OTP Sent",
+      description: "Check your phone for the verification code.",
+    });
+    return true;
+  };
+
+  const verifyOtp = async (phone: string, otp: string, purpose: "signup" | "password_reset") => {
+    setIsLoading(true);
+    const { data, error } = await supabase.functions.invoke("verify-otp", {
+      body: { phone_number: phone, otp_code: otp, purpose },
+    });
+    setIsLoading(false);
+
+    if (error || data?.error) {
+      toast({
+        title: "Verification Failed",
+        description: data?.error || "Invalid OTP. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    return data.verification_id;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,11 +151,43 @@ const Auth = () => {
     }
   };
 
+  const handleSendSignupOtp = async () => {
+    const success = await sendOtp(signupPhone, "signup");
+    if (success) {
+      setStep("signup-otp");
+    }
+  };
+
+  const handleVerifySignupOtp = async () => {
+    if (signupOtp.length !== 6) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter the 6-digit code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const verificationResult = await verifyOtp(signupPhone, signupOtp, "signup");
+    if (verificationResult) {
+      setPhoneVerified(true);
+      setStep("signup-details");
+    }
+  };
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!phoneVerified) {
+      toast({
+        title: "Verification Required",
+        description: "Please verify your phone number first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      phoneSchema.parse(signupPhone);
       passwordSchema.parse(signupPassword);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -90,8 +200,17 @@ const Auth = () => {
       }
     }
 
+    if (!securityQuestion || !securityAnswer) {
+      toast({
+        title: "Security Question Required",
+        description: "Please set a security question for account recovery.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
-    const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode);
+    const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode, securityQuestion, securityAnswer);
     setIsLoading(false);
 
     if (error) {
@@ -113,6 +232,167 @@ const Auth = () => {
     }
   };
 
+  const handleForgotSendOtp = async () => {
+    const success = await sendOtp(forgotPhone, "password_reset");
+    if (success) {
+      setStep("forgot-otp");
+    }
+  };
+
+  const handleCheckSecurityQuestion = async () => {
+    try {
+      phoneSchema.parse(forgotPhone);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: err.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    // Check if phone exists and get security question
+    const fakeEmail = `${forgotPhone.replace(/\D/g, '')}@eagles.local`;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("security_question")
+      .eq("email", fakeEmail)
+      .maybeSingle();
+    setIsLoading(false);
+
+    if (!profile) {
+      toast({
+        title: "Not Found",
+        description: "No account found with this phone number.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!profile.security_question) {
+      toast({
+        title: "No Security Question",
+        description: "This account doesn't have a security question set. Please use OTP verification.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setForgotSecurityQuestion(profile.security_question);
+    setStep("forgot-security");
+  };
+
+  const handleVerifyForgotOtp = async () => {
+    if (forgotOtp.length !== 6) {
+      toast({
+        title: "Invalid OTP",
+        description: "Please enter the 6-digit code.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const verificationResult = await verifyOtp(forgotPhone, forgotOtp, "password_reset");
+    if (verificationResult) {
+      setVerificationId(verificationResult);
+      setStep("forgot-reset");
+    }
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Password Mismatch",
+        description: "Passwords do not match.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      passwordSchema.parse(newPassword);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        toast({
+          title: "Validation Error",
+          description: err.errors[0].message,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    const body: Record<string, string> = {
+      phone_number: forgotPhone,
+      new_password: newPassword,
+    };
+
+    if (recoveryMethod === "otp") {
+      body.verification_id = verificationId;
+    } else {
+      body.security_answer = forgotSecurityAnswer;
+    }
+
+    const { data, error } = await supabase.functions.invoke("reset-password", {
+      body,
+    });
+    setIsLoading(false);
+
+    if (error || data?.error) {
+      toast({
+        title: "Reset Failed",
+        description: data?.error || "Failed to reset password. Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Password Reset!",
+      description: "Your password has been reset. Please login with your new password.",
+    });
+    setStep("login");
+    resetState();
+  };
+
+  const handleSecurityReset = async () => {
+    if (!forgotSecurityAnswer) {
+      toast({
+        title: "Answer Required",
+        description: "Please enter your security answer.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setRecoveryMethod("security");
+    setStep("forgot-reset");
+  };
+
+  const resetState = () => {
+    setSignupPhone("");
+    setSignupOtp("");
+    setSignupPassword("");
+    setSignupName("");
+    setReferralCode("");
+    setSecurityQuestion("");
+    setSecurityAnswer("");
+    setPhoneVerified(false);
+    setForgotPhone("");
+    setForgotOtp("");
+    setForgotSecurityAnswer("");
+    setForgotSecurityQuestion("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setVerificationId("");
+    setRecoveryMethod("otp");
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -120,6 +400,22 @@ const Auth = () => {
       </div>
     );
   }
+
+  const renderBackButton = (targetStep: AuthStep) => (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      onClick={() => {
+        setStep(targetStep);
+        if (targetStep === "login") resetState();
+      }}
+      className="mb-4"
+    >
+      <ArrowLeft className="h-4 w-4 mr-2" />
+      Back
+    </Button>
+  );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
@@ -135,136 +431,420 @@ const Auth = () => {
         </div>
 
         <Card className="shadow-elevated border-2 border-border">
-          <Tabs defaultValue="login" className="w-full">
-            <CardHeader className="pb-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-            </CardHeader>
+          {step === "login" && (
+            <Tabs defaultValue="login" className="w-full">
+              <CardHeader className="pb-4">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="login">Login</TabsTrigger>
+                  <TabsTrigger value="signup" onClick={() => setStep("signup-phone")}>Sign Up</TabsTrigger>
+                </TabsList>
+              </CardHeader>
 
-            <CardContent>
-              <TabsContent value="login" className="mt-0">
-                <CardTitle className="text-xl mb-2">Welcome Back</CardTitle>
-                <CardDescription className="mb-6">
-                  Enter your credentials to access your account
-                </CardDescription>
-                
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="login-phone">Phone Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-phone"
-                        type="tel"
-                        placeholder="08012345678"
-                        value={loginPhone}
-                        onChange={(e) => setLoginPhone(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
+              <CardContent>
+                <TabsContent value="login" className="mt-0">
+                  <CardTitle className="text-xl mb-2">Welcome Back</CardTitle>
+                  <CardDescription className="mb-6">
+                    Enter your credentials to access your account
+                  </CardDescription>
+                  
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="login-phone">Phone Number</Label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-phone"
+                          type="tel"
+                          placeholder="08012345678"
+                          value={loginPhone}
+                          onChange={(e) => setLoginPhone(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="login-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="login-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          className="pl-10"
+                          required
+                        />
+                      </div>
                     </div>
+
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                      {isLoading ? "Logging in..." : "Login"}
+                    </Button>
+                    
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="w-full"
+                      onClick={() => setStep("forgot-phone")}
+                    >
+                      Forgot Password?
+                    </Button>
+                  </form>
+                </TabsContent>
+              </CardContent>
+            </Tabs>
+          )}
+
+          {/* Signup - Phone Entry */}
+          {step === "signup-phone" && (
+            <CardContent className="pt-6">
+              {renderBackButton("login")}
+              <CardTitle className="text-xl mb-2">Create Account</CardTitle>
+              <CardDescription className="mb-6">
+                Enter your phone number to get started
+              </CardDescription>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="signup-phone"
+                      type="tel"
+                      placeholder="08012345678"
+                      value={signupPhone}
+                      onChange={(e) => setSignupPhone(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
+                </div>
 
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup" className="mt-0">
-                <CardTitle className="text-xl mb-2">Create Account</CardTitle>
-                <CardDescription className="mb-6">
-                  Join THE EAGLES for instant airtime & data recharge
-                </CardDescription>
-                
-                <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-name">Full Name</Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-name"
-                        type="text"
-                        placeholder="John Doe"
-                        value={signupName}
-                        onChange={(e) => setSignupName(e.target.value)}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-phone">Phone Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-phone"
-                        type="tel"
-                        placeholder="08012345678"
-                        value={signupPhone}
-                        onChange={(e) => setSignupPhone(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="signup-password"
-                        type="password"
-                        placeholder="••••••••"
-                        value={signupPassword}
-                        onChange={(e) => setSignupPassword(e.target.value)}
-                        className="pl-10"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="referral-code">Referral Code (Optional)</Label>
-                    <div className="relative">
-                      <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="referral-code"
-                        type="text"
-                        placeholder="EAGLE123ABC"
-                        value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
-                        className="pl-10"
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating Account..." : "Create Account"}
-                  </Button>
-                </form>
-              </TabsContent>
+                <Button onClick={handleSendSignupOtp} className="w-full" disabled={isLoading}>
+                  {isLoading ? "Sending OTP..." : "Send Verification Code"}
+                </Button>
+              </div>
             </CardContent>
-          </Tabs>
+          )}
+
+          {/* Signup - OTP Verification */}
+          {step === "signup-otp" && (
+            <CardContent className="pt-6">
+              {renderBackButton("signup-phone")}
+              <CardTitle className="text-xl mb-2">Verify Phone Number</CardTitle>
+              <CardDescription className="mb-6">
+                Enter the 6-digit code sent to {signupPhone}
+              </CardDescription>
+              
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <InputOTP maxLength={6} value={signupOtp} onChange={setSignupOtp}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                <Button onClick={handleVerifySignupOtp} className="w-full" disabled={isLoading}>
+                  {isLoading ? "Verifying..." : "Verify Code"}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full"
+                  onClick={() => sendOtp(signupPhone, "signup")}
+                  disabled={isLoading}
+                >
+                  Resend Code
+                </Button>
+              </div>
+            </CardContent>
+          )}
+
+          {/* Signup - Details */}
+          {step === "signup-details" && (
+            <CardContent className="pt-6">
+              {renderBackButton("signup-phone")}
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                <span className="text-sm text-green-600">Phone verified: {signupPhone}</span>
+              </div>
+              <CardTitle className="text-xl mb-2">Complete Your Profile</CardTitle>
+              <CardDescription className="mb-6">
+                Fill in your details to create your account
+              </CardDescription>
+              
+              <form onSubmit={handleSignup} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="signup-name">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      placeholder="John Doe"
+                      value={signupName}
+                      onChange={(e) => setSignupName(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="signup-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={signupPassword}
+                      onChange={(e) => setSignupPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="security-question">Security Question (for account recovery)</Label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="security-question"
+                      type="text"
+                      placeholder="e.g., What is your mother's maiden name?"
+                      value={securityQuestion}
+                      onChange={(e) => setSecurityQuestion(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="security-answer">Security Answer</Label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="security-answer"
+                      type="text"
+                      placeholder="Your answer"
+                      value={securityAnswer}
+                      onChange={(e) => setSecurityAnswer(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+                  <div className="relative">
+                    <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="referral-code"
+                      type="text"
+                      placeholder="EAGLE123ABC"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Create Account"}
+                </Button>
+              </form>
+            </CardContent>
+          )}
+
+          {/* Forgot Password - Phone Entry */}
+          {step === "forgot-phone" && (
+            <CardContent className="pt-6">
+              {renderBackButton("login")}
+              <CardTitle className="text-xl mb-2">Reset Password</CardTitle>
+              <CardDescription className="mb-6">
+                Enter your phone number to recover your account
+              </CardDescription>
+              
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="forgot-phone">Phone Number</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="forgot-phone"
+                      type="tel"
+                      placeholder="08012345678"
+                      value={forgotPhone}
+                      onChange={(e) => setForgotPhone(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={handleForgotSendOtp} className="w-full" disabled={isLoading}>
+                  {isLoading ? "Sending OTP..." : "Send OTP to Phone"}
+                </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or if you lost your phone
+                    </span>
+                  </div>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={handleCheckSecurityQuestion} 
+                  className="w-full" 
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Checking..." : "Use Security Question"}
+                </Button>
+              </div>
+            </CardContent>
+          )}
+
+          {/* Forgot Password - OTP Verification */}
+          {step === "forgot-otp" && (
+            <CardContent className="pt-6">
+              {renderBackButton("forgot-phone")}
+              <CardTitle className="text-xl mb-2">Verify Your Phone</CardTitle>
+              <CardDescription className="mb-6">
+                Enter the 6-digit code sent to {forgotPhone}
+              </CardDescription>
+              
+              <div className="space-y-4">
+                <div className="flex justify-center">
+                  <InputOTP maxLength={6} value={forgotOtp} onChange={setForgotOtp}>
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                <Button onClick={handleVerifyForgotOtp} className="w-full" disabled={isLoading}>
+                  {isLoading ? "Verifying..." : "Verify Code"}
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full"
+                  onClick={() => sendOtp(forgotPhone, "password_reset")}
+                  disabled={isLoading}
+                >
+                  Resend Code
+                </Button>
+              </div>
+            </CardContent>
+          )}
+
+          {/* Forgot Password - Security Question */}
+          {step === "forgot-security" && (
+            <CardContent className="pt-6">
+              {renderBackButton("forgot-phone")}
+              <CardTitle className="text-xl mb-2">Answer Security Question</CardTitle>
+              <CardDescription className="mb-6">
+                Please answer your security question
+              </CardDescription>
+              
+              <div className="space-y-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium">{forgotSecurityQuestion}</p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="security-answer-input">Your Answer</Label>
+                  <div className="relative">
+                    <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="security-answer-input"
+                      type="text"
+                      placeholder="Enter your answer"
+                      value={forgotSecurityAnswer}
+                      onChange={(e) => setForgotSecurityAnswer(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={handleSecurityReset} className="w-full" disabled={isLoading}>
+                  {isLoading ? "Verifying..." : "Continue"}
+                </Button>
+              </div>
+            </CardContent>
+          )}
+
+          {/* Forgot Password - New Password */}
+          {step === "forgot-reset" && (
+            <CardContent className="pt-6">
+              {renderBackButton("forgot-phone")}
+              <CardTitle className="text-xl mb-2">Set New Password</CardTitle>
+              <CardDescription className="mb-6">
+                Create a new password for your account
+              </CardDescription>
+              
+              <form onSubmit={handleResetPassword} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="new-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="confirm-password"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Resetting..." : "Reset Password"}
+                </Button>
+              </form>
+            </CardContent>
+          )}
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">

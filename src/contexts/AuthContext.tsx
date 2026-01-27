@@ -24,7 +24,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   isLoading: boolean;
-  signUp: (email: string, password: string, fullName?: string, referralCode?: string) => Promise<{ error: Error | null }>;
+  signUp: (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string) => {
+  const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string) => {
     // Create a fake email from phone number for Supabase auth (phone auth requires SMS setup)
     const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
     const redirectUrl = `${window.location.origin}/`;
@@ -124,7 +124,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Create profile with phone number
+      // Create profile with phone number and security question
       const { error: profileError } = await supabase
         .from("profiles")
         .insert({
@@ -133,6 +133,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           phone_number: phoneNumber,
           full_name: fullName || null,
           referred_by: referredBy,
+          security_question: securityQuestion || null,
+          security_answer: securityAnswer || null,
+          phone_verified: true,
         });
 
       if (profileError) {
