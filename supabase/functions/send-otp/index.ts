@@ -10,6 +10,19 @@ interface OtpRequest {
   purpose: "signup" | "password_reset";
 }
 
+interface RateLimitRecord {
+  id: string;
+  identifier: string;
+  endpoint: string;
+  attempt_count: number;
+  locked_until: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+const MAX_FAILED_ATTEMPTS = 4;
+const LOCKOUT_DURATION_MINUTES = 30;
+
 // Valid Nigerian network prefixes (as of 2024)
 const VALID_NIGERIAN_PREFIXES = [
   // MTN
@@ -27,6 +40,13 @@ interface PhoneValidationResult {
   formatted: string;
   normalized: string;
   error?: string;
+}
+
+interface RateLimitResult {
+  allowed: boolean;
+  attemptsRemaining?: number;
+  lockedUntil?: string;
+  contactSupport?: boolean;
 }
 
 function validateNigerianPhone(phone: string): PhoneValidationResult {
@@ -55,6 +75,87 @@ function validateNigerianPhone(phone: string): PhoneValidationResult {
   }
   
   return { valid: true, formatted: `+234${normalized}`, normalized: `0${normalized}` };
+}
+
+// deno-lint-ignore no-explicit-any
+async function checkRateLimit(
+  supabase: any,
+  identifier: string,
+  endpoint: string
+): Promise<RateLimitResult> {
+  const { data: existing } = await supabase
+    .from("rate_limit_attempts")
+    .select("*")
+    .eq("identifier", identifier)
+    .eq("endpoint", endpoint)
+    .maybeSingle() as { data: RateLimitRecord | null };
+
+  if (!existing) {
+    return { allowed: true, attemptsRemaining: MAX_FAILED_ATTEMPTS };
+  }
+
+  // Check if currently locked
+  if (existing.locked_until && new Date(existing.locked_until) > new Date()) {
+    return {
+      allowed: false,
+      lockedUntil: existing.locked_until,
+      contactSupport: true,
+    };
+  }
+
+  // If lock has expired, reset the counter
+  if (existing.locked_until && new Date(existing.locked_until) <= new Date()) {
+    await supabase
+      .from("rate_limit_attempts")
+      .delete()
+      .eq("id", existing.id);
+    return { allowed: true, attemptsRemaining: MAX_FAILED_ATTEMPTS };
+  }
+
+  const attemptsRemaining = MAX_FAILED_ATTEMPTS - existing.attempt_count;
+  return { allowed: attemptsRemaining > 0, attemptsRemaining };
+}
+
+// deno-lint-ignore no-explicit-any
+async function recordFailedAttempt(
+  supabase: any,
+  identifier: string,
+  endpoint: string
+): Promise<{ locked: boolean; attemptsRemaining: number }> {
+  const { data: existing } = await supabase
+    .from("rate_limit_attempts")
+    .select("*")
+    .eq("identifier", identifier)
+    .eq("endpoint", endpoint)
+    .maybeSingle() as { data: RateLimitRecord | null };
+
+  if (!existing) {
+    await supabase.from("rate_limit_attempts").insert({
+      identifier,
+      endpoint,
+      attempt_count: 1,
+    });
+    return { locked: false, attemptsRemaining: MAX_FAILED_ATTEMPTS - 1 };
+  }
+
+  const newCount = existing.attempt_count + 1;
+  const shouldLock = newCount >= MAX_FAILED_ATTEMPTS;
+  const lockedUntil = shouldLock
+    ? new Date(Date.now() + LOCKOUT_DURATION_MINUTES * 60 * 1000).toISOString()
+    : null;
+
+  await supabase
+    .from("rate_limit_attempts")
+    .update({
+      attempt_count: newCount,
+      locked_until: lockedUntil,
+    })
+    .eq("id", existing.id);
+
+  return {
+    locked: shouldLock,
+    attemptsRemaining: Math.max(0, MAX_FAILED_ATTEMPTS - newCount),
+  };
 }
 
 Deno.serve(async (req) => {
@@ -96,6 +197,20 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Check rate limit for failed attempts (abuse prevention)
+    const rateLimitCheck = await checkRateLimit(supabase, normalizedPhone, "send-otp");
+    if (!rateLimitCheck.allowed) {
+      console.log(`Rate limit (failed attempts) exceeded for send-otp: ${normalizedPhone}`);
+      return new Response(
+        JSON.stringify({
+          error: "Too many failed attempts. Please contact customer support for assistance.",
+          contactSupport: true,
+          lockedUntil: rateLimitCheck.lockedUntil,
+        }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Rate limiting: Check recent OTP requests for this phone number
     const oneHourAgo = new Date(Date.now() - 3600000).toISOString();
@@ -145,6 +260,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!existingProfile) {
+        await recordFailedAttempt(supabase, normalizedPhone, "send-otp");
         return new Response(
           JSON.stringify({ error: "No account found with this phone number" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }

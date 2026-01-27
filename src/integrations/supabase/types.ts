@@ -148,6 +148,36 @@ export type Database = {
           },
         ]
       }
+      rate_limit_attempts: {
+        Row: {
+          attempt_count: number
+          created_at: string
+          endpoint: string
+          id: string
+          identifier: string
+          locked_until: string | null
+          updated_at: string
+        }
+        Insert: {
+          attempt_count?: number
+          created_at?: string
+          endpoint: string
+          id?: string
+          identifier: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Update: {
+          attempt_count?: number
+          created_at?: string
+          endpoint?: string
+          id?: string
+          identifier?: string
+          locked_until?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referral_rewards: {
         Row: {
           created_at: string
