@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck } from "lucide-react";
+import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,9 @@ const WalletTopUp = () => {
   const [phone, setPhone] = useState("");
   const [isCreatingDVA, setIsCreatingDVA] = useState(false);
   const [dvaPending, setDvaPending] = useState(false);
+  
+  // Email for card payments (for phone-based accounts)
+  const [paymentEmail, setPaymentEmail] = useState("");
 
   // Fetch DVA on mount
   useEffect(() => {
@@ -191,19 +194,27 @@ const WalletTopUp = () => {
     }
   };
 
-  // Check if email is valid for Paystack (not a synthetic phone-based email)
-  const getValidPaymentEmail = () => {
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => {
     const email = user?.email || "";
-    // Check if it's a synthetic email (phone@eagles.local)
-    if (email.endsWith("@eagles.local")) {
-      return null;
-    }
-    // Basic email validation
+    return email.endsWith("@eagles.local");
+  };
+
+  // Check if email is valid for Paystack
+  const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return null;
+    return emailRegex.test(email) && !email.endsWith("@eagles.local");
+  };
+
+  // Get valid payment email (from user account or manual input)
+  const getValidPaymentEmail = () => {
+    // If user has synthetic email, use manual input
+    if (hasSyntheticEmail()) {
+      return isValidEmail(paymentEmail) ? paymentEmail : null;
     }
-    return email;
+    // Otherwise use account email
+    const email = user?.email || "";
+    return isValidEmail(email) ? email : null;
   };
 
   const handleCardPayment = async () => {
@@ -217,7 +228,9 @@ const WalletTopUp = () => {
     if (!validEmail) {
       toast({ 
         title: "Email Required", 
-        description: "Please update your profile with a valid email address to use card payments. Go to Profile > Edit to add your email.", 
+        description: hasSyntheticEmail() 
+          ? "Please enter a valid email address for card payments."
+          : "Please update your profile with a valid email address.", 
         variant: "destructive" 
       });
       return;
@@ -445,6 +458,27 @@ const WalletTopUp = () => {
               </div>
               <p className="text-xs text-muted-foreground">Minimum amount: ₦100</p>
             </div>
+
+            {/* Email Input for phone-based accounts */}
+            {hasSyntheticEmail() && (
+              <div className="space-y-2">
+                <Label htmlFor="paymentEmail" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  Email for Payment Receipt
+                </Label>
+                <Input
+                  id="paymentEmail"
+                  type="email"
+                  placeholder="your@email.com"
+                  value={paymentEmail}
+                  onChange={(e) => setPaymentEmail(e.target.value)}
+                  className="h-12"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter a valid email to receive your payment receipt
+                </p>
+              </div>
+            )}
 
             {/* Quick Amount Buttons */}
             <div className="grid grid-cols-3 gap-2">
