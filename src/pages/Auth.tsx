@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle } from "lucide-react";
+import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 
 const phoneSchema = z.string()
   .min(10, "Phone number must be at least 10 digits")
@@ -24,8 +25,11 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, signUp, signIn, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { authenticateWithBiometric, isBiometricEnabled, checkBiometricSupport } = useBiometricAuth();
   
   const [isLoading, setIsLoading] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [isBiometricAuthenticating, setIsBiometricAuthenticating] = useState(false);
   const [step, setStep] = useState<AuthStep>("login");
   
   // Login state
@@ -57,6 +61,41 @@ const Auth = () => {
       navigate("/dashboard");
     }
   }, [user, authLoading, navigate]);
+
+  // Check biometric availability on mount
+  useEffect(() => {
+    const checkBiometric = async () => {
+      const supported = await checkBiometricSupport();
+      const enabled = isBiometricEnabled();
+      setBiometricAvailable(supported && enabled);
+    };
+    checkBiometric();
+  }, [checkBiometricSupport, isBiometricEnabled]);
+
+  const handleBiometricLogin = async () => {
+    setIsBiometricAuthenticating(true);
+    const success = await authenticateWithBiometric();
+    setIsBiometricAuthenticating(false);
+
+    if (success) {
+      // Biometric verified, but we need to restore the session
+      // Check if there's a stored session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        toast({
+          title: "Welcome back!",
+          description: "Logged in with biometrics.",
+        });
+        navigate("/dashboard");
+      } else {
+        toast({
+          title: "Session Expired",
+          description: "Please log in with your password to continue.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
 
   const sendOtp = async (phone: string, purpose: "signup" | "password_reset") => {
     try {
@@ -483,6 +522,20 @@ const Auth = () => {
                     <Button type="submit" className="w-full" disabled={isLoading}>
                       {isLoading ? "Logging in..." : "Login"}
                     </Button>
+
+                    {/* Biometric Login Button */}
+                    {biometricAvailable && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleBiometricLogin}
+                        disabled={isBiometricAuthenticating}
+                      >
+                        <Fingerprint className="h-4 w-4 mr-2" />
+                        {isBiometricAuthenticating ? "Authenticating..." : "Login with Biometrics"}
+                      </Button>
+                    )}
                     
                     <Button
                       type="button"
@@ -496,6 +549,21 @@ const Auth = () => {
                 </TabsContent>
               </CardContent>
             </Tabs>
+          )}
+
+          {/* Biometric Quick Access - shown when biometric is enabled but not logged in */}
+          {biometricAvailable && step === "login" && (
+            <div className="absolute -bottom-16 left-0 right-0 flex justify-center">
+              <Button
+                variant="ghost"
+                size="lg"
+                className="rounded-full h-14 w-14 bg-primary/10 hover:bg-primary/20"
+                onClick={handleBiometricLogin}
+                disabled={isBiometricAuthenticating}
+              >
+                <Fingerprint className="h-7 w-7 text-primary" />
+              </Button>
+            </div>
           )}
 
           {/* Signup - Phone Entry */}
