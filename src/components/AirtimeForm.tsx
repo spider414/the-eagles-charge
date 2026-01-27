@@ -114,9 +114,21 @@ const AirtimeForm = () => {
         setNetwork(null);
       }
     } else {
+      // Check if email is valid for Paystack
+      const email = user.email || "";
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email) || email.endsWith("@eagles.local")) {
+        toast({
+          title: "Email Required",
+          description: "Please update your profile with a valid email address to use card payments. Go to Profile > Edit to add your email.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       await initializePayment({
         amount: Number(amount),
-        email: user.email || "",
+        email,
         metadata,
       });
     }
