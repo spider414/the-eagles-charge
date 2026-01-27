@@ -99,31 +99,61 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send OTP via Termii
+    // Send OTP via Termii Token API (handles sender ID automatically)
     const termiiApiKey = Deno.env.get("TERMII_API_KEY");
     
-    const termiiResponse = await fetch("https://api.ng.termii.com/api/sms/send", {
+    const termiiResponse = await fetch("https://api.ng.termii.com/api/sms/otp/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         api_key: termiiApiKey,
+        message_type: "NUMERIC",
         to: formattedPhone,
-        from: "N-Alert",
-        sms: `Your verification code is: ${otpCode}. Valid for 10 minutes. Do not share this code.`,
-        type: "plain",
+        from: "Termii",
         channel: "dnd",
+        pin_attempts: 3,
+        pin_time_to_live: 10,
+        pin_length: 6,
+        pin_placeholder: "< 1234 >",
+        message_text: `Your Eagles verification code is < 1234 >. Valid for 10 minutes. Do not share.`,
+        pin_type: "NUMERIC",
       }),
     });
 
     const termiiResult = await termiiResponse.json();
-    console.log("Termii response:", termiiResult);
+    console.log("Termii Token API response:", termiiResult);
 
-    if (!termiiResponse.ok || termiiResult.code !== "ok") {
+    if (!termiiResponse.ok || (termiiResult.status !== "success" && termiiResult.code !== "ok")) {
       console.error("Termii error:", termiiResult);
-      return new Response(
-        JSON.stringify({ error: "Failed to send OTP. Please try again." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      
+      // If Termii Token API fails, try the standard SMS endpoint with Termii sender
+      console.log("Trying fallback SMS endpoint...");
+      const fallbackResponse = await fetch("https://api.ng.termii.com/api/sms/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          api_key: termiiApiKey,
+          to: formattedPhone,
+          from: "Termii",
+          sms: `Your Eagles verification code is: ${otpCode}. Valid for 10 minutes.`,
+          type: "plain",
+          channel: "dnd",
+        }),
+      });
+      
+      const fallbackResult = await fallbackResponse.json();
+      console.log("Fallback SMS response:", fallbackResult);
+      
+      if (!fallbackResponse.ok || fallbackResult.code !== "ok") {
+        console.error("Fallback also failed:", fallbackResult);
+        return new Response(
+          JSON.stringify({ 
+            error: "Failed to send OTP. Please check your Termii dashboard for registered sender IDs.",
+            details: fallbackResult.message || termiiResult.message 
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     return new Response(
