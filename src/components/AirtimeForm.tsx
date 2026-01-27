@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, Wallet } from "lucide-react";
+import { Phone, Wallet, Mail } from "lucide-react";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import FavoriteNumbersSelector from "./FavoriteNumbersSelector";
@@ -14,6 +14,7 @@ import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
 import { detectNetwork } from "@/utils/phoneUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 const quickAmounts = [100, 200, 500, 1000, 2000, 5000];
 
@@ -23,11 +24,39 @@ const AirtimeForm = () => {
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
+  const [paymentEmail, setPaymentEmail] = useState("");
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { initializePayment, isLoading: paystackLoading } = usePaystack();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
   const { addFavorite } = useFavoriteNumbers();
+
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+
+  // Check if email is valid for Paystack
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && !email.endsWith("@eagles.local");
+  };
+
+  // Pre-fill payment email from profile if valid
+  useEffect(() => {
+    if (profile?.email && isValidEmail(profile.email)) {
+      setPaymentEmail(profile.email);
+    }
+  }, [profile]);
+
+  // Save payment email to profile
+  const savePaymentEmail = async (email: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("profiles").update({ email }).eq("user_id", user.id);
+      await refreshProfile();
+    } catch (err) {
+      console.error("Error saving email:", err);
+    }
+  };
 
   const isLoading = paystackLoading || walletLoading;
 
@@ -114,21 +143,30 @@ const AirtimeForm = () => {
         setNetwork(null);
       }
     } else {
-      // Check if email is valid for Paystack
-      const email = user.email || "";
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email || !emailRegex.test(email) || email.endsWith("@eagles.local")) {
+      // Get valid email for card payment
+      const validEmail = hasSyntheticEmail() 
+        ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+        : (isValidEmail(user.email || "") ? user.email : null);
+
+      if (!validEmail) {
         toast({
           title: "Email Required",
-          description: "Please update your profile with a valid email address to use card payments. Go to Profile > Edit to add your email.",
+          description: hasSyntheticEmail()
+            ? "Please enter a valid email address for card payments."
+            : "Please update your profile with a valid email address.",
           variant: "destructive",
         });
         return;
       }
+
+      // Save email to profile if different
+      if (hasSyntheticEmail() && validEmail !== profile?.email) {
+        await savePaymentEmail(validEmail);
+      }
       
       await initializePayment({
         amount: Number(amount),
-        email,
+        email: validEmail,
         metadata,
       });
     }
@@ -203,6 +241,26 @@ const AirtimeForm = () => {
               ))}
             </div>
           </div>
+
+          {user && hasSyntheticEmail() && paymentMethod === "paystack" && (
+            <div className="space-y-2">
+              <Label htmlFor="airtime-email" className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                Email for Payment Receipt
+              </Label>
+              <Input
+                id="airtime-email"
+                type="email"
+                placeholder="Enter your email address"
+                value={paymentEmail}
+                onChange={(e) => setPaymentEmail(e.target.value)}
+                className="h-12"
+              />
+              <p className="text-xs text-muted-foreground">
+                Required for card payments. Will be saved to your profile.
+              </p>
+            </div>
+          )}
 
           {user && (
             <PaymentMethodSelector
