@@ -137,8 +137,8 @@ const DataForm = () => {
       transaction_type: "data" as const,
       phone_number: phone,
       network: network,
-      data_plan: selectedPlan.size,
-      variation_id: selectedPlan.variation_id,
+      data_plan: selectedPlan.variation_id, // Send variation_id for CheapDataHub API
+      data_plan_name: selectedPlan.size, // Keep display name for records
     };
 
     if (paymentMethod === "wallet") {
