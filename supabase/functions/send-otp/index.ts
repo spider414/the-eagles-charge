@@ -25,12 +25,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Format phone number for Nigeria (add 234 prefix if needed)
+    // Format phone number for Nigeria (add +234 prefix if needed)
     let formattedPhone = phone_number.replace(/\D/g, "");
     if (formattedPhone.startsWith("0")) {
-      formattedPhone = "234" + formattedPhone.slice(1);
-    } else if (!formattedPhone.startsWith("234")) {
-      formattedPhone = "234" + formattedPhone;
+      formattedPhone = "+234" + formattedPhone.slice(1);
+    } else if (formattedPhone.startsWith("234")) {
+      formattedPhone = "+" + formattedPhone;
+    } else if (!formattedPhone.startsWith("+")) {
+      formattedPhone = "+234" + formattedPhone;
     }
 
     const supabase = createClient(
@@ -99,61 +101,49 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Send OTP via Termii Token API (handles sender ID automatically)
-    const termiiApiKey = Deno.env.get("TERMII_API_KEY");
-    
-    const termiiResponse = await fetch("https://api.ng.termii.com/api/sms/otp/send", {
+    // Send OTP via Twilio
+    const twilioAccountSid = Deno.env.get("TWILIO_ACCOUNT_SID");
+    const twilioAuthToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+    const twilioPhoneNumber = Deno.env.get("TWILIO_PHONE_NUMBER");
+
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+      console.error("Twilio credentials not configured");
+      return new Response(
+        JSON.stringify({ error: "SMS service not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
+    const credentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
+
+    const messageBody = `Your Eagles verification code is: ${otpCode}. Valid for 10 minutes. Do not share this code.`;
+
+    const twilioResponse = await fetch(twilioUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        api_key: termiiApiKey,
-        message_type: "NUMERIC",
-        to: formattedPhone,
-        from: "HERMIC PAY",
-        channel: "dnd",
-        pin_attempts: 3,
-        pin_time_to_live: 10,
-        pin_length: 6,
-        pin_placeholder: "< 1234 >",
-        message_text: `Your Eagles verification code is < 1234 >. Valid for 10 minutes. Do not share.`,
-        pin_type: "NUMERIC",
+      headers: {
+        "Authorization": `Basic ${credentials}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        To: formattedPhone,
+        From: twilioPhoneNumber,
+        Body: messageBody,
       }),
     });
 
-    const termiiResult = await termiiResponse.json();
-    console.log("Termii Token API response:", termiiResult);
+    const twilioResult = await twilioResponse.json();
+    console.log("Twilio response:", JSON.stringify(twilioResult));
 
-    if (!termiiResponse.ok || (termiiResult.status !== "success" && termiiResult.code !== "ok")) {
-      console.error("Termii error:", termiiResult);
-      
-      // If Termii Token API fails, try the standard SMS endpoint
-      console.log("Trying fallback SMS endpoint...");
-      const fallbackResponse = await fetch("https://api.ng.termii.com/api/sms/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          api_key: termiiApiKey,
-          to: formattedPhone,
-          from: "HERMIC PAY",
-          sms: `Your Eagles verification code is: ${otpCode}. Valid for 10 minutes.`,
-          type: "plain",
-          channel: "dnd",
+    if (!twilioResponse.ok) {
+      console.error("Twilio error:", twilioResult);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to send OTP. Please try again.",
+          details: twilioResult.message || "SMS delivery failed"
         }),
-      });
-      
-      const fallbackResult = await fallbackResponse.json();
-      console.log("Fallback SMS response:", fallbackResult);
-      
-      if (!fallbackResponse.ok || fallbackResult.code !== "ok") {
-        console.error("Fallback also failed:", fallbackResult);
-        return new Response(
-          JSON.stringify({ 
-            error: "Failed to send OTP. Please check your Termii dashboard for registered sender IDs.",
-            details: fallbackResult.message || termiiResult.message 
-          }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     return new Response(
