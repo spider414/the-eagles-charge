@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
         api_key: termiiApiKey,
         message_type: "NUMERIC",
         to: formattedPhone,
-        from: "Termii",
+        from: "HERMIC PAY",
         channel: "dnd",
         pin_attempts: 3,
         pin_time_to_live: 10,
@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
     if (!termiiResponse.ok || (termiiResult.status !== "success" && termiiResult.code !== "ok")) {
       console.error("Termii error:", termiiResult);
       
-      // If Termii Token API fails, try the standard SMS endpoint with Termii sender
+      // If Termii Token API fails, try the standard SMS endpoint
       console.log("Trying fallback SMS endpoint...");
       const fallbackResponse = await fetch("https://api.ng.termii.com/api/sms/send", {
         method: "POST",
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           api_key: termiiApiKey,
           to: formattedPhone,
-          from: "Termii",
+          from: "HERMIC PAY",
           sms: `Your Eagles verification code is: ${otpCode}. Valid for 10 minutes.`,
           type: "plain",
           channel: "dnd",
