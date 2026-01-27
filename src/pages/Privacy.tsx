@@ -76,7 +76,7 @@ const Privacy = () => {
             <section>
               <h3 className="text-lg font-semibold">7. Your Rights</h3>
               <p className="text-sm text-muted-foreground">
-                You have the right to access, correct, or delete your personal information. Contact us at support@theeagles.com to exercise these rights.
+                You have the right to access, correct, or delete your personal information. Contact us at henry4god99@gmail.com to exercise these rights.
               </p>
             </section>
 
@@ -97,7 +97,7 @@ const Privacy = () => {
             <section>
               <h3 className="text-lg font-semibold">10. Contact Us</h3>
               <p className="text-sm text-muted-foreground">
-                For privacy-related inquiries, contact us at support@theeagles.com
+                For privacy-related inquiries, contact us at henry4god99@gmail.com
               </p>
             </section>
           </CardContent>

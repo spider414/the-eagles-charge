@@ -28,8 +28,8 @@ const features = [
   },
   {
     icon: Gift,
-    title: "Cashback Rewards",
-    description: "Earn rewards on every transaction you make",
+    title: "Referral Rewards",
+    description: "Earn rewards on each person you invite to join the platform",
   },
 ];
 
