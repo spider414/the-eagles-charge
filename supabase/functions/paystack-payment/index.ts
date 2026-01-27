@@ -492,15 +492,36 @@ Deno.serve(async (req) => {
           console.log("CheapDataHub Airtime Response:", JSON.stringify(vtuResult));
           
         } else if (metadata.transaction_type === "data" && metadata.phone_number && metadata.network && metadata.data_plan) {
-          console.log(`Processing data via CheapDataHub: ${metadata.network} plan_id=${metadata.data_plan} for ${metadata.phone_number}`);
-          
+          // CheapDataHub expects numeric provider_id + bundle_id for data purchases.
+          const providerId = providerIdByNetwork[String(metadata.network).toLowerCase()];
+          if (!providerId) {
+            throw new Error(`Unsupported network provider: ${metadata.network}`);
+          }
+
+          console.log(
+            `Processing data via CheapDataHub: provider_id=${providerId} bundle_id=${metadata.data_plan} for ${metadata.phone_number}`,
+          );
+
+          // Primary (documented) payload
           vtuResult = await cheapDataHubPost("/data/purchase/", {
-            mobile_number: metadata.phone_number,
-            network: metadata.network.toUpperCase(),
-            plan_id: metadata.data_plan, // Use plan_id which is the variation_id
-            ported_number: "true",
+            provider_id: providerId,
+            bundle_id: metadata.data_plan,
+            phone_number: metadata.phone_number,
           });
           console.log("CheapDataHub Data Response:", JSON.stringify(vtuResult));
+
+          // Some CheapDataHub accounts accept alternative keys. Retry once if we get the known bundle error.
+          const msg = (vtuResult?.message || vtuResult?.error || "").toString().toLowerCase();
+          if (msg.includes("bundle") && msg.includes("does not exist")) {
+            console.log("Retrying data purchase with alternative payload keys (mobile_number/network/plan)...");
+            vtuResult = await cheapDataHubPost("/data/purchase/", {
+              provider_id: providerId,
+              bundle_id: metadata.data_plan,
+              mobile_number: metadata.phone_number,
+              network: String(metadata.network).toUpperCase(),
+            });
+            console.log("CheapDataHub Data Response (retry):", JSON.stringify(vtuResult));
+          }
           
         } else if (metadata.transaction_type === "electricity" && metadata.meter_number && metadata.electricity_provider) {
           console.log(`Processing electricity via CheapDataHub: ${metadata.electricity_provider} ₦${amount} for meter ${metadata.meter_number}`);
