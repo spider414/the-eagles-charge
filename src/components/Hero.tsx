@@ -1,8 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { Zap, Shield, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import eagleHero from "@/assets/eagle-hero.png";
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleRechargeClick = () => {
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      navigate("/auth");
+    }
+  };
+
+  const handleDataPlansClick = () => {
+    if (user) {
+      navigate("/dashboard");
+    } else {
+      navigate("/auth");
+    }
+  };
+
   return (
     <section className="relative overflow-hidden gradient-hero py-16 md:py-24">
       {/* Background pattern */}
@@ -29,10 +50,15 @@ const Hero = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <Button variant="hero" size="xl">
+              <Button variant="hero" size="xl" onClick={handleRechargeClick}>
                 Recharge Now
               </Button>
-              <Button variant="outline" size="xl" className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground">
+              <Button 
+                variant="outline" 
+                size="xl" 
+                className="border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground"
+                onClick={handleDataPlansClick}
+              >
                 View Data Plans
               </Button>
             </div>
