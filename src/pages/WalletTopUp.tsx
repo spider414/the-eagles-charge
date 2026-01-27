@@ -42,6 +42,7 @@ const WalletTopUp = () => {
   
   // Email for card payments (for phone-based accounts)
   const [paymentEmail, setPaymentEmail] = useState("");
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   // Fetch DVA on mount
   useEffect(() => {
@@ -69,6 +70,13 @@ const WalletTopUp = () => {
       setFirstName(nameParts[0] || "");
       setLastName(nameParts.slice(1).join(" ") || "");
       setPhone(profile.phone_number || "");
+      
+      // Pre-fill payment email if profile has a valid non-synthetic email
+      const profileEmail = profile.email || "";
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (emailRegex.test(profileEmail) && !profileEmail.endsWith("@eagles.local")) {
+        setPaymentEmail(profileEmail);
+      }
     }
   }, [profile]);
 
@@ -217,6 +225,29 @@ const WalletTopUp = () => {
     return isValidEmail(email) ? email : null;
   };
 
+  // Save payment email to profile
+  const savePaymentEmail = async (email: string) => {
+    if (!profile) return;
+    
+    setIsSavingEmail(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ email })
+        .eq("user_id", user?.id);
+      
+      if (error) {
+        console.error("Failed to save email:", error);
+      } else {
+        await refreshProfile();
+      }
+    } catch (err) {
+      console.error("Error saving email:", err);
+    } finally {
+      setIsSavingEmail(false);
+    }
+  };
+
   const handleCardPayment = async () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount < 100) {
@@ -234,6 +265,11 @@ const WalletTopUp = () => {
         variant: "destructive" 
       });
       return;
+    }
+
+    // Save the payment email to profile if it's different from the stored one
+    if (hasSyntheticEmail() && validEmail !== profile?.email) {
+      await savePaymentEmail(validEmail);
     }
 
     setPaymentMethod("card");
