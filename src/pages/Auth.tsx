@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, Mail, Lock, User, Gift } from "lucide-react";
+import { Bird, Phone, Lock, User, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
-const emailSchema = z.string().email("Please enter a valid email address");
+const phoneSchema = z.string()
+  .min(10, "Phone number must be at least 10 digits")
+  .max(15, "Phone number is too long")
+  .regex(/^[0-9+]+$/, "Please enter a valid phone number");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
 const Auth = () => {
@@ -19,9 +22,9 @@ const Auth = () => {
   const { toast } = useToast();
   
   const [isLoading, setIsLoading] = useState(false);
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPhone, setLoginPhone] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
-  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPhone, setSignupPhone] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -36,7 +39,7 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      emailSchema.parse(loginEmail);
+      phoneSchema.parse(loginPhone);
       passwordSchema.parse(loginPassword);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -50,14 +53,14 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signIn(loginEmail, loginPassword);
+    const { error } = await signIn(loginPhone, loginPassword);
     setIsLoading(false);
 
     if (error) {
       toast({
         title: "Login Failed",
         description: error.message === "Invalid login credentials" 
-          ? "Invalid email or password. Please try again."
+          ? "Invalid phone number or password. Please try again."
           : error.message,
         variant: "destructive",
       });
@@ -74,7 +77,7 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      emailSchema.parse(signupEmail);
+      phoneSchema.parse(signupPhone);
       passwordSchema.parse(signupPassword);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -88,13 +91,13 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signUp(signupEmail, signupPassword, signupName, referralCode);
+    const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode);
     setIsLoading(false);
 
     if (error) {
       let errorMessage = error.message;
       if (error.message.includes("already registered")) {
-        errorMessage = "This email is already registered. Please login instead.";
+        errorMessage = "This phone number is already registered. Please login instead.";
       }
       toast({
         title: "Signup Failed",
@@ -149,15 +152,15 @@ const Auth = () => {
                 
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-phone">Phone Number</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={loginEmail}
-                        onChange={(e) => setLoginEmail(e.target.value)}
+                        id="login-phone"
+                        type="tel"
+                        placeholder="08012345678"
+                        value={loginPhone}
+                        onChange={(e) => setLoginPhone(e.target.value)}
                         className="pl-10"
                         required
                       />
@@ -209,15 +212,15 @@ const Auth = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
+                    <Label htmlFor="signup-phone">Phone Number</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
-                        id="signup-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={signupEmail}
-                        onChange={(e) => setSignupEmail(e.target.value)}
+                        id="signup-phone"
+                        type="tel"
+                        placeholder="08012345678"
+                        value={signupPhone}
+                        onChange={(e) => setSignupPhone(e.target.value)}
                         className="pl-10"
                         required
                       />

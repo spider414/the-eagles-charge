@@ -96,11 +96,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, fullName?: string, referralCode?: string) => {
+  const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string) => {
+    // Create a fake email from phone number for Supabase auth (phone auth requires SMS setup)
+    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: fakeEmail,
       password,
       options: {
         emailRedirectTo: redirectUrl,
@@ -122,12 +124,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Create profile
+      // Create profile with phone number
       const { error: profileError } = await supabase
         .from("profiles")
         .insert({
           user_id: data.user.id,
-          email: email,
+          email: fakeEmail,
+          phone_number: phoneNumber,
           full_name: fullName || null,
           referred_by: referredBy,
         });
@@ -140,9 +143,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return { error: error as Error | null };
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (phoneNumber: string, password: string) => {
+    // Use the fake email format to match signup
+    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
+    
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: fakeEmail,
       password,
     });
 
