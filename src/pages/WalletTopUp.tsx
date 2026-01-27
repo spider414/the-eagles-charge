@@ -191,6 +191,21 @@ const WalletTopUp = () => {
     }
   };
 
+  // Check if email is valid for Paystack (not a synthetic phone-based email)
+  const getValidPaymentEmail = () => {
+    const email = user?.email || "";
+    // Check if it's a synthetic email (phone@eagles.local)
+    if (email.endsWith("@eagles.local")) {
+      return null;
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return null;
+    }
+    return email;
+  };
+
   const handleCardPayment = async () => {
     const numAmount = parseFloat(amount);
     if (!numAmount || numAmount < 100) {
@@ -198,10 +213,20 @@ const WalletTopUp = () => {
       return;
     }
 
+    const validEmail = getValidPaymentEmail();
+    if (!validEmail) {
+      toast({ 
+        title: "Email Required", 
+        description: "Please update your profile with a valid email address to use card payments. Go to Profile > Edit to add your email.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     setPaymentMethod("card");
     await initializePayment({
       amount: numAmount,
-      email: user.email!,
+      email: validEmail,
       metadata: {
         transaction_type: "wallet_topup",
       },
