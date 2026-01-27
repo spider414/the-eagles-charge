@@ -14,6 +14,12 @@ import {
   Smartphone,
   Fingerprint,
   Vibrate,
+  Volume2,
+  Zap,
+  Wallet,
+  Phone,
+  Wifi,
+  Receipt,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +27,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { useSoundEffects } from "@/hooks/useSoundEffects";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 
 interface SettingItem {
@@ -39,6 +46,7 @@ const Settings = () => {
   const { signOut, user } = useAuth();
   const { toast } = useToast();
   const { checkBiometricSupport, registerBiometric, disableBiometric, isBiometricEnabled } = useBiometricAuth();
+  const { testSound, playToggle } = useSoundEffects();
   
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -49,6 +57,15 @@ const Settings = () => {
     notifications: localStorage.getItem("notifications") !== "false",
     biometric: isBiometricEnabled(),
     hapticFeedback: localStorage.getItem("hapticFeedback") !== "false",
+    soundEffects: localStorage.getItem("soundEffects") !== "false",
+  }));
+
+  // Notification preferences state
+  const [notificationPrefs, setNotificationPrefs] = useState(() => ({
+    airtime: localStorage.getItem("notify_airtime") !== "false",
+    data: localStorage.getItem("notify_data") !== "false",
+    bills: localStorage.getItem("notify_bills") !== "false",
+    wallet: localStorage.getItem("notify_wallet") !== "false",
   }));
 
   useEffect(() => {
@@ -150,6 +167,21 @@ const Settings = () => {
       }
     }
 
+    // Special handling for sound effects
+    if (key === "soundEffects") {
+      // Save first so testSound can check
+      localStorage.setItem(key, value.toString());
+      setSettings((prev) => ({ ...prev, [key]: value }));
+      if (value) {
+        testSound();
+      }
+      toast({
+        title: "Setting Updated",
+        description: `Sound effects has been ${value ? "enabled" : "disabled"}.`,
+      });
+      return;
+    }
+
     setSettings((prev) => ({ ...prev, [key]: value }));
     localStorage.setItem(key, value.toString());
 
@@ -163,12 +195,35 @@ const Settings = () => {
       triggerHaptic();
     }
 
+    // Play sound on toggle if enabled
+    if (settings.soundEffects) {
+      playToggle();
+    }
+
     if (key !== "biometric") {
       toast({
         title: "Setting Updated",
         description: `${key.replace(/([A-Z])/g, " $1").trim()} has been ${value ? "enabled" : "disabled"}.`,
       });
     }
+  };
+
+  const updateNotificationPref = (key: keyof typeof notificationPrefs, value: boolean) => {
+    setNotificationPrefs((prev) => ({ ...prev, [key]: value }));
+    localStorage.setItem(`notify_${key}`, value.toString());
+
+    // Trigger haptic and sound feedback
+    if (settings.hapticFeedback) {
+      triggerHaptic();
+    }
+    if (settings.soundEffects) {
+      playToggle();
+    }
+
+    toast({
+      title: "Preference Updated",
+      description: `${key.charAt(0).toUpperCase() + key.slice(1)} notifications ${value ? "enabled" : "disabled"}.`,
+    });
   };
 
   const handleSignOut = async () => {
@@ -194,12 +249,59 @@ const Settings = () => {
       onChange: (value) => updateSetting("notifications", value),
     },
     {
+      icon: Volume2,
+      label: "Sound Effects",
+      description: "Audio feedback on actions",
+      type: "toggle",
+      value: settings.soundEffects,
+      onChange: (value) => updateSetting("soundEffects", value),
+    },
+    {
       icon: Vibrate,
       label: "Haptic Feedback",
       description: "Vibration on button press",
       type: "toggle",
       value: settings.hapticFeedback,
       onChange: (value) => updateSetting("hapticFeedback", value),
+    },
+  ];
+
+  const notificationTypes: SettingItem[] = [
+    {
+      icon: Phone,
+      label: "Airtime",
+      description: "Airtime purchase alerts",
+      type: "toggle",
+      value: notificationPrefs.airtime,
+      onChange: (value) => updateNotificationPref("airtime", value),
+      disabled: !settings.notifications,
+    },
+    {
+      icon: Wifi,
+      label: "Data",
+      description: "Data bundle alerts",
+      type: "toggle",
+      value: notificationPrefs.data,
+      onChange: (value) => updateNotificationPref("data", value),
+      disabled: !settings.notifications,
+    },
+    {
+      icon: Receipt,
+      label: "Bills",
+      description: "Electricity & cable TV alerts",
+      type: "toggle",
+      value: notificationPrefs.bills,
+      onChange: (value) => updateNotificationPref("bills", value),
+      disabled: !settings.notifications,
+    },
+    {
+      icon: Wallet,
+      label: "Wallet",
+      description: "Wallet top-up & transfer alerts",
+      type: "toggle",
+      value: notificationPrefs.wallet,
+      onChange: (value) => updateNotificationPref("wallet", value),
+      disabled: !settings.notifications,
     },
   ];
 
@@ -312,6 +414,22 @@ const Settings = () => {
             {appSettings.map((item, index) => renderSettingItem(item, index))}
           </CardContent>
         </Card>
+
+        {/* Notification Preferences */}
+        {settings.notifications && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Bell className="h-5 w-5" />
+                Notification Types
+              </CardTitle>
+              <CardDescription>Choose which transactions trigger alerts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {notificationTypes.map((item, index) => renderSettingItem(item, index))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Security Settings */}
         <Card>
