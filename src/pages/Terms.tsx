@@ -90,7 +90,7 @@ const Terms = () => {
             <section>
               <h3 className="text-lg font-semibold">9. Contact</h3>
               <p className="text-sm text-muted-foreground">
-                For questions about these Terms, please contact us at support@theeagles.com
+                For questions about these Terms, please contact us at henry4god99@gmail.com
               </p>
             </section>
           </CardContent>
