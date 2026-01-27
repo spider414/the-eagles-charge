@@ -56,6 +56,55 @@ const Settings = () => {
     checkBiometricSupport().then(setBiometricSupported);
   }, [checkBiometricSupport]);
 
+  // Request push notification permission
+  const requestNotificationPermission = async (): Promise<boolean> => {
+    if (!("Notification" in window)) {
+      toast({
+        title: "Not Supported",
+        description: "Push notifications are not supported on this device.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (Notification.permission === "granted") {
+      return true;
+    }
+
+    if (Notification.permission === "denied") {
+      toast({
+        title: "Notifications Blocked",
+        description: "Please enable notifications in your browser settings.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      // Show a test notification
+      new Notification("Eagles VTU", {
+        body: "Notifications enabled! You'll receive transaction alerts.",
+        icon: "/favicon.ico",
+      });
+      return true;
+    } else {
+      toast({
+        title: "Permission Denied",
+        description: "You won't receive transaction alerts.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
+  // Trigger haptic feedback
+  const triggerHaptic = (pattern: number | number[] = 50) => {
+    if ("vibrate" in navigator) {
+      navigator.vibrate(pattern);
+    }
+  };
+
   const updateSetting = async (key: keyof typeof settings, value: boolean) => {
     // Special handling for biometric
     if (key === "biometric") {
@@ -77,12 +126,41 @@ const Settings = () => {
       }
     }
 
+    // Special handling for notifications
+    if (key === "notifications") {
+      if (value) {
+        const granted = await requestNotificationPermission();
+        if (!granted) return;
+      }
+    }
+
+    // Special handling for haptic feedback
+    if (key === "hapticFeedback") {
+      if (value) {
+        if (!("vibrate" in navigator)) {
+          toast({
+            title: "Not Supported",
+            description: "Haptic feedback is not available on this device.",
+            variant: "destructive",
+          });
+          return;
+        }
+        // Test vibration when enabled
+        triggerHaptic([50, 30, 50]);
+      }
+    }
+
     setSettings((prev) => ({ ...prev, [key]: value }));
     localStorage.setItem(key, value.toString());
 
     if (key === "darkMode") {
       document.documentElement.classList.toggle("dark", value);
       localStorage.setItem("theme", value ? "dark" : "light");
+    }
+
+    // Trigger haptic on all toggle changes if enabled
+    if (settings.hapticFeedback || (key === "hapticFeedback" && value)) {
+      triggerHaptic();
     }
 
     if (key !== "biometric") {
