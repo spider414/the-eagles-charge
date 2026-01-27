@@ -53,6 +53,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Helper function to hash security answer (SHA-256)
+    async function hashSecurityAnswer(answer: string): Promise<string> {
+      const normalized = answer.toLowerCase().trim();
+      const encoder = new TextEncoder();
+      const data = encoder.encode(normalized);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     // Verify either OTP verification or security answer
     let verified = false;
 
@@ -76,9 +86,22 @@ Deno.serve(async (req) => {
           .eq("id", verification_id);
       }
     } else if (security_answer && profile.security_answer) {
-      // Verify using security answer (case-insensitive)
-      if (security_answer.toLowerCase().trim() === profile.security_answer.toLowerCase().trim()) {
-        verified = true;
+      // Verify using security answer - compare hashes
+      const hashedInput = await hashSecurityAnswer(security_answer);
+      // Check if stored answer is already hashed (64 hex chars) or plaintext
+      const storedAnswer = profile.security_answer;
+      const isStoredHashed = /^[a-f0-9]{64}$/i.test(storedAnswer);
+      
+      if (isStoredHashed) {
+        // Compare hashes
+        if (hashedInput === storedAnswer.toLowerCase()) {
+          verified = true;
+        }
+      } else {
+        // Legacy plaintext comparison (case-insensitive)
+        if (security_answer.toLowerCase().trim() === storedAnswer.toLowerCase().trim()) {
+          verified = true;
+        }
       }
     }
 

@@ -96,6 +96,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Helper function to hash security answer using SHA-256
+  const hashSecurityAnswer = async (answer: string): Promise<string> => {
+    const normalized = answer.toLowerCase().trim();
+    const encoder = new TextEncoder();
+    const data = encoder.encode(normalized);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  };
+
   const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string) => {
     // Create a fake email from phone number for Supabase auth (phone auth requires SMS setup)
     const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
@@ -124,7 +134,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // Create profile with phone number and security question
+      // Hash security answer before storing (security best practice)
+      let hashedSecurityAnswer: string | null = null;
+      if (securityAnswer) {
+        hashedSecurityAnswer = await hashSecurityAnswer(securityAnswer);
+      }
+
+      // Create profile with phone number and hashed security answer
       const { error: profileError } = await supabase
         .from("profiles")
         .insert({
@@ -134,7 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           full_name: fullName || null,
           referred_by: referredBy,
           security_question: securityQuestion || null,
-          security_answer: securityAnswer || null,
+          security_answer: hashedSecurityAnswer,
           phone_verified: true,
         });
 
