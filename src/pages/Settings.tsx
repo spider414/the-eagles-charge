@@ -20,6 +20,8 @@ import {
   Phone,
   Wifi,
   Receipt,
+  Trash2,
+  UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
+import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -50,6 +53,7 @@ const Settings = () => {
   
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
 
   // Settings state (stored in localStorage for persistence)
   const [settings, setSettings] = useState(() => ({
@@ -458,6 +462,35 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Account Section */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <UserX className="h-5 w-5" />
+              Account
+            </CardTitle>
+            <CardDescription>Manage your account</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div
+              className="flex items-center justify-between py-4 cursor-pointer hover:bg-muted/50 -mx-4 px-4 rounded-lg"
+              onClick={() => setDeleteAccountOpen(true)}
+              role="button"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-destructive/10">
+                  <Trash2 className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="font-medium text-destructive">Delete Account</p>
+                  <p className="text-sm text-muted-foreground">Permanently delete your account</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Logout Button */}
         <Button
           variant="destructive"
@@ -476,6 +509,9 @@ const Settings = () => {
 
       {/* Change Password Dialog */}
       <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
+
+      {/* Delete Account Dialog */}
+      <DeleteAccountDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen} />
     </div>
   );
 };

@@ -74,6 +74,8 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          deletion_reason: string | null
+          deletion_scheduled_at: string | null
           dva_account_name: string | null
           dva_account_number: string | null
           dva_bank_name: string | null
@@ -94,6 +96,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deletion_reason?: string | null
+          deletion_scheduled_at?: string | null
           dva_account_name?: string | null
           dva_account_number?: string | null
           dva_bank_name?: string | null
@@ -114,6 +118,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deletion_reason?: string | null
+          deletion_scheduled_at?: string | null
           dva_account_name?: string | null
           dva_account_number?: string | null
           dva_bank_name?: string | null
