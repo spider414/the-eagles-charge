@@ -1,4 +1,5 @@
 import { Bird } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   return (
@@ -15,16 +16,16 @@ const Footer = () => {
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm text-primary-foreground/70">
-            <a href="#" className="hover:text-primary-foreground transition-colors">
+            <Link to="/terms" className="hover:text-primary-foreground transition-colors">
               Terms of Service
-            </a>
-            <a href="#" className="hover:text-primary-foreground transition-colors">
+            </Link>
+            <Link to="/privacy" className="hover:text-primary-foreground transition-colors">
               Privacy Policy
-            </a>
-            <a href="#" className="hover:text-primary-foreground transition-colors">
+            </Link>
+            <Link to="/support" className="hover:text-primary-foreground transition-colors">
               Contact Us
-            </a>
-            <a href="#" className="hover:text-primary-foreground transition-colors">
+            </Link>
+            <a href="#faq" className="hover:text-primary-foreground transition-colors">
               FAQ
             </a>
           </div>
