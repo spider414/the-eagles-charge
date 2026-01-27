@@ -108,10 +108,10 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         api_key: termiiApiKey,
         to: formattedPhone,
-        from: "THE EAGLES",
-        sms: `Your THE EAGLES verification code is: ${otpCode}. Valid for 10 minutes.`,
+        from: "N-Alert",
+        sms: `Your verification code is: ${otpCode}. Valid for 10 minutes. Do not share this code.`,
         type: "plain",
-        channel: "generic",
+        channel: "dnd",
       }),
     });
 
