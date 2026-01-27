@@ -54,6 +54,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .maybeSingle();
 
     if (!error && data) {
+      // Check if account was scheduled for deletion and cancel it
+      if (data.deletion_scheduled_at) {
+        console.log("Cancelling scheduled account deletion for user:", userId);
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({
+            deletion_scheduled_at: null,
+            deletion_reason: null,
+          })
+          .eq("user_id", userId);
+
+        if (updateError) {
+          console.error("Failed to cancel deletion:", updateError);
+        } else {
+          // Update local data to reflect cancellation
+          data.deletion_scheduled_at = null;
+          data.deletion_reason = null;
+        }
+      }
       setProfile(data as Profile);
     }
   };
