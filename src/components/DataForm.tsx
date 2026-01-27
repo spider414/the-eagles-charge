@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Wifi, Check, Loader2, Mail } from "lucide-react";
+import { Wifi, Check, Loader2, Mail, AlertCircle } from "lucide-react";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import FavoriteNumbersSelector from "./FavoriteNumbersSelector";
@@ -15,6 +15,7 @@ import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
 import { detectNetwork } from "@/utils/phoneUtils";
 import { useDataPlans, DataPlan } from "@/hooks/useDataPlans";
+import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 
 const DataForm = () => {
@@ -33,11 +34,8 @@ const DataForm = () => {
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
 
-  // Check if email is valid for Paystack
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) && !email.endsWith("@eagles.local");
-  };
+  // Get email suggestion for typos
+  const emailSuggestion = getEmailSuggestion(paymentEmail);
 
   // Pre-fill payment email from profile if valid
   useEffect(() => {
@@ -274,8 +272,24 @@ const DataForm = () => {
                 placeholder="Enter your email address"
                 value={paymentEmail}
                 onChange={(e) => setPaymentEmail(e.target.value)}
-                className="h-12"
+                className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
               />
+              {emailSuggestion && (
+                <button
+                  type="button"
+                  onClick={() => setPaymentEmail(emailSuggestion)}
+                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                >
+                  <AlertCircle className="h-3 w-3" />
+                  Did you mean {emailSuggestion}?
+                </button>
+              )}
+              {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  Please enter a valid email address
+                </p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Required for card payments. Will be saved to your profile.
               </p>
