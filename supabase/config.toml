@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.reset-password]
 verify_jwt = false
+
+[functions.support-chat]
+verify_jwt = false
