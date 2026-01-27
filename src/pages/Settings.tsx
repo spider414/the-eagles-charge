@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bird,
@@ -14,14 +14,14 @@ import {
   Smartphone,
   Fingerprint,
   Vibrate,
-  Settings2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-
+import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -31,22 +31,52 @@ interface SettingItem {
   value?: boolean;
   onClick?: () => void;
   onChange?: (value: boolean) => void;
+  disabled?: boolean;
 }
 
 const Settings = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { toast } = useToast();
+  const { checkBiometricSupport, registerBiometric, disableBiometric, isBiometricEnabled } = useBiometricAuth();
+  
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
 
   // Settings state (stored in localStorage for persistence)
   const [settings, setSettings] = useState(() => ({
     darkMode: localStorage.getItem("theme") === "dark",
     notifications: localStorage.getItem("notifications") !== "false",
-    biometric: localStorage.getItem("biometric") === "true",
+    biometric: isBiometricEnabled(),
     hapticFeedback: localStorage.getItem("hapticFeedback") !== "false",
   }));
 
-  const updateSetting = (key: keyof typeof settings, value: boolean) => {
+  useEffect(() => {
+    // Check biometric support on mount
+    checkBiometricSupport().then(setBiometricSupported);
+  }, [checkBiometricSupport]);
+
+  const updateSetting = async (key: keyof typeof settings, value: boolean) => {
+    // Special handling for biometric
+    if (key === "biometric") {
+      if (value) {
+        if (!biometricSupported) {
+          toast({
+            title: "Not Supported",
+            description: "Biometric authentication is not available on this device.",
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        // Register biometric
+        const success = await registerBiometric(user?.id || "user");
+        if (!success) return;
+      } else {
+        disableBiometric();
+      }
+    }
+
     setSettings((prev) => ({ ...prev, [key]: value }));
     localStorage.setItem(key, value.toString());
 
@@ -55,10 +85,12 @@ const Settings = () => {
       localStorage.setItem("theme", value ? "dark" : "light");
     }
 
-    toast({
-      title: "Setting Updated",
-      description: `${key.replace(/([A-Z])/g, " $1").trim()} has been ${value ? "enabled" : "disabled"}.`,
-    });
+    if (key !== "biometric") {
+      toast({
+        title: "Setting Updated",
+        description: `${key.replace(/([A-Z])/g, " $1").trim()} has been ${value ? "enabled" : "disabled"}.`,
+      });
+    }
   };
 
   const handleSignOut = async () => {
@@ -97,22 +129,20 @@ const Settings = () => {
     {
       icon: Fingerprint,
       label: "Biometric Login",
-      description: "Use fingerprint or face ID",
+      description: biometricSupported 
+        ? "Use fingerprint or face ID" 
+        : "Not available on this device",
       type: "toggle",
       value: settings.biometric,
       onChange: (value) => updateSetting("biometric", value),
+      disabled: !biometricSupported,
     },
     {
       icon: Shield,
       label: "Change Password",
       description: "Update your account password",
       type: "link",
-      onClick: () => {
-        toast({
-          title: "Password Reset",
-          description: "A password reset link will be sent to your email.",
-        });
-      },
+      onClick: () => setChangePasswordOpen(true),
     },
   ];
 
@@ -143,7 +173,9 @@ const Settings = () => {
   const renderSettingItem = (item: SettingItem, index: number) => (
     <div
       key={index}
-      className="flex items-center justify-between py-4 border-b border-border last:border-0"
+      className={`flex items-center justify-between py-4 border-b border-border last:border-0 ${
+        item.type === "link" || item.type === "action" ? "cursor-pointer hover:bg-muted/50 -mx-4 px-4 rounded-lg" : ""
+      } ${item.disabled ? "opacity-50" : ""}`}
       onClick={item.type === "link" || item.type === "action" ? item.onClick : undefined}
       role={item.type === "link" || item.type === "action" ? "button" : undefined}
     >
@@ -159,7 +191,11 @@ const Settings = () => {
         </div>
       </div>
       {item.type === "toggle" ? (
-        <Switch checked={item.value} onCheckedChange={item.onChange} />
+        <Switch 
+          checked={item.value} 
+          onCheckedChange={item.onChange} 
+          disabled={item.disabled}
+        />
       ) : (
         <ChevronRight className="h-5 w-5 text-muted-foreground" />
       )}
@@ -241,6 +277,9 @@ const Settings = () => {
           THE EAGLES VTU v1.0.0
         </p>
       </main>
+
+      {/* Change Password Dialog */}
+      <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
     </div>
   );
 };
