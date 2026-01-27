@@ -18,13 +18,28 @@ const Profile = () => {
   const [formData, setFormData] = useState({
     full_name: "",
     phone_number: "",
+    payment_email: "",
   });
+
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+
+  // Check if email is valid
+  const isValidEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email) && !email.endsWith("@eagles.local");
+  };
 
   useEffect(() => {
     if (profile) {
+      // Get the payment email (non-synthetic email from profile)
+      const profileEmail = profile.email || "";
+      const paymentEmail = isValidEmail(profileEmail) ? profileEmail : "";
+      
       setFormData({
         full_name: profile.full_name || "",
         phone_number: profile.phone_number || "",
+        payment_email: paymentEmail,
       });
     }
   }, [profile]);
@@ -43,14 +58,31 @@ const Profile = () => {
   }
 
   const handleSave = async () => {
+    // Validate payment email if provided
+    if (formData.payment_email && !isValidEmail(formData.payment_email)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address for payments.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
+      const updateData: Record<string, string> = {
+        full_name: formData.full_name,
+        phone_number: formData.phone_number,
+      };
+
+      // Only update email if user has synthetic email and provided a valid payment email
+      if (hasSyntheticEmail() && formData.payment_email) {
+        updateData.email = formData.payment_email;
+      }
+
       const { error } = await supabase
         .from("profiles")
-        .update({
-          full_name: formData.full_name,
-          phone_number: formData.phone_number,
-        })
+        .update(updateData)
         .eq("user_id", user.id);
 
       if (error) throw error;
@@ -130,19 +162,38 @@ const Profile = () => {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-muted-foreground" />
-                Email Address
-              </Label>
-              <Input
-                id="email"
-                value={user.email || ""}
-                disabled
-                className="bg-muted"
-              />
-              <p className="text-xs text-muted-foreground">Email cannot be changed</p>
-            </div>
+            {hasSyntheticEmail() ? (
+              <div className="space-y-2">
+                <Label htmlFor="payment_email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Payment Email
+                </Label>
+                <Input
+                  id="payment_email"
+                  type="email"
+                  value={formData.payment_email}
+                  onChange={(e) => setFormData({ ...formData, payment_email: e.target.value })}
+                  placeholder="Enter email for payment receipts"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used for card payment receipts and notifications
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  Email Address
+                </Label>
+                <Input
+                  id="email"
+                  value={user.email || ""}
+                  disabled
+                  className="bg-muted"
+                />
+                <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="phone" className="flex items-center gap-2">
