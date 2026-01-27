@@ -492,12 +492,12 @@ Deno.serve(async (req) => {
           console.log("CheapDataHub Airtime Response:", JSON.stringify(vtuResult));
           
         } else if (metadata.transaction_type === "data" && metadata.phone_number && metadata.network && metadata.data_plan) {
-          console.log(`Processing data via CheapDataHub: ${metadata.network} ${metadata.data_plan} for ${metadata.phone_number}`);
+          console.log(`Processing data via CheapDataHub: ${metadata.network} plan_id=${metadata.data_plan} for ${metadata.phone_number}`);
           
           vtuResult = await cheapDataHubPost("/data/purchase/", {
             mobile_number: metadata.phone_number,
             network: metadata.network.toUpperCase(),
-            plan: metadata.data_plan,
+            plan_id: metadata.data_plan, // Use plan_id which is the variation_id
             ported_number: "true",
           });
           console.log("CheapDataHub Data Response:", JSON.stringify(vtuResult));
