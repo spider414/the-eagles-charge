@@ -143,12 +143,11 @@ Deno.serve(async (req) => {
           return new Response("OK", { status: 200 });
         }
 
-        // Credit wallet
-        const newBalance = (profile.wallet_balance || 0) + amount;
-        const { error: walletError } = await supabase
-          .from("profiles")
-          .update({ wallet_balance: newBalance })
-          .eq("id", profile.id);
+        // Credit wallet using atomic function to prevent race conditions
+        const { data: newBalance, error: walletError } = await supabase.rpc('credit_wallet', {
+          p_profile_id: profile.id,
+          p_amount: amount
+        });
 
         if (walletError) {
           console.error("Failed to credit wallet:", walletError);
@@ -158,7 +157,7 @@ Deno.serve(async (req) => {
             .update({ status: "failed", api_response: { ...data, error: "Wallet credit failed" } })
             .eq("id", transaction.id);
         } else {
-          console.log(`Wallet credited: ₦${amount} for user ${profile.user_id}. New balance: ₦${newBalance}`);
+          console.log(`Wallet atomically credited: ₦${amount} for user ${profile.user_id}. New balance: ₦${newBalance}`);
         }
       }
 
@@ -177,22 +176,23 @@ Deno.serve(async (req) => {
             .update({ status: "completed", api_response: data })
             .eq("id", existingTx.id);
 
-          // If wallet topup, credit the wallet
+          // If wallet topup, credit the wallet using atomic function
           if (existingTx.transaction_type === "wallet_topup") {
             const { data: profile } = await supabase
               .from("profiles")
-              .select("id, wallet_balance")
+              .select("id")
               .eq("user_id", existingTx.user_id)
               .single();
 
             if (profile) {
-              const newBalance = (profile.wallet_balance || 0) + amount;
-              await supabase
-                .from("profiles")
-                .update({ wallet_balance: newBalance })
-                .eq("id", profile.id);
+              const { data: newBalance, error: creditError } = await supabase.rpc('credit_wallet', {
+                p_profile_id: profile.id,
+                p_amount: amount
+              });
 
-              console.log(`Card payment credited: ₦${amount} for user ${existingTx.user_id}`);
+              if (!creditError) {
+                console.log(`Card payment atomically credited: ₦${amount} for user ${existingTx.user_id}. New balance: ₦${newBalance}`);
+              }
             }
           }
         }

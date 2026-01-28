@@ -250,29 +250,33 @@ Deno.serve(async (req) => {
         console.error("Transaction update error:", updateError);
       }
 
-      // Handle wallet top-up - credit wallet after successful payment
+      // Handle wallet top-up - credit wallet after successful payment using atomic function
       if (transactionStatus === "completed" && existingTx?.transaction_type === "wallet_topup") {
         const amountToCredit = paystackData.data.amount / 100; // Convert from kobo to naira
         
-        // Get current profile to update wallet
+        // Get current profile to get ID for credit function
         const { data: userProfile } = await supabase
           .from("profiles")
-          .select("id, wallet_balance")
+          .select("id")
           .eq("user_id", userId)
           .single();
 
         if (userProfile) {
-          const newBalance = (userProfile.wallet_balance || 0) + amountToCredit;
-          
-          const { error: walletError } = await supabase
-            .from("profiles")
-            .update({ wallet_balance: newBalance })
-            .eq("id", userProfile.id);
+          // Use atomic credit function to prevent race conditions
+          const supabaseAdmin = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+          );
 
-          if (walletError) {
-            console.error("Wallet update error:", walletError);
+          const { data: newBalance, error: creditError } = await supabaseAdmin.rpc('credit_wallet', {
+            p_profile_id: userProfile.id,
+            p_amount: amountToCredit
+          });
+
+          if (creditError) {
+            console.error("Wallet credit error:", creditError);
           } else {
-            console.log(`Wallet credited with ₦${amountToCredit}. New balance: ₦${newBalance}`);
+            console.log(`Wallet atomically credited with ₦${amountToCredit}. New balance: ₦${newBalance}`);
           }
         }
       }
@@ -299,22 +303,34 @@ Deno.serve(async (req) => {
             // Award ₦100 to both referrer and referee
             const bonusAmount = 100;
 
-            // Get referrer profile to update wallet
-            const { data: referrerProfile } = await supabase
-              .from("profiles")
-              .select("id, wallet_balance, total_referral_earnings")
-              .eq("id", profile.referred_by)
-              .single();
+            // Use atomic credit function for referrer bonus to prevent race conditions
+            const supabaseAdminRef = createClient(
+              Deno.env.get("SUPABASE_URL")!,
+              Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+            );
 
-            if (referrerProfile) {
-              // Update referrer's wallet and earnings
-              await supabase
+            // Atomically credit referrer wallet
+            const { error: refCreditError } = await supabaseAdminRef.rpc('credit_wallet', {
+              p_profile_id: profile.referred_by,
+              p_amount: bonusAmount
+            });
+
+            if (!refCreditError) {
+              // Update total referral earnings - fetch current and update
+              const { data: referrerData } = await supabaseAdminRef
                 .from("profiles")
-                .update({
-                  wallet_balance: (referrerProfile.wallet_balance || 0) + bonusAmount,
-                  total_referral_earnings: (referrerProfile.total_referral_earnings || 0) + bonusAmount,
-                })
-                .eq("id", referrerProfile.id);
+                .select("total_referral_earnings")
+                .eq("id", profile.referred_by)
+                .single();
+
+              if (referrerData) {
+                await supabaseAdminRef
+                  .from("profiles")
+                  .update({
+                    total_referral_earnings: (referrerData.total_referral_earnings || 0) + bonusAmount
+                  })
+                  .eq("id", profile.referred_by);
+              }
             }
 
             // Record the referral reward
@@ -349,7 +365,7 @@ Deno.serve(async (req) => {
     if (body.action === "wallet_payment") {
       const { amount, metadata } = body;
 
-      // Get user's profile and check wallet balance
+      // Get user's profile ID first
       const { data: userProfile, error: profileError } = await supabase
         .from("profiles")
         .select("id, wallet_balance")
@@ -361,10 +377,6 @@ Deno.serve(async (req) => {
       }
 
       const walletBalance = userProfile.wallet_balance || 0;
-
-      if (walletBalance < amount) {
-        throw new Error(`Insufficient wallet balance. Available: ₦${walletBalance.toLocaleString()}`);
-      }
 
       // Generate unique reference for wallet payment
       const reference = `WALLET-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -397,18 +409,30 @@ Deno.serve(async (req) => {
       }
 
       try {
-        // Deduct from wallet immediately
-        const newBalance = walletBalance - amount;
-        const { error: walletError } = await supabase
-          .from("profiles")
-          .update({ wallet_balance: newBalance })
-          .eq("id", userProfile.id);
+        // Use atomic debit function to prevent race conditions
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
 
-        if (walletError) {
+        const { data: debitResult, error: debitError } = await supabaseAdmin.rpc('debit_wallet', {
+          p_profile_id: userProfile.id,
+          p_amount: amount
+        });
+
+        if (debitError) {
+          console.error("Wallet debit error:", debitError);
           throw new Error("Failed to deduct from wallet");
         }
 
-        console.log(`Wallet payment: Deducted ₦${amount} from wallet. New balance: ₦${newBalance}`);
+        // Check if debit was successful (returns array with {success, new_balance})
+        const debitRow = Array.isArray(debitResult) ? debitResult[0] : debitResult;
+        if (!debitRow || !debitRow.success) {
+          throw new Error(`Insufficient wallet balance. Available: ₦${walletBalance.toLocaleString()}`);
+        }
+
+        const newBalance = debitRow.new_balance;
+        console.log(`Wallet payment: Atomically deducted ₦${amount} from wallet. New balance: ₦${newBalance}`);
 
         // Call VTU service for real transaction processing
         let vtuResult: any = null;
@@ -613,13 +637,25 @@ Deno.serve(async (req) => {
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       } catch (processingError) {
-        // If processing fails, refund the wallet and mark transaction as refunded
+        // If processing fails, refund the wallet using atomic credit and mark transaction as refunded
         console.error("Processing error, refunding wallet:", processingError);
         
-        await supabase
-          .from("profiles")
-          .update({ wallet_balance: walletBalance }) // Restore original balance
-          .eq("id", userProfile.id);
+        // Refund atomically using credit function
+        const supabaseAdminRefund = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+        
+        const { data: refundedBalance, error: refundError } = await supabaseAdminRefund.rpc('credit_wallet', {
+          p_profile_id: userProfile.id,
+          p_amount: amount
+        });
+
+        if (refundError) {
+          console.error("Failed to refund wallet:", refundError);
+        } else {
+          console.log(`Wallet atomically refunded: ₦${amount}. Balance restored to: ₦${refundedBalance}`);
+        }
 
         await supabase
           .from("transactions")
