@@ -308,6 +308,17 @@ export type Database = {
     }
     Functions: {
       cleanup_expired_otps: { Args: never; Returns: undefined }
+      credit_wallet: {
+        Args: { p_amount: number; p_profile_id: string }
+        Returns: number
+      }
+      debit_wallet: {
+        Args: { p_amount: number; p_profile_id: string }
+        Returns: {
+          new_balance: number
+          success: boolean
+        }[]
+      }
       generate_referral_code: { Args: never; Returns: string }
     }
     Enums: {
