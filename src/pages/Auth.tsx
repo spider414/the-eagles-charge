@@ -293,35 +293,35 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    // Check if phone exists and get security question
-    const fakeEmail = `${forgotPhone.replace(/\D/g, '')}@eagles.local`;
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("security_question")
-      .eq("email", fakeEmail)
-      .maybeSingle();
+    
+    // Use server-side endpoint to prevent account enumeration
+    // This endpoint returns generic responses to prevent revealing account existence
+    const { data, error } = await supabase.functions.invoke("get-security-question", {
+      body: { phone_number: forgotPhone },
+    });
+    
     setIsLoading(false);
 
-    if (!profile) {
+    if (error) {
       toast({
-        title: "Not Found",
-        description: "No account found with this phone number.",
+        title: "Error",
+        description: "Unable to check account. Please try again.",
         variant: "destructive",
       });
       return;
     }
 
-    if (!profile.security_question) {
+    if (data?.has_security_question && data?.security_question) {
+      setForgotSecurityQuestion(data.security_question);
+      setStep("forgot-security");
+    } else {
+      // Generic message that doesn't reveal if account exists
       toast({
-        title: "No Security Question",
-        description: "This account doesn't have a security question set. Please use OTP verification.",
+        title: "Use OTP Verification",
+        description: "Please use OTP verification to reset your password.",
         variant: "destructive",
       });
-      return;
     }
-
-    setForgotSecurityQuestion(profile.security_question);
-    setStep("forgot-security");
   };
 
   const handleVerifyForgotOtp = async () => {
