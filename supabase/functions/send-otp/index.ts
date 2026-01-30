@@ -1,9 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
+import { encodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Hash OTP code using SHA-256 for secure storage
+async function hashOTP(otp: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(otp);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return encodeHex(new Uint8Array(hashBuffer));
+}
 
 interface OtpRequest {
   phone_number: string;
@@ -288,6 +298,9 @@ Deno.serve(async (req) => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
+    // Hash OTP before storing for security
+    const hashedOTP = await hashOTP(otpCode);
+
     // Clean up old OTPs for this phone number (keeping recent ones for rate limiting)
     const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     await supabase
@@ -297,12 +310,12 @@ Deno.serve(async (req) => {
       .eq("purpose", purpose)
       .lt("created_at", tenMinutesAgo);
 
-    // Store OTP in database
+    // Store hashed OTP in database (plaintext OTP is only sent via SMS)
     const { error: insertError } = await supabase
       .from("otp_verifications")
       .insert({
         phone_number: normalizedPhone,
-        otp_code: otpCode,
+        otp_code: hashedOTP,
         purpose,
         expires_at: expiresAt.toISOString(),
       });

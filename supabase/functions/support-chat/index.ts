@@ -5,6 +5,55 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Validation constants
+const MAX_MESSAGES = 50;
+const MAX_MESSAGE_LENGTH = 10000;
+const VALID_ROLES = ["user", "assistant", "system"];
+
+interface ChatMessage {
+  role: string;
+  content: string;
+}
+
+// Validate message structure and content
+function validateMessages(messages: unknown): { valid: boolean; error?: string } {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return { valid: false, error: "Invalid messages format - must be a non-empty array" };
+  }
+
+  if (messages.length > MAX_MESSAGES) {
+    return { valid: false, error: `Message history too long (max ${MAX_MESSAGES} messages)` };
+  }
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    
+    if (!msg || typeof msg !== "object") {
+      return { valid: false, error: `Invalid message structure at index ${i}` };
+    }
+
+    const message = msg as ChatMessage;
+
+    if (!message.role || typeof message.role !== "string") {
+      return { valid: false, error: `Missing or invalid role at index ${i}` };
+    }
+
+    if (!VALID_ROLES.includes(message.role)) {
+      return { valid: false, error: `Invalid message role "${message.role}" at index ${i}` };
+    }
+
+    if (!message.content || typeof message.content !== "string") {
+      return { valid: false, error: `Missing or invalid content at index ${i}` };
+    }
+
+    if (message.content.length > MAX_MESSAGE_LENGTH) {
+      return { valid: false, error: `Message too long at index ${i} (max ${MAX_MESSAGE_LENGTH} chars)` };
+    }
+  }
+
+  return { valid: true };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -36,7 +85,30 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { messages } = await req.json();
+    // Parse and validate request body
+    let body: { messages: unknown };
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { messages } = body;
+
+    // Validate messages array
+    const validation = validateMessages(messages);
+    if (!validation.valid) {
+      return new Response(
+        JSON.stringify({ error: validation.error }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const validatedMessages = messages as ChatMessage[];
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     
     if (!LOVABLE_API_KEY) {
@@ -77,7 +149,7 @@ Always be helpful, friendly, and professional. If you don't know something speci
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages,
+          ...validatedMessages,
         ],
         stream: true,
       }),
@@ -109,7 +181,7 @@ Always be helpful, friendly, and professional. If you don't know something speci
     });
   } catch (error) {
     console.error("Support chat error:", error);
-    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: "An error occurred. Please try again." }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
