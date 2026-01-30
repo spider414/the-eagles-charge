@@ -1,9 +1,19 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
+import { encodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Hash OTP code using SHA-256 for secure comparison
+async function hashOTP(otp: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(otp);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return encodeHex(new Uint8Array(hashBuffer));
+}
 
 interface VerifyRequest {
   phone_number: string;
@@ -206,8 +216,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify OTP code
-    if (otpRecord.otp_code !== otp_code) {
+    // Hash the input OTP and compare with stored hash
+    const hashedInputOTP = await hashOTP(otp_code);
+    
+    // Verify OTP code (comparing hashes)
+    if (otpRecord.otp_code !== hashedInputOTP) {
       const failResult = await recordFailedAttempt(supabase, phone_number, "verify-otp");
       const errorMessage = failResult.locked
         ? "Too many failed attempts. Please contact customer support for assistance."
