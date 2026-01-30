@@ -5,6 +5,13 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * Cleanup edge function for deleting scheduled accounts.
+ * 
+ * SECURITY: This function requires service-role authentication.
+ * It should only be called by cron jobs or admin processes with the service role key.
+ * Regular user requests will be rejected with 403 Forbidden.
+ */
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
@@ -12,10 +19,34 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // This function should only be called by a cron job or admin
-    // Using service role key to bypass RLS
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    // SECURITY: Verify service-role authentication
+    // This function should only be called by cron jobs or admin processes
+    const authHeader = req.headers.get("Authorization");
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
+    
+    // Extract token from Authorization header
+    const token = authHeader?.replace("Bearer ", "") || "";
+    
+    // Reject if using anon key or no auth
+    if (!authHeader || token === supabaseAnonKey) {
+      console.warn("Unauthorized cleanup attempt - missing or anon key used");
+      return new Response(
+        JSON.stringify({ error: "Forbidden - service role required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Only allow service role key
+    if (token !== supabaseServiceRoleKey) {
+      console.warn("Unauthorized cleanup attempt - invalid service role key");
+      return new Response(
+        JSON.stringify({ error: "Forbidden - service role required" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: {
