@@ -6,6 +6,7 @@ import DataForm from "@/components/DataForm";
 import Features from "@/components/Features";
 import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import {
   Select,
   SelectContent,
@@ -72,6 +73,7 @@ const Index = () => {
       </main>
 
       <Footer />
+      <PWAInstallPrompt />
     </div>
   );
 };
