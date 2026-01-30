@@ -47,9 +47,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchProfile = async (userId: string) => {
+    // SECURITY: Only select fields needed for client-side display
+    // Excludes sensitive fields: security_question, security_answer, paystack_customer_code
+    // DVA details are served through the secure paystack-payment edge function
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
+      .select(`
+        id,
+        user_id,
+        email,
+        full_name,
+        phone_number,
+        wallet_balance,
+        referral_code,
+        total_referral_earnings,
+        dva_account_number,
+        dva_account_name,
+        dva_bank_name,
+        created_at,
+        updated_at,
+        deletion_scheduled_at,
+        deletion_reason
+      `)
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -73,7 +92,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           data.deletion_reason = null;
         }
       }
-      setProfile(data as Profile);
+      // Cast to Profile type - paystack_customer_code is null as it's not fetched
+      setProfile({
+        ...data,
+        paystack_customer_code: null,
+        wallet_balance: data.wallet_balance ?? 0,
+        total_referral_earnings: data.total_referral_earnings ?? 0,
+      } as Profile);
     }
   };
 
