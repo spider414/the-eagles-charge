@@ -810,6 +810,8 @@ Deno.serve(async (req) => {
         // Check if validation failed
         if (!validateData.status) {
           const errorMsg = validateData.message?.toLowerCase() || "";
+          const originalMsg = validateData.message || "";
+          
           // "Customer already identified" is okay - proceed to DVA
           if (errorMsg.includes("already identified")) {
             console.log("Customer already identified, proceeding to DVA creation");
@@ -829,8 +831,12 @@ Deno.serve(async (req) => {
               }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
+          } else if (errorMsg.includes("not available on this integration") || errorMsg.includes("bvn") && errorMsg.includes("not")) {
+            // BVN validation not enabled on Paystack account - try to create DVA anyway
+            console.log("BVN validation not available, attempting DVA creation without validation");
+            // Continue to DVA creation step - some accounts allow this
           } else {
-            throw new Error(validateData.message || "BVN validation failed. Please check your details.");
+            throw new Error(originalMsg || "BVN validation failed. Please check your details.");
           }
         }
       } else {
