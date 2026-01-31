@@ -64,6 +64,7 @@ const loadPaystackScript = (): Promise<void> => {
 
 export const usePaystackPopup = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   const { session, refreshProfile } = useAuth();
 
@@ -118,6 +119,11 @@ export const usePaystackPopup = () => {
           throw new Error("Payment configuration missing (public key)");
         }
 
+        // Set processing state - this is for when the popup is open
+        setIsProcessing(true);
+        // Release the initial loading state once popup is ready
+        setIsLoading(false);
+
         const handler = window.PaystackPop.setup({
           key: data.public_key,
           email,
@@ -131,8 +137,10 @@ export const usePaystackPopup = () => {
               value: String(value ?? ""),
             })),
           },
-          // Paystack's validator doesn't accept async functions here.
           callback: (response) => {
+            // Set loading again during verification
+            setIsLoading(true);
+            
             void (async () => {
               console.log("Payment successful:", response.reference);
 
@@ -167,12 +175,14 @@ export const usePaystackPopup = () => {
                 });
               } finally {
                 setIsLoading(false);
+                setIsProcessing(false);
               }
             })();
           },
           onClose: () => {
             console.log("Payment popup closed");
             setIsLoading(false);
+            setIsProcessing(false);
             onClose?.();
           },
         });
@@ -186,6 +196,7 @@ export const usePaystackPopup = () => {
           variant: "destructive",
         });
         setIsLoading(false);
+        setIsProcessing(false);
       }
     },
     [session, toast, refreshProfile]
@@ -193,6 +204,6 @@ export const usePaystackPopup = () => {
 
   return {
     initializePayment,
-    isLoading,
+    isLoading: isLoading || isProcessing,
   };
 };
