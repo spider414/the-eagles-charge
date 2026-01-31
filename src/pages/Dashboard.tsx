@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import AdvertBanner from "@/components/AdvertBanner";
+import RecentTransactions from "@/components/RecentTransactions";
+import PageTransition from "@/components/PageTransition";
 
 interface DVADetails {
   account_number: string;
@@ -63,7 +66,7 @@ const Dashboard = () => {
   if (!user) {
     return null;
   }
-  return <div className="min-h-screen bg-background">
+  return <PageTransition><div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
@@ -175,6 +178,9 @@ const Dashboard = () => {
           </Link>
         </div>
 
+        {/* Advert Banner */}
+        <AdvertBanner />
+
         {/* Quick Services Grid */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Services</h2>
@@ -252,6 +258,8 @@ const Dashboard = () => {
             </Link>
           </div>
         </div>
+        {/* Recent Transactions */}
+        <RecentTransactions />
 
       </main>
 
@@ -280,6 +288,6 @@ const Dashboard = () => {
           </Link>
         </div>
       </nav>
-    </div>;
+    </div></PageTransition>;
 };
 export default Dashboard;

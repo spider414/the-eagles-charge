@@ -4,6 +4,7 @@ import { Bird, ArrowLeft, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import AirtimeForm from "@/components/AirtimeForm";
+import PageTransition from "@/components/PageTransition";
 
 // Import network logos
 import mtnLogo from "@/assets/networks/mtn-logo.png";
@@ -34,7 +35,8 @@ const Airtime = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <PageTransition>
+      <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
@@ -87,6 +89,7 @@ const Airtime = () => {
         <AirtimeForm />
       </main>
     </div>
+    </PageTransition>
   );
 };
 
