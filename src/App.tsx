@@ -10,6 +10,8 @@ import { SessionLockProvider } from "@/components/SessionLockProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Airtime from "./pages/Airtime";
+import Data from "./pages/Data";
 import History from "./pages/History";
 import Referrals from "./pages/Referrals";
 import Electricity from "./pages/bills/Electricity";
@@ -41,6 +43,8 @@ const App = () => {
                   <Route path="/" element={<Index />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/airtime" element={<Airtime />} />
+                  <Route path="/data" element={<Data />} />
                   <Route path="/history" element={<History />} />
                   <Route path="/referrals" element={<Referrals />} />
                   <Route path="/bills/electricity" element={<Electricity />} />
