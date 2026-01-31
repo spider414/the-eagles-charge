@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,25 +8,29 @@ import { useToast } from "@/hooks/use-toast";
 import AdvertBanner from "@/components/AdvertBanner";
 import RecentTransactions from "@/components/RecentTransactions";
 import PageTransition from "@/components/PageTransition";
+import PullToRefresh from "@/components/PullToRefresh";
 
 interface DVADetails {
   account_number: string;
   account_name: string;
   bank_name: string;
 }
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
     user,
     profile,
     isLoading,
-    signOut
+    signOut,
+    refreshProfile
   } = useAuth();
   const {
     toast
   } = useToast();
   const [dvaDetails, setDvaDetails] = useState<DVADetails | null>(null);
   const [copied, setCopied] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   useEffect(() => {
     if (!isLoading && !user) {
       navigate("/auth");
@@ -58,6 +62,22 @@ const Dashboard = () => {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const handleRefresh = useCallback(async () => {
+    try {
+      if (refreshProfile) {
+        await refreshProfile();
+      }
+      // Trigger re-fetch of transactions by updating the key
+      setRefreshKey(prev => prev + 1);
+      toast({
+        title: "Refreshed!",
+        description: "Dashboard updated successfully",
+      });
+    } catch (error) {
+      console.error("Refresh error:", error);
+    }
+  }, [refreshProfile, toast]);
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse-soft text-primary">Loading...</div>
@@ -66,7 +86,7 @@ const Dashboard = () => {
   if (!user) {
     return null;
   }
-  return <PageTransition><div className="min-h-screen bg-background">
+  return <PageTransition><PullToRefresh onRefresh={handleRefresh} className="min-h-screen"><div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
@@ -259,7 +279,7 @@ const Dashboard = () => {
           </div>
         </div>
         {/* Recent Transactions */}
-        <RecentTransactions />
+        <RecentTransactions key={refreshKey} />
 
       </main>
 
@@ -288,6 +308,6 @@ const Dashboard = () => {
           </Link>
         </div>
       </nav>
-    </div></PageTransition>;
+    </div></PullToRefresh></PageTransition>;
 };
 export default Dashboard;

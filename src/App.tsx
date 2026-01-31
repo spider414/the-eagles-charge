@@ -14,6 +14,7 @@ import Airtime from "./pages/Airtime";
 import Data from "./pages/Data";
 import History from "./pages/History";
 import Referrals from "./pages/Referrals";
+import ComingSoon from "./pages/ComingSoon";
 import Electricity from "./pages/bills/Electricity";
 import CableTV from "./pages/bills/CableTV";
 import Internet from "./pages/bills/Internet";
@@ -47,6 +48,7 @@ const App = () => {
                   <Route path="/data" element={<Data />} />
                   <Route path="/history" element={<History />} />
                   <Route path="/referrals" element={<Referrals />} />
+                  <Route path="/coming-soon" element={<ComingSoon />} />
                   <Route path="/bills/electricity" element={<Electricity />} />
                   <Route path="/bills/cable" element={<CableTV />} />
                   <Route path="/bills/internet" element={<Internet />} />
