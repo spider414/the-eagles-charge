@@ -106,6 +106,27 @@ const WalletTopUp = () => {
     }
   };
 
+  // Generate a valid email for DVA creation (for phone-based users)
+  const getDVAEmail = (): string => {
+    // If user has a real email, use it
+    const userEmail = user?.email || "";
+    if (!userEmail.endsWith("@eagles.local") && isValidEmail(userEmail)) {
+      return userEmail;
+    }
+    // If profile has a valid payment email, use it
+    const profileEmail = profile?.email || "";
+    if (!profileEmail.endsWith("@eagles.local") && isValidEmail(profileEmail)) {
+      return profileEmail;
+    }
+    // Generate a unique email using the user's phone number or ID
+    const phone = profile?.phone_number?.replace(/\D/g, "") || "";
+    if (phone) {
+      return `user${phone}@eagles-vtu.com`;
+    }
+    // Fallback to user ID based email
+    return `user${user?.id?.substring(0, 8)}@eagles-vtu.com`;
+  };
+
   const createDVA = async () => {
     if (!user || !bvn || !firstName || !lastName) {
       toast({
@@ -128,10 +149,14 @@ const WalletTopUp = () => {
     setIsCreatingDVA(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
+      const dvaEmail = getDVAEmail();
+      
+      console.log("Creating DVA with email:", dvaEmail);
+      
       const response = await supabase.functions.invoke("paystack-payment", {
         body: {
           action: "create_dva",
-          email: user.email,
+          email: dvaEmail,
           first_name: firstName,
           last_name: lastName,
           phone: phone,
