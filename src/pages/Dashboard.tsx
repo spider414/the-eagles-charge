@@ -1,19 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, ChevronRight } from "lucide-react";
+import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import AirtimeForm from "@/components/AirtimeForm";
-import DataForm from "@/components/DataForm";
-
-// Import network logos
-import mtnLogo from "@/assets/networks/mtn-logo.png";
-import gloLogo from "@/assets/networks/glo-logo.png";
-import airtelLogo from "@/assets/networks/airtel-logo.png";
-import nineMobileLogo from "@/assets/networks/9mobile-logo.png";
 
 interface DVADetails {
   account_number: string;
@@ -72,22 +63,6 @@ const Dashboard = () => {
   if (!user) {
     return null;
   }
-  const services = [{
-    name: "Electricity",
-    icon: Zap,
-    href: "/bills/electricity",
-    color: "text-yellow-600"
-  }, {
-    name: "Cable TV",
-    icon: Tv,
-    href: "/bills/cable",
-    color: "text-blue-600"
-  }, {
-    name: "Internet",
-    icon: Globe,
-    href: "/bills/internet",
-    color: "text-purple-600"
-  }];
   return <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
@@ -200,63 +175,84 @@ const Dashboard = () => {
           </Link>
         </div>
 
-        {/* Mobile Services - Airtime & Data */}
+        {/* Quick Services Grid */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Mobile Services</h2>
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-xl bg-yellow-500/10 flex items-center justify-center mb-1">
-                <img src={mtnLogo} alt="MTN" className="w-8 h-8 object-contain" />
-              </div>
-              <span className="text-xs font-medium">MTN</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-xl bg-green-600/10 flex items-center justify-center mb-1">
-                <img src={gloLogo} alt="GLO" className="w-8 h-8 object-contain" />
-              </div>
-              <span className="text-xs font-medium">GLO</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-xl bg-red-600/10 flex items-center justify-center mb-1">
-                <img src={airtelLogo} alt="Airtel" className="w-8 h-8 object-contain" />
-              </div>
-              <span className="text-xs font-medium">Airtel</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center mb-1">
-                <img src={nineMobileLogo} alt="9mobile" className="w-8 h-8 object-contain" />
-              </div>
-              <span className="text-xs font-medium">9mobile</span>
-            </div>
-          </div>
-          
-          {/* Airtime & Data Forms */}
-          <div className="grid lg:grid-cols-2 gap-6">
-            <div className="animate-fade-in" style={{ animationDelay: "100ms" }}>
-              <AirtimeForm />
-            </div>
-            <div className="animate-fade-in" style={{ animationDelay: "200ms" }}>
-              <DataForm />
-            </div>
+          <h2 className="text-xl font-semibold mb-4">Services</h2>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Airtime */}
+            <Link to="/airtime">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-3">
+                    <Phone className="h-7 w-7 text-primary-foreground" />
+                  </div>
+                  <span className="text-sm font-semibold">Airtime</span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Data */}
+            <Link to="/data">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center mb-3">
+                    <Wifi className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Data</span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Refer & Earn */}
+            <Link to="/referrals">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-500 flex items-center justify-center mb-3">
+                    <Gift className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Refer & Earn</span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Electricity */}
+            <Link to="/bills/electricity">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-yellow-500 flex items-center justify-center mb-3">
+                    <Zap className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Electricity</span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Cable TV */}
+            <Link to="/bills/cable">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center mb-3">
+                    <Tv className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Cable TV</span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Internet */}
+            <Link to="/bills/internet">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-violet-500 flex items-center justify-center mb-3">
+                    <Globe className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Internet</span>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
 
-        {/* Bill Payment Services */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Bill Payments</h2>
-          <div className="grid grid-cols-3 gap-4">
-            {services.map(service => <Link key={service.name} to={service.href}>
-                <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                  <CardContent className="p-4 flex flex-col items-center text-center">
-                    <div className={`p-3 rounded-xl bg-muted mb-2 ${service.color}`}>
-                      <service.icon className="h-6 w-6" />
-                    </div>
-                    <span className="text-sm font-medium">{service.name}</span>
-                  </CardContent>
-                </Card>
-              </Link>)}
-          </div>
-        </div>
       </main>
 
       {/* Mobile Bottom Navigation */}

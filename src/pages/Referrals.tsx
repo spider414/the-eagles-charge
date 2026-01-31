@@ -113,7 +113,7 @@ const Referrals = () => {
             <div className="flex items-center gap-3 mb-4">
               <Gift className="h-8 w-8" />
               <div>
-                <h2 className="text-xl font-bold">Earn ₦100 Per Referral!</h2>
+              <h2 className="text-xl font-bold">Earn ₦1,000 Per Referral!</h2>
                 <p className="text-primary-foreground/80 text-sm">
                   Invite friends and earn bonus credits
                 </p>
@@ -121,7 +121,7 @@ const Referrals = () => {
             </div>
             <p className="text-sm text-primary-foreground/80 mb-4">
               Share your unique referral code with friends. When they sign up and make their first transaction, 
-              you both earn ₦100 bonus credits!
+              you both earn ₦1,000 bonus credits!
             </p>
           </CardContent>
         </Card>
@@ -206,7 +206,7 @@ const Referrals = () => {
               <div>
                 <h4 className="font-medium">Both Earn Rewards</h4>
                 <p className="text-sm text-muted-foreground">
-                  After their first transaction, you both get ₦100 bonus!
+                  After their first transaction, you both get ₦1,000 bonus!
                 </p>
               </div>
             </div>
