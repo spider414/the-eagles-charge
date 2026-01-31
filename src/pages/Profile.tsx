@@ -1,20 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, User, Mail, Phone, Save, Camera } from "lucide-react";
+import { Bird, ArrowLeft, User, Mail, Phone, Save, Camera, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 
 const Profile = () => {
   const navigate = useNavigate();
   const { user, profile, isLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [emailLocked, setEmailLocked] = useState(false);
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     full_name: "",
     phone_number: "",
@@ -23,12 +29,6 @@ const Profile = () => {
 
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
-
-  // Check if email is valid
-  const isValidEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email) && !email.endsWith("@eagles.local");
-  };
 
   useEffect(() => {
     if (profile) {
@@ -41,8 +41,128 @@ const Profile = () => {
         phone_number: profile.phone_number || "",
         payment_email: paymentEmail,
       });
+      
+      // Check if email is already locked
+      fetchEmailLockStatus();
+      
+      // Fetch avatar URL
+      fetchAvatarUrl();
     }
-  }, [profile]);
+  }, [profile, user]);
+
+  const fetchEmailLockStatus = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("payment_email_locked, email")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (data) {
+      // Email is locked if payment_email_locked is true AND email is valid
+      const hasValidPaymentEmail = isValidEmail(data.email || "");
+      setEmailLocked(data.payment_email_locked === true && hasValidPaymentEmail);
+    }
+  };
+
+  const fetchAvatarUrl = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("user_id", user.id)
+      .single();
+    
+    if (data?.avatar_url) {
+      setAvatarUrl(data.avatar_url);
+    }
+  };
+
+  const handlePaymentEmailChange = (email: string) => {
+    setFormData({ ...formData, payment_email: email });
+    
+    // Check for email suggestions
+    const suggestion = getEmailSuggestion(email);
+    setEmailSuggestion(suggestion);
+  };
+
+  const applySuggestion = () => {
+    if (emailSuggestion) {
+      setFormData({ ...formData, payment_email: emailSuggestion });
+      setEmailSuggestion(null);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Invalid File",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please select an image smaller than 2MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      // Create a unique filename
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      const publicUrl = urlData.publicUrl + `?t=${Date.now()}`; // Cache busting
+
+      // Update profile with avatar URL
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("user_id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast({
+        title: "Photo Updated",
+        description: "Your profile photo has been updated.",
+      });
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+      toast({
+        title: "Upload Failed",
+        description: "Could not upload your photo. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -58,26 +178,29 @@ const Profile = () => {
   }
 
   const handleSave = async () => {
-    // Validate payment email if provided
-    if (formData.payment_email && !isValidEmail(formData.payment_email)) {
-      toast({
-        title: "Invalid Email",
-        description: "Please enter a valid email address for payments.",
-        variant: "destructive",
-      });
-      return;
+    // Validate payment email if provided and not already locked
+    if (formData.payment_email && !emailLocked) {
+      if (!isValidEmail(formData.payment_email)) {
+        toast({
+          title: "Invalid Email",
+          description: "Please enter a valid email address for payments.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setIsSaving(true);
     try {
-      const updateData: Record<string, string> = {
+      const updateData: Record<string, string | boolean> = {
         full_name: formData.full_name,
         phone_number: formData.phone_number,
       };
 
-      // Only update email if user has synthetic email and provided a valid payment email
-      if (hasSyntheticEmail() && formData.payment_email) {
+      // Only update email if user has synthetic email, provided a valid payment email, and it's not locked
+      if (hasSyntheticEmail() && formData.payment_email && !emailLocked) {
         updateData.email = formData.payment_email;
+        updateData.payment_email_locked = true; // Lock the email after first save
       }
 
       const { error } = await supabase
@@ -86,6 +209,11 @@ const Profile = () => {
         .eq("user_id", user.id);
 
       if (error) throw error;
+
+      // If we just saved a payment email, lock it locally
+      if (updateData.payment_email_locked) {
+        setEmailLocked(true);
+      }
 
       await refreshProfile();
       toast({
@@ -107,6 +235,23 @@ const Profile = () => {
   const initials = formData.full_name
     ? formData.full_name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : user.email?.slice(0, 2).toUpperCase() || "U";
+
+  // Display the real identifier (phone or valid email)
+  const getDisplayIdentifier = () => {
+    // If user has a real email (not synthetic), show it
+    if (!hasSyntheticEmail() && user.email) {
+      return user.email;
+    }
+    // Otherwise show phone number
+    if (profile?.phone_number) {
+      return profile.phone_number;
+    }
+    // Fallback to payment email if locked
+    if (emailLocked && formData.payment_email) {
+      return formData.payment_email;
+    }
+    return "Add your details";
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -130,16 +275,34 @@ const Profile = () => {
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-4">
             <Avatar className="h-24 w-24 border-4 border-primary/20">
+              {avatarUrl ? (
+                <AvatarImage src={avatarUrl} alt="Profile photo" />
+              ) : null}
               <AvatarFallback className="text-2xl font-bold gradient-hero text-primary-foreground">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <button className="absolute bottom-0 right-0 p-2 bg-primary rounded-full text-primary-foreground shadow-lg">
-              <Camera className="h-4 w-4" />
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleAvatarUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className="absolute bottom-0 right-0 p-2 bg-primary rounded-full text-primary-foreground shadow-lg disabled:opacity-50"
+            >
+              {isUploading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+              ) : (
+                <Camera className="h-4 w-4" />
+              )}
             </button>
           </div>
           <h2 className="text-xl font-bold">{formData.full_name || "Set your name"}</h2>
-          <p className="text-muted-foreground">{user.email}</p>
+          <p className="text-muted-foreground">{getDisplayIdentifier()}</p>
         </div>
 
         {/* Profile Form */}
@@ -165,24 +328,47 @@ const Profile = () => {
             {hasSyntheticEmail() ? (
               <div className="space-y-2">
                 <Label htmlFor="payment_email" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  {emailLocked ? (
+                    <Lock className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                  )}
                   Payment Email
+                  {emailLocked && (
+                    <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                      Verified
+                    </span>
+                  )}
                 </Label>
                 <Input
                   id="payment_email"
                   type="email"
                   value={formData.payment_email}
-                  onChange={(e) => setFormData({ ...formData, payment_email: e.target.value })}
-                  placeholder="Enter email for payment receipts"
+                  onChange={(e) => handlePaymentEmailChange(e.target.value)}
+                  placeholder={emailLocked ? "" : "Enter email for payment receipts"}
+                  disabled={emailLocked}
+                  className={emailLocked ? "bg-muted" : ""}
                 />
+                {emailSuggestion && !emailLocked && (
+                  <button
+                    type="button"
+                    onClick={applySuggestion}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Did you mean {emailSuggestion}?
+                  </button>
+                )}
                 <p className="text-xs text-muted-foreground">
-                  Used for card payment receipts and notifications
+                  {emailLocked 
+                    ? "Email is locked and cannot be changed" 
+                    : "Used for card payment receipts. This will be locked after saving."
+                  }
                 </p>
               </div>
             ) : (
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <Lock className="h-4 w-4 text-muted-foreground" />
                   Email Address
                 </Label>
                 <Input

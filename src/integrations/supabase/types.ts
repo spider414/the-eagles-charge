@@ -73,6 +73,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           deletion_reason: string | null
           deletion_scheduled_at: string | null
@@ -82,6 +83,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          payment_email_locked: boolean | null
           paystack_customer_code: string | null
           phone_number: string | null
           phone_verified: boolean | null
@@ -95,6 +97,7 @@ export type Database = {
           wallet_balance: number | null
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           deletion_reason?: string | null
           deletion_scheduled_at?: string | null
@@ -104,6 +107,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          payment_email_locked?: boolean | null
           paystack_customer_code?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
@@ -117,6 +121,7 @@ export type Database = {
           wallet_balance?: number | null
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           deletion_reason?: string | null
           deletion_scheduled_at?: string | null
@@ -126,6 +131,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          payment_email_locked?: boolean | null
           paystack_customer_code?: string | null
           phone_number?: string | null
           phone_verified?: boolean | null
