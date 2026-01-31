@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Download, Smartphone } from "lucide-react";
+import { X, Download, Smartphone, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -13,19 +13,18 @@ const PWAInstallPrompt = () => {
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if already installed or dismissed
+    // Check if running as installed PWA - don't show if already installed
+    if (window.matchMedia("(display-mode: standalone)").matches) {
+      return;
+    }
+
+    // Check if dismissed recently (only 1 day cooldown now)
     const dismissed = localStorage.getItem("pwa-install-dismissed");
     if (dismissed) {
       const dismissedTime = parseInt(dismissed, 10);
-      // Show again after 7 days
-      if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
+      if (Date.now() - dismissedTime < 24 * 60 * 60 * 1000) {
         return;
       }
-    }
-
-    // Check if running as installed PWA
-    if (window.matchMedia("(display-mode: standalone)").matches) {
-      return;
     }
 
     // Detect iOS
@@ -33,23 +32,31 @@ const PWAInstallPrompt = () => {
     setIsIOS(isIOSDevice);
 
     if (isIOSDevice) {
-      // Show iOS-specific prompt after a delay
-      const timer = setTimeout(() => setShowPrompt(true), 3000);
-      return () => clearTimeout(timer);
+      // Show iOS prompt immediately
+      setTimeout(() => setShowPrompt(true), 500);
+      return;
     }
 
     // Handle Android/Desktop install prompt
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Show prompt after a short delay for better UX
-      setTimeout(() => setShowPrompt(true), 3000);
+      // Show prompt immediately
+      setTimeout(() => setShowPrompt(true), 500);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstall);
 
+    // For browsers that don't fire beforeinstallprompt, still show prompt after short delay
+    const fallbackTimer = setTimeout(() => {
+      if (!window.matchMedia("(display-mode: standalone)").matches) {
+        setShowPrompt(true);
+      }
+    }, 2000);
+
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      clearTimeout(fallbackTimer);
     };
   }, []);
 
@@ -73,45 +80,111 @@ const PWAInstallPrompt = () => {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 animate-fade-in">
-      <div className="mx-auto max-w-lg rounded-2xl border border-border bg-card p-4 shadow-xl">
-        <div className="flex items-start gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl gradient-gold">
-            <Smartphone className="h-6 w-6 text-secondary-foreground" />
-          </div>
-          
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-foreground">Install Eagles Charge</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {isIOS 
-                ? "Tap the share button and select 'Add to Home Screen'"
-                : "Get quick access to airtime & data top-up from your home screen"
-              }
-            </p>
-            
-            {!isIOS && deferredPrompt && (
-              <Button 
-                onClick={handleInstall}
-                size="sm"
-                className="mt-3 gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Install App
-              </Button>
-            )}
-          </div>
-
+    <>
+      {/* Overlay backdrop */}
+      <div 
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm animate-fade-in"
+        onClick={handleDismiss}
+      />
+      
+      {/* Centered modal prompt */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+        <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-6 shadow-2xl">
+          {/* Close button */}
           <Button
             variant="ghost"
             size="icon"
-            className="shrink-0 -mt-1 -mr-1"
+            className="absolute right-2 top-2"
             onClick={handleDismiss}
           >
             <X className="h-4 w-4" />
           </Button>
+
+          {/* Icon */}
+          <div className="flex justify-center mb-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl gradient-gold">
+              <Smartphone className="h-8 w-8 text-secondary-foreground" />
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="text-center">
+            <h3 className="text-xl font-bold text-foreground mb-2">
+              Install Eagles Charge
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {isIOS 
+                ? "Add this app to your home screen for quick access to airtime & data top-up anytime!"
+                : "Install our app on your device for quick access to airtime & data top-up anytime!"
+              }
+            </p>
+
+            {isIOS ? (
+              <div className="space-y-4">
+                <div className="bg-muted/50 rounded-lg p-4 text-left">
+                  <p className="text-sm text-foreground font-medium mb-2">How to install:</p>
+                  <ol className="text-sm text-muted-foreground space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">1</span>
+                      Tap the <Share className="h-4 w-4 inline mx-1" /> Share button below
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">2</span>
+                      Scroll and tap "Add to Home Screen"
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">3</span>
+                      Tap "Add" to confirm
+                    </li>
+                  </ol>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleDismiss}
+                >
+                  Got it!
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {deferredPrompt ? (
+                  <Button 
+                    onClick={handleInstall}
+                    className="w-full gap-2"
+                    size="lg"
+                  >
+                    <Download className="h-5 w-5" />
+                    Install App Now
+                  </Button>
+                ) : (
+                  <div className="bg-muted/50 rounded-lg p-4 text-left">
+                    <p className="text-sm text-foreground font-medium mb-2">How to install:</p>
+                    <ol className="text-sm text-muted-foreground space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">1</span>
+                        Tap the menu icon (⋮) in your browser
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold shrink-0">2</span>
+                        Select "Add to Home Screen" or "Install App"
+                      </li>
+                    </ol>
+                  </div>
+                )}
+                <Button 
+                  variant="ghost" 
+                  className="w-full text-muted-foreground"
+                  onClick={handleDismiss}
+                >
+                  Maybe later
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
