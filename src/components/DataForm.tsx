@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Wifi, Check, Loader2, Mail, AlertCircle } from "lucide-react";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
@@ -17,6 +18,148 @@ import { detectNetwork } from "@/utils/phoneUtils";
 import { useDataPlans, DataPlan } from "@/hooks/useDataPlans";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
+
+// Categorize plans by validity period
+type PlanCategory = "daily" | "weekly" | "monthly";
+
+const categorizePlan = (validity: string): PlanCategory => {
+  const lower = validity.toLowerCase();
+  if (lower.includes("1 day") || lower.includes("2 day") || lower.includes("1day") || lower.includes("2day")) {
+    return "daily";
+  }
+  if (lower.includes("7 day") || lower.includes("14 day") || lower.includes("7day") || lower.includes("14day")) {
+    return "weekly";
+  }
+  return "monthly";
+};
+
+interface DataPlanSelectorProps {
+  plans: DataPlan[];
+  selectedPlan: DataPlan | null;
+  onSelectPlan: (plan: DataPlan) => void;
+  isLoading: boolean;
+}
+
+const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: DataPlanSelectorProps) => {
+  const [activeTab, setActiveTab] = useState<PlanCategory>("daily");
+
+  // Group plans by category
+  const categorizedPlans = useMemo(() => {
+    const grouped: Record<PlanCategory, DataPlan[]> = {
+      daily: [],
+      weekly: [],
+      monthly: [],
+    };
+
+    plans.forEach((plan) => {
+      const category = categorizePlan(plan.validity);
+      grouped[category].push(plan);
+    });
+
+    // Sort each category by price
+    Object.keys(grouped).forEach((key) => {
+      grouped[key as PlanCategory].sort((a, b) => a.price - b.price);
+    });
+
+    return grouped;
+  }, [plans]);
+
+  // Get count for each tab
+  const tabCounts = useMemo(() => ({
+    daily: categorizedPlans.daily.length,
+    weekly: categorizedPlans.weekly.length,
+    monthly: categorizedPlans.monthly.length,
+  }), [categorizedPlans]);
+
+  // Auto-select first tab with plans
+  useEffect(() => {
+    if (tabCounts.daily > 0) {
+      setActiveTab("daily");
+    } else if (tabCounts.weekly > 0) {
+      setActiveTab("weekly");
+    } else if (tabCounts.monthly > 0) {
+      setActiveTab("monthly");
+    }
+  }, [tabCounts]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Loading plans...</span>
+      </div>
+    );
+  }
+
+  const renderPlanCards = (planList: DataPlan[]) => (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {planList.map((plan) => (
+        <button
+          key={plan.id}
+          type="button"
+          onClick={() => onSelectPlan(plan)}
+          className={`relative p-3 rounded-xl border-2 text-center transition-all ${
+            selectedPlan?.id === plan.id
+              ? "border-primary bg-accent shadow-card"
+              : "border-border hover:border-primary/50 hover:bg-muted/50"
+          }`}
+        >
+          {selectedPlan?.id === plan.id && (
+            <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
+          )}
+          <div className="text-base font-bold text-foreground">{plan.size}</div>
+          <div className="text-xs text-muted-foreground mb-1">{plan.validity}</div>
+          <div className="text-lg font-extrabold text-primary">
+            ₦{plan.price.toLocaleString()}
+          </div>
+        </button>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="space-y-3 animate-fade-in">
+      <Label>Select Data Plan</Label>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PlanCategory)} className="w-full">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsTrigger value="daily" disabled={tabCounts.daily === 0} className="text-xs sm:text-sm">
+            Daily ({tabCounts.daily})
+          </TabsTrigger>
+          <TabsTrigger value="weekly" disabled={tabCounts.weekly === 0} className="text-xs sm:text-sm">
+            Weekly ({tabCounts.weekly})
+          </TabsTrigger>
+          <TabsTrigger value="monthly" disabled={tabCounts.monthly === 0} className="text-xs sm:text-sm">
+            Monthly ({tabCounts.monthly})
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="daily" className="mt-0">
+          {categorizedPlans.daily.length > 0 ? (
+            renderPlanCards(categorizedPlans.daily)
+          ) : (
+            <p className="text-center text-muted-foreground py-4">No daily plans available</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="weekly" className="mt-0">
+          {categorizedPlans.weekly.length > 0 ? (
+            renderPlanCards(categorizedPlans.weekly)
+          ) : (
+            <p className="text-center text-muted-foreground py-4">No weekly plans available</p>
+          )}
+        </TabsContent>
+
+        <TabsContent value="monthly" className="mt-0">
+          {categorizedPlans.monthly.length > 0 ? (
+            renderPlanCards(categorizedPlans.monthly)
+          ) : (
+            <p className="text-center text-muted-foreground py-4">No monthly plans available</p>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
 
 const DataForm = () => {
   const navigate = useNavigate();
@@ -225,39 +368,12 @@ const DataForm = () => {
           </div>
 
           {network && (
-            <div className="space-y-3 animate-fade-in">
-              <Label>Select Data Plan</Label>
-              {plansLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  <span className="ml-2 text-muted-foreground">Loading plans...</span>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {currentPlans.map((plan) => (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      onClick={() => setSelectedPlan(plan)}
-                      className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                        selectedPlan?.id === plan.id
-                          ? "border-primary bg-accent shadow-card"
-                          : "border-border hover:border-primary/50 hover:bg-muted/50"
-                      }`}
-                    >
-                      {selectedPlan?.id === plan.id && (
-                        <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
-                      )}
-                      <div className="text-lg font-bold text-foreground">{plan.size}</div>
-                      <div className="text-xl font-extrabold text-primary">
-                        ₦{plan.price.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{plan.validity}</div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <DataPlanSelector
+              plans={currentPlans}
+              selectedPlan={selectedPlan}
+              onSelectPlan={setSelectedPlan}
+              isLoading={plansLoading}
+            />
           )}
 
           {user && selectedPlan && hasSyntheticEmail() && paymentMethod === "paystack" && (
