@@ -762,6 +762,23 @@ Deno.serve(async (req) => {
     if (body.action === "create_dva") {
       const { email, first_name, last_name, phone, bvn } = body;
 
+      // Validate required fields
+      if (!email || !first_name || !last_name || !bvn) {
+        throw new Error("Missing required fields: email, first_name, last_name, and bvn are required");
+      }
+
+      // Format phone number for Paystack (Nigerian format with country code)
+      let formattedPhone = phone?.replace(/\D/g, "") || "";
+      if (formattedPhone.startsWith("0")) {
+        formattedPhone = "+234" + formattedPhone.substring(1);
+      } else if (formattedPhone.startsWith("234")) {
+        formattedPhone = "+" + formattedPhone;
+      } else if (!formattedPhone.startsWith("+")) {
+        formattedPhone = "+234" + formattedPhone;
+      }
+
+      console.log("Creating DVA with phone:", formattedPhone, "email:", email);
+
       // Step 1: Create or get customer
       const customerResponse = await fetch("https://api.paystack.co/customer", {
         method: "POST",
@@ -773,7 +790,7 @@ Deno.serve(async (req) => {
           email,
           first_name,
           last_name,
-          phone,
+          phone: formattedPhone,
         }),
       });
 
