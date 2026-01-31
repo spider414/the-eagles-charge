@@ -22,6 +22,7 @@ import {
   Receipt,
   Trash2,
   UserX,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,9 +30,11 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { usePinAuth } from "@/hooks/usePinAuth";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
+import { PinSetupDialog } from "@/components/PinSetupDialog";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -49,17 +52,21 @@ const Settings = () => {
   const { signOut, user } = useAuth();
   const { toast } = useToast();
   const { checkBiometricSupport, registerBiometric, disableBiometric, isBiometricEnabled } = useBiometricAuth();
+  const { isPinEnabled, disablePin } = usePinAuth();
   const { testSound, playToggle } = useSoundEffects();
   
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [pinDialogMode, setPinDialogMode] = useState<"setup" | "change" | "disable">("setup");
 
   // Settings state (stored in localStorage for persistence)
   const [settings, setSettings] = useState(() => ({
     darkMode: localStorage.getItem("theme") === "dark",
     notifications: localStorage.getItem("notifications") !== "false",
     biometric: isBiometricEnabled(),
+    pinLock: isPinEnabled(),
     hapticFeedback: localStorage.getItem("hapticFeedback") !== "false",
     soundEffects: localStorage.getItem("soundEffects") !== "false",
   }));
@@ -144,6 +151,21 @@ const Settings = () => {
         if (!success) return;
       } else {
         disableBiometric();
+      }
+    }
+
+    // Special handling for PIN lock
+    if (key === "pinLock") {
+      if (value) {
+        // Open PIN setup dialog
+        setPinDialogMode("setup");
+        setPinDialogOpen(true);
+        return; // Don't update state yet, wait for dialog completion
+      } else {
+        // Open PIN disable dialog
+        setPinDialogMode("disable");
+        setPinDialogOpen(true);
+        return;
       }
     }
 
@@ -309,6 +331,11 @@ const Settings = () => {
     },
   ];
 
+  // Refresh PIN state after dialog closes
+  const handlePinDialogSuccess = () => {
+    setSettings((prev) => ({ ...prev, pinLock: isPinEnabled() }));
+  };
+
   const securitySettings: SettingItem[] = [
     {
       icon: Fingerprint,
@@ -320,6 +347,20 @@ const Settings = () => {
       value: settings.biometric,
       onChange: (value) => updateSetting("biometric", value),
       disabled: !biometricSupported,
+    },
+    {
+      icon: KeyRound,
+      label: "PIN Lock",
+      description: settings.pinLock 
+        ? "PIN is enabled - tap to manage" 
+        : "Set up a PIN for app unlock",
+      type: settings.pinLock ? "link" : "toggle",
+      value: settings.pinLock,
+      onChange: (value) => updateSetting("pinLock", value),
+      onClick: settings.pinLock ? () => {
+        setPinDialogMode("change");
+        setPinDialogOpen(true);
+      } : undefined,
     },
     {
       icon: Shield,
@@ -512,6 +553,14 @@ const Settings = () => {
 
       {/* Delete Account Dialog */}
       <DeleteAccountDialog open={deleteAccountOpen} onOpenChange={setDeleteAccountOpen} />
+
+      {/* PIN Setup Dialog */}
+      <PinSetupDialog
+        open={pinDialogOpen}
+        onOpenChange={setPinDialogOpen}
+        mode={pinDialogMode}
+        onSuccess={handlePinDialogSuccess}
+      />
     </div>
   );
 };
