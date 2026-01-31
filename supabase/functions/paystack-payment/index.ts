@@ -802,6 +802,34 @@ Deno.serve(async (req) => {
       }
 
       const customerCode = customerData.data.customer_code;
+      
+      // Step 1b: If the existing customer has no phone, UPDATE it with the phone number
+      // This is critical for DVA creation which requires phone
+      if (!customerData.data.phone && formattedPhone) {
+        console.log("Customer has no phone, updating with:", formattedPhone);
+        
+        const updateCustomerResponse = await fetch(`https://api.paystack.co/customer/${customerCode}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${paystackSecretKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            phone: formattedPhone,
+            first_name,
+            last_name,
+          }),
+        });
+        
+        const updateData = await updateCustomerResponse.json();
+        console.log("Customer update response:", updateData);
+        
+        if (!updateData.status) {
+          console.warn("Failed to update customer phone:", updateData.message);
+          // Continue anyway - DVA creation might still work or give a clearer error
+        }
+      }
+
       const isAlreadyIdentified = customerData.data.identified === true;
 
       // Step 2: Validate customer with BVN (skip if already identified)
