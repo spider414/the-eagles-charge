@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 type Message = { role: "user" | "assistant"; content: string };
 
@@ -19,6 +21,7 @@ const SupportChatDialog = ({ open, onOpenChange }: SupportChatDialogProps) => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -37,17 +40,47 @@ const SupportChatDialog = ({ open, onOpenChange }: SupportChatDialogProps) => {
     let assistantContent = "";
 
     try {
+      // Get the current session to use the actual user token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.access_token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to use the AI assistant.",
+          variant: "destructive",
+        });
+        throw new Error("Not authenticated");
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-chat`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${session.access_token}`,
           },
           body: JSON.stringify({ messages: [...messages, userMessage] }),
         }
       );
+
+      if (response.status === 401) {
+        toast({
+          title: "Session Expired",
+          description: "Please log in again to continue.",
+          variant: "destructive",
+        });
+        throw new Error("Unauthorized");
+      }
+
+      if (response.status === 429) {
+        toast({
+          title: "Too Many Requests",
+          description: "Please wait a moment before trying again.",
+          variant: "destructive",
+        });
+        throw new Error("Rate limited");
+      }
 
       if (!response.ok || !response.body) {
         throw new Error("Failed to get response");

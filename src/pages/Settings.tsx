@@ -23,6 +23,7 @@ import {
   Trash2,
   UserX,
   KeyRound,
+  Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,6 +33,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { usePinAuth } from "@/hooks/usePinAuth";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
@@ -60,6 +62,10 @@ const Settings = () => {
   const [deleteAccountOpen, setDeleteAccountOpen] = useState(false);
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [pinDialogMode, setPinDialogMode] = useState<"setup" | "change" | "disable">("setup");
+  const [autoLockTimeout, setAutoLockTimeout] = useState(() => {
+    const stored = localStorage.getItem("autoLockTimeout");
+    return stored || "10"; // Default 10 minutes
+  });
 
   // Settings state (stored in localStorage for persistence)
   const [settings, setSettings] = useState(() => ({
@@ -70,6 +76,23 @@ const Settings = () => {
     hapticFeedback: localStorage.getItem("hapticFeedback") !== "false",
     soundEffects: localStorage.getItem("soundEffects") !== "false",
   }));
+
+  const handleAutoLockTimeoutChange = (value: string) => {
+    setAutoLockTimeout(value);
+    localStorage.setItem("autoLockTimeout", value);
+    
+    if (settings.hapticFeedback) {
+      triggerHaptic();
+    }
+    if (settings.soundEffects) {
+      playToggle();
+    }
+    
+    toast({
+      title: "Auto-Lock Updated",
+      description: `Session will lock after ${value} minute${value === "1" ? "" : "s"} of inactivity.`,
+    });
+  };
 
   // Notification preferences state
   const [notificationPrefs, setNotificationPrefs] = useState(() => ({
@@ -487,6 +510,35 @@ const Settings = () => {
           </CardHeader>
           <CardContent>
             {securitySettings.map((item, index) => renderSettingItem(item, index))}
+            
+            {/* Auto-lock timeout setting - only show if biometric or PIN is enabled */}
+            {(settings.biometric || settings.pinLock) && (
+              <div className="flex items-center justify-between py-4 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-muted">
+                    <Clock className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Auto-Lock Timer</p>
+                    <p className="text-sm text-muted-foreground">Lock after inactivity</p>
+                  </div>
+                </div>
+                <Select value={autoLockTimeout} onValueChange={handleAutoLockTimeoutChange}>
+                  <SelectTrigger className="w-24">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 min</SelectItem>
+                    <SelectItem value="2">2 min</SelectItem>
+                    <SelectItem value="5">5 min</SelectItem>
+                    <SelectItem value="10">10 min</SelectItem>
+                    <SelectItem value="15">15 min</SelectItem>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="60">60 min</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </CardContent>
         </Card>
 

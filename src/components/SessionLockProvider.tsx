@@ -25,8 +25,22 @@ export const useSessionLock = () => {
   return context;
 };
 
-// Inactivity timeout in milliseconds (5 minutes)
-const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
+// Default inactivity timeout in milliseconds (10 minutes)
+const DEFAULT_INACTIVITY_TIMEOUT = 10 * 60 * 1000;
+// Hidden timeout (30 seconds when app is backgrounded)
+const HIDDEN_TIMEOUT = 30 * 1000;
+
+// Get the configured timeout from localStorage
+const getInactivityTimeout = (): number => {
+  const stored = localStorage.getItem("autoLockTimeout");
+  if (stored) {
+    const minutes = parseInt(stored, 10);
+    if (!isNaN(minutes) && minutes >= 1 && minutes <= 60) {
+      return minutes * 60 * 1000;
+    }
+  }
+  return DEFAULT_INACTIVITY_TIMEOUT;
+};
 
 export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
@@ -77,9 +91,10 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
 
     // Only set timer if user is logged in and has lock enabled
     if (user && hasAnyLock && !isLocked) {
+      const timeout = getInactivityTimeout();
       const timer = setTimeout(() => {
         lockSession();
-      }, INACTIVITY_TIMEOUT);
+      }, timeout);
       setInactivityTimer(timer);
     }
   }, [user, hasAnyLock, isLocked, inactivityTimer, lockSession]);
@@ -122,10 +137,10 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
         if (inactivityTimer) {
           clearTimeout(inactivityTimer);
         }
-        // Lock after 30 seconds of being hidden
+        // Lock after the hidden timeout when user leaves the app/tab
         const hiddenTimer = setTimeout(() => {
           lockSession();
-        }, 30000);
+        }, HIDDEN_TIMEOUT);
         setInactivityTimer(hiddenTimer);
       } else {
         // Reset timer when user returns
