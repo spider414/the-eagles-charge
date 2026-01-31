@@ -59,7 +59,11 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
 
   const hasBiometric = isBiometricEnabled();
   const hasPin = isPinEnabled();
-  const hasAnyLock = hasBiometric || hasPin;
+  
+  // Check if user has EXPLICITLY enabled session lock in settings
+  // Only lock if they have set up security AND enabled session lock
+  const isSessionLockEnabled = localStorage.getItem("sessionLockEnabled") === "true";
+  const hasAnyLock = (hasBiometric || hasPin) && isSessionLockEnabled;
 
   // Determine default unlock method
   useEffect(() => {
@@ -71,12 +75,13 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
   }, [hasBiometric, hasPin]);
 
   const lockSession = useCallback(() => {
-    if (user && hasAnyLock) {
+    // Only lock if user has explicitly enabled session lock AND has a lock method set up
+    if (user && hasAnyLock && isSessionLockEnabled) {
       setIsLocked(true);
       setShowLockDialog(true);
       setPinInput("");
     }
-  }, [user, hasAnyLock]);
+  }, [user, hasAnyLock, isSessionLockEnabled]);
 
   const unlockSession = useCallback(() => {
     setIsLocked(false);

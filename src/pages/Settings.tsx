@@ -24,6 +24,7 @@ import {
   UserX,
   KeyRound,
   Clock,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +74,7 @@ const Settings = () => {
     notifications: localStorage.getItem("notifications") !== "false",
     biometric: isBiometricEnabled(),
     pinLock: isPinEnabled(),
+    sessionLock: localStorage.getItem("sessionLockEnabled") === "true",
     hapticFeedback: localStorage.getItem("hapticFeedback") !== "false",
     soundEffects: localStorage.getItem("soundEffects") !== "false",
   }));
@@ -190,6 +192,36 @@ const Settings = () => {
         setPinDialogOpen(true);
         return;
       }
+    }
+
+    // Special handling for session lock
+    if (key === "sessionLock") {
+      // Check if user has biometric or PIN set up before enabling
+      if (value && !settings.biometric && !settings.pinLock) {
+        toast({
+          title: "Security Required",
+          description: "Please set up PIN or Biometric authentication first.",
+          variant: "destructive",
+        });
+        return;
+      }
+      setSettings((prev) => ({ ...prev, sessionLock: value }));
+      localStorage.setItem("sessionLockEnabled", value.toString());
+      
+      if (settings.hapticFeedback) {
+        triggerHaptic();
+      }
+      if (settings.soundEffects) {
+        playToggle();
+      }
+      
+      toast({
+        title: "Session Lock Updated",
+        description: value 
+          ? "App will lock after inactivity." 
+          : "Session lock has been disabled.",
+      });
+      return;
     }
 
     // Special handling for notifications
@@ -384,6 +416,17 @@ const Settings = () => {
         setPinDialogMode("change");
         setPinDialogOpen(true);
       } : undefined,
+    },
+    {
+      icon: Lock,
+      label: "Session Lock",
+      description: settings.sessionLock 
+        ? "App locks after inactivity" 
+        : "Enable auto-lock for security",
+      type: "toggle",
+      value: settings.sessionLock,
+      onChange: (value) => updateSetting("sessionLock", value),
+      disabled: !settings.biometric && !settings.pinLock,
     },
     {
       icon: Shield,
