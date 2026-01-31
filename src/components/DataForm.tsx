@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Wifi, Check, Loader2, Mail, AlertCircle } from "lucide-react";
+import { Wifi, Check, Loader2, Mail, AlertCircle, Flame } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import NetworkSelector, { NetworkType } from "./NetworkSelector";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import FavoriteNumbersSelector from "./FavoriteNumbersSelector";
@@ -20,9 +21,10 @@ import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 
 // Categorize plans by validity period
-type PlanCategory = "daily" | "weekly" | "monthly";
+type PlanCategory = "hot" | "daily" | "weekly" | "monthly";
+type PlanType = "sme" | "gifting" | "corporate" | "direct";
 
-const categorizePlan = (validity: string): PlanCategory => {
+const categorizePlan = (validity: string): Exclude<PlanCategory, "hot"> => {
   const lower = validity.toLowerCase();
   if (lower.includes("1 day") || lower.includes("2 day") || lower.includes("1day") || lower.includes("2day")) {
     return "daily";
@@ -33,6 +35,30 @@ const categorizePlan = (validity: string): PlanCategory => {
   return "monthly";
 };
 
+// Determine plan type from name or price patterns
+const getPlanType = (plan: DataPlan): PlanType => {
+  const name = plan.name.toLowerCase();
+  if (name.includes("sme") || name.includes("corporate")) return "sme";
+  if (name.includes("gift") || name.includes("share")) return "gifting";
+  if (name.includes("corp")) return "corporate";
+  // Default: cheaper plans are typically SME, more expensive are direct/gifting
+  return plan.price < 500 ? "sme" : "direct";
+};
+
+// Hot/Popular plans - best value plans that are commonly purchased
+const HOT_PLAN_IDS = [
+  // MTN popular plans
+  "46", "48", "50", "27", "60",
+  // Glo popular plans  
+  "36", "40", "37", "38",
+  // Airtel popular plans
+  "17", "18", "52",
+  // 9mobile popular plans
+  "71", "73", "74",
+];
+
+const isHotPlan = (planId: string): boolean => HOT_PLAN_IDS.includes(planId);
+
 interface DataPlanSelectorProps {
   plans: DataPlan[];
   selectedPlan: DataPlan | null;
@@ -41,17 +67,23 @@ interface DataPlanSelectorProps {
 }
 
 const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: DataPlanSelectorProps) => {
-  const [activeTab, setActiveTab] = useState<PlanCategory>("daily");
+  const [activeTab, setActiveTab] = useState<PlanCategory>("hot");
 
   // Group plans by category
   const categorizedPlans = useMemo(() => {
     const grouped: Record<PlanCategory, DataPlan[]> = {
+      hot: [],
       daily: [],
       weekly: [],
       monthly: [],
     };
 
     plans.forEach((plan) => {
+      // Add to hot category if it's a popular plan
+      if (isHotPlan(plan.id)) {
+        grouped.hot.push(plan);
+      }
+      // Also add to time-based category
       const category = categorizePlan(plan.validity);
       grouped[category].push(plan);
     });
@@ -66,14 +98,17 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
 
   // Get count for each tab
   const tabCounts = useMemo(() => ({
+    hot: categorizedPlans.hot.length,
     daily: categorizedPlans.daily.length,
     weekly: categorizedPlans.weekly.length,
     monthly: categorizedPlans.monthly.length,
   }), [categorizedPlans]);
 
-  // Auto-select first tab with plans
+  // Auto-select hot tab if it has plans, otherwise first available
   useEffect(() => {
-    if (tabCounts.daily > 0) {
+    if (tabCounts.hot > 0) {
+      setActiveTab("hot");
+    } else if (tabCounts.daily > 0) {
       setActiveTab("daily");
     } else if (tabCounts.weekly > 0) {
       setActiveTab("weekly");
@@ -91,7 +126,21 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
     );
   }
 
-  const renderPlanCards = (planList: DataPlan[]) => (
+  const getPlanTypeBadge = (plan: DataPlan) => {
+    const type = getPlanType(plan);
+    switch (type) {
+      case "sme":
+        return <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">SME</Badge>;
+      case "gifting":
+        return <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">Gifting</Badge>;
+      case "corporate":
+        return <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">Corp</Badge>;
+      default:
+        return null;
+    }
+  };
+
+  const renderPlanCards = (planList: DataPlan[], showHotBadge = false) => (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {planList.map((plan) => (
         <button
@@ -107,7 +156,13 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
           {selectedPlan?.id === plan.id && (
             <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
           )}
-          <div className="text-base font-bold text-foreground">{plan.size}</div>
+          {showHotBadge && isHotPlan(plan.id) && (
+            <Flame className="absolute top-2 left-2 h-4 w-4 text-orange-500" />
+          )}
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <span className="text-base font-bold text-foreground">{plan.size}</span>
+            {getPlanTypeBadge(plan)}
+          </div>
           <div className="text-xs text-muted-foreground mb-1">{plan.validity}</div>
           <div className="text-lg font-extrabold text-primary">
             ₦{plan.price.toLocaleString()}
@@ -121,17 +176,29 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
     <div className="space-y-3 animate-fade-in">
       <Label>Select Data Plan</Label>
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as PlanCategory)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-4 mb-4">
+          <TabsTrigger value="hot" disabled={tabCounts.hot === 0} className="text-xs sm:text-sm gap-1">
+            <Flame className="h-3 w-3 text-orange-500" />
+            Hot
+          </TabsTrigger>
           <TabsTrigger value="daily" disabled={tabCounts.daily === 0} className="text-xs sm:text-sm">
-            Daily ({tabCounts.daily})
+            Daily
           </TabsTrigger>
           <TabsTrigger value="weekly" disabled={tabCounts.weekly === 0} className="text-xs sm:text-sm">
-            Weekly ({tabCounts.weekly})
+            Weekly
           </TabsTrigger>
           <TabsTrigger value="monthly" disabled={tabCounts.monthly === 0} className="text-xs sm:text-sm">
-            Monthly ({tabCounts.monthly})
+            Monthly
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="hot" className="mt-0">
+          {categorizedPlans.hot.length > 0 ? (
+            renderPlanCards(categorizedPlans.hot, true)
+          ) : (
+            <p className="text-center text-muted-foreground py-4">No hot plans available</p>
+          )}
+        </TabsContent>
 
         <TabsContent value="daily" className="mt-0">
           {categorizedPlans.daily.length > 0 ? (
