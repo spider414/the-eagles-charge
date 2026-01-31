@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { usePinAuth } from "@/hooks/usePinAuth";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Fingerprint, Lock, LogOut } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Fingerprint, Lock, LogOut, KeyRound } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface SessionLockContextType {
@@ -29,25 +31,43 @@ const INACTIVITY_TIMEOUT = 5 * 60 * 1000;
 export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
   const { user, signOut } = useAuth();
   const { authenticateWithBiometric, isBiometricEnabled } = useBiometricAuth();
+  const { verifyPin, isPinEnabled, isVerifying } = usePinAuth();
   const navigate = useNavigate();
   
   const [isLocked, setIsLocked] = useState(false);
   const [showLockDialog, setShowLockDialog] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [inactivityTimer, setInactivityTimer] = useState<NodeJS.Timeout | null>(null);
+  
+  // PIN input state
+  const [pinInput, setPinInput] = useState("");
+  const [unlockMethod, setUnlockMethod] = useState<"biometric" | "pin">("biometric");
 
   const hasBiometric = isBiometricEnabled();
+  const hasPin = isPinEnabled();
+  const hasAnyLock = hasBiometric || hasPin;
+
+  // Determine default unlock method
+  useEffect(() => {
+    if (hasBiometric) {
+      setUnlockMethod("biometric");
+    } else if (hasPin) {
+      setUnlockMethod("pin");
+    }
+  }, [hasBiometric, hasPin]);
 
   const lockSession = useCallback(() => {
-    if (user && hasBiometric) {
+    if (user && hasAnyLock) {
       setIsLocked(true);
       setShowLockDialog(true);
+      setPinInput("");
     }
-  }, [user, hasBiometric]);
+  }, [user, hasAnyLock]);
 
   const unlockSession = useCallback(() => {
     setIsLocked(false);
     setShowLockDialog(false);
+    setPinInput("");
   }, []);
 
   const resetInactivityTimer = useCallback(() => {
@@ -55,18 +75,18 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
       clearTimeout(inactivityTimer);
     }
 
-    // Only set timer if user is logged in and biometric is enabled
-    if (user && hasBiometric && !isLocked) {
+    // Only set timer if user is logged in and has lock enabled
+    if (user && hasAnyLock && !isLocked) {
       const timer = setTimeout(() => {
         lockSession();
       }, INACTIVITY_TIMEOUT);
       setInactivityTimer(timer);
     }
-  }, [user, hasBiometric, isLocked, inactivityTimer, lockSession]);
+  }, [user, hasAnyLock, isLocked, inactivityTimer, lockSession]);
 
   // Set up activity listeners
   useEffect(() => {
-    if (!user || !hasBiometric) return;
+    if (!user || !hasAnyLock) return;
 
     const handleActivity = () => {
       if (!isLocked) {
@@ -90,11 +110,11 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
         clearTimeout(inactivityTimer);
       }
     };
-  }, [user, hasBiometric, isLocked, resetInactivityTimer]);
+  }, [user, hasAnyLock, isLocked, resetInactivityTimer]);
 
   // Handle visibility change (tab switch, app minimize)
   useEffect(() => {
-    if (!user || !hasBiometric) return;
+    if (!user || !hasAnyLock) return;
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
@@ -119,7 +139,7 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user, hasBiometric, isLocked, lockSession, resetInactivityTimer, inactivityTimer]);
+  }, [user, hasAnyLock, isLocked, lockSession, resetInactivityTimer, inactivityTimer]);
 
   const handleBiometricUnlock = async () => {
     setIsAuthenticating(true);
@@ -129,6 +149,18 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
     if (success) {
       unlockSession();
       resetInactivityTimer();
+    }
+  };
+
+  const handlePinUnlock = async () => {
+    if (!pinInput || pinInput.length < 4) return;
+    
+    const success = await verifyPin(pinInput);
+    if (success) {
+      unlockSession();
+      resetInactivityTimer();
+    } else {
+      setPinInput("");
     }
   };
 
@@ -162,40 +194,113 @@ export const SessionLockProvider = ({ children }: { children: ReactNode }) => {
               Session Locked
             </DialogTitle>
             <DialogDescription>
-              Your session has been locked due to inactivity. Use biometrics to unlock.
+              Your session has been locked due to inactivity.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex flex-col items-center gap-6 py-6">
-            <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center">
-              <Fingerprint className="h-12 w-12 text-primary" />
-            </div>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {/* Method selector (if both available) */}
+            {hasBiometric && hasPin && (
+              <div className="flex gap-2 w-full">
+                <Button
+                  variant={unlockMethod === "biometric" ? "default" : "outline"}
+                  className="flex-1"
+                  onClick={() => setUnlockMethod("biometric")}
+                >
+                  <Fingerprint className="h-4 w-4 mr-2" />
+                  Biometric
+                </Button>
+                <Button
+                  variant={unlockMethod === "pin" ? "default" : "outline"}
+                  className="flex-1"
+                  onClick={() => setUnlockMethod("pin")}
+                >
+                  <KeyRound className="h-4 w-4 mr-2" />
+                  PIN
+                </Button>
+              </div>
+            )}
 
-            <p className="text-center text-muted-foreground">
-              Tap below to unlock with fingerprint or face ID
-            </p>
+            {/* Biometric unlock */}
+            {unlockMethod === "biometric" && hasBiometric && (
+              <>
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Fingerprint className="h-10 w-10 text-primary" />
+                </div>
 
-            <Button
-              size="lg"
-              className="w-full"
-              onClick={handleBiometricUnlock}
-              disabled={isAuthenticating}
-            >
-              {isAuthenticating ? (
-                "Authenticating..."
-              ) : (
-                <>
-                  <Fingerprint className="h-5 w-5 mr-2" />
-                  Unlock with Biometrics
-                </>
-              )}
-            </Button>
+                <p className="text-center text-sm text-muted-foreground">
+                  Tap below to unlock with fingerprint or face ID
+                </p>
+
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={handleBiometricUnlock}
+                  disabled={isAuthenticating}
+                >
+                  {isAuthenticating ? (
+                    "Authenticating..."
+                  ) : (
+                    <>
+                      <Fingerprint className="h-5 w-5 mr-2" />
+                      Unlock with Biometrics
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+
+            {/* PIN unlock */}
+            {unlockMethod === "pin" && hasPin && (
+              <>
+                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <KeyRound className="h-10 w-10 text-primary" />
+                </div>
+
+                <p className="text-center text-sm text-muted-foreground">
+                  Enter your PIN to unlock
+                </p>
+
+                <Input
+                  type="password"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="Enter PIN"
+                  value={pinInput}
+                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handlePinUnlock();
+                    }
+                  }}
+                  className="text-center text-2xl tracking-widest h-14"
+                  autoFocus
+                />
+
+                <Button
+                  size="lg"
+                  className="w-full"
+                  onClick={handlePinUnlock}
+                  disabled={isVerifying || pinInput.length < 4}
+                >
+                  {isVerifying ? (
+                    "Verifying..."
+                  ) : (
+                    <>
+                      <KeyRound className="h-5 w-5 mr-2" />
+                      Unlock with PIN
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
 
             <Button
               variant="outline"
               className="w-full"
               onClick={handleLogout}
-              disabled={isAuthenticating}
+              disabled={isAuthenticating || isVerifying}
             >
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
