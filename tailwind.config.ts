@@ -99,6 +99,14 @@ export default {
           "0%, 100%": { transform: "translateY(0)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        marquee: {
+          "0%": { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
+        },
+        "page-enter": {
+          "0%": { opacity: "0", transform: "translateY(20px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -107,6 +115,8 @@ export default {
         "slide-in": "slide-in 0.3s ease-out forwards",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         float: "float 3s ease-in-out infinite",
+        marquee: "marquee 20s linear infinite",
+        "page-enter": "page-enter 0.4s ease-out forwards",
       },
     },
   },
