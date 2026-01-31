@@ -36,6 +36,107 @@
     <meta name="twitter:title" content="The Eagles Charge" />
     <meta name="twitter:description" content="Fast, reliable airtime and data top-up" />
     <meta name="twitter:image" content="https://the-eagles-charge.lovable.app/pwa-512x512.png" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "The Eagles Charge",
+      "url": "https://the-eagles-charge.lovable.app",
+      "logo": "https://the-eagles-charge.lovable.app/pwa-512x512.png",
+      "description": "Fast, reliable airtime and data top-up for MTN, Glo, Airtel, and 9mobile in Nigeria",
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "url": "https://the-eagles-charge.lovable.app/support"
+      },
+      "sameAs": []
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "The Eagles Charge",
+      "url": "https://the-eagles-charge.lovable.app",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://the-eagles-charge.lovable.app/dashboard",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "name": "VTU Services",
+      "description": "Mobile top-up and bill payment services",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "item": {
+            "@type": "Service",
+            "name": "Airtime Top-Up",
+            "description": "Instant airtime recharge for MTN, Glo, Airtel, and 9mobile networks",
+            "provider": {
+              "@type": "Organization",
+              "name": "The Eagles Charge"
+            },
+            "areaServed": "Nigeria",
+            "serviceType": "Mobile Airtime"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "item": {
+            "@type": "Service",
+            "name": "Data Bundle Purchase",
+            "description": "Buy data bundles for MTN, Glo, Airtel, and 9mobile at competitive rates",
+            "provider": {
+              "@type": "Organization",
+              "name": "The Eagles Charge"
+            },
+            "areaServed": "Nigeria",
+            "serviceType": "Mobile Data"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "item": {
+            "@type": "Service",
+            "name": "Electricity Bill Payment",
+            "description": "Pay electricity bills for EKEDC, IKEDC, AEDC, and other distribution companies",
+            "provider": {
+              "@type": "Organization",
+              "name": "The Eagles Charge"
+            },
+            "areaServed": "Nigeria",
+            "serviceType": "Utility Payment"
+          }
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "item": {
+            "@type": "Service",
+            "name": "Cable TV Subscription",
+            "description": "Subscribe to DSTV, GOtv, and Startimes packages",
+            "provider": {
+              "@type": "Organization",
+              "name": "The Eagles Charge"
+            },
+            "areaServed": "Nigeria",
+            "serviceType": "Cable TV"
+          }
+        }
+      ]
+    }
+    </script>
   </head>
 
   <body>
