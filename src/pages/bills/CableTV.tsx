@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Tv, Check } from "lucide-react";
+import { Bird, ArrowLeft, Tv, Check, Mail, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
+import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CablePlan {
   id: string;
@@ -49,13 +51,36 @@ const providers = [
 
 const CableTV = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { initializePayment, isLoading } = usePaystack();
 
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<CablePlan | null>(null);
   const [smartcardNumber, setSmartcardNumber] = useState("");
+  const [paymentEmail, setPaymentEmail] = useState("");
+
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+  const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Pre-fill payment email from profile if valid
+  useEffect(() => {
+    if (profile?.email && isValidEmail(profile.email)) {
+      setPaymentEmail(profile.email);
+    }
+  }, [profile]);
+
+  // Save payment email to profile
+  const savePaymentEmail = async (email: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("profiles").update({ email }).eq("user_id", user.id);
+      await refreshProfile();
+    } catch (err) {
+      console.error("Error saving email:", err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,9 +104,30 @@ const CableTV = () => {
       return;
     }
 
+    // Get valid email for payment
+    const validEmail = hasSyntheticEmail() 
+      ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+      : (isValidEmail(user.email || "") ? user.email : null);
+
+    if (!validEmail) {
+      toast({
+        title: "Email Required",
+        description: hasSyntheticEmail()
+          ? "Please enter a valid email address for payments."
+          : "Please update your profile with a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Save email to profile if different
+    if (hasSyntheticEmail() && validEmail !== profile?.email) {
+      await savePaymentEmail(validEmail);
+    }
+
     await initializePayment({
       amount: selectedPlan.price,
-      email: user.email || "",
+      email: validEmail,
       metadata: {
         transaction_type: "cable_tv",
         cable_provider: selectedPlan.provider,
@@ -196,6 +242,39 @@ const CableTV = () => {
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {user && hasSyntheticEmail() && (
+                <div className="space-y-2">
+                  <Label htmlFor="cable-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    Email for Payment Receipt
+                  </Label>
+                  <Input
+                    id="cable-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={paymentEmail}
+                    onChange={(e) => setPaymentEmail(e.target.value)}
+                    className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
+                  />
+                  {emailSuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentEmail(emailSuggestion)}
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      Did you mean {emailSuggestion}?
+                    </button>
+                  )}
+                  {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Please enter a valid email address
+                    </p>
+                  )}
                 </div>
               )}
 

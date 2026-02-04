@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Zap } from "lucide-react";
+import { Bird, ArrowLeft, Zap, Mail, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
-
+import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
+import { supabase } from "@/integrations/supabase/client";
 const discos = [
   { id: "ekedc", name: "Eko Electricity (EKEDC)" },
   { id: "ikedc", name: "Ikeja Electricity (IKEDC)" },
@@ -27,7 +28,7 @@ const discos = [
 
 const Electricity = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { initializePayment, isLoading } = usePaystack();
 
@@ -35,6 +36,29 @@ const Electricity = () => {
   const [meterType, setMeterType] = useState<"prepaid" | "postpaid">("prepaid");
   const [meterNumber, setMeterNumber] = useState("");
   const [amount, setAmount] = useState("");
+  const [paymentEmail, setPaymentEmail] = useState("");
+
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+  const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Pre-fill payment email from profile if valid
+  useEffect(() => {
+    if (profile?.email && isValidEmail(profile.email)) {
+      setPaymentEmail(profile.email);
+    }
+  }, [profile]);
+
+  // Save payment email to profile
+  const savePaymentEmail = async (email: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("profiles").update({ email }).eq("user_id", user.id);
+      await refreshProfile();
+    } catch (err) {
+      console.error("Error saving email:", err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,9 +91,30 @@ const Electricity = () => {
       return;
     }
 
+    // Get valid email for payment
+    const validEmail = hasSyntheticEmail() 
+      ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+      : (isValidEmail(user.email || "") ? user.email : null);
+
+    if (!validEmail) {
+      toast({
+        title: "Email Required",
+        description: hasSyntheticEmail()
+          ? "Please enter a valid email address for payments."
+          : "Please update your profile with a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Save email to profile if different
+    if (hasSyntheticEmail() && validEmail !== profile?.email) {
+      await savePaymentEmail(validEmail);
+    }
+
     await initializePayment({
       amount: Number(amount),
-      email: user.email || "",
+      email: validEmail,
       metadata: {
         transaction_type: "electricity",
         electricity_provider: disco,
@@ -171,6 +216,39 @@ const Electricity = () => {
                   min={500}
                 />
               </div>
+
+              {user && hasSyntheticEmail() && (
+                <div className="space-y-2">
+                  <Label htmlFor="electricity-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    Email for Payment Receipt
+                  </Label>
+                  <Input
+                    id="electricity-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={paymentEmail}
+                    onChange={(e) => setPaymentEmail(e.target.value)}
+                    className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
+                  />
+                  {emailSuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentEmail(emailSuggestion)}
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      Did you mean {emailSuggestion}?
+                    </button>
+                  )}
+                  {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Please enter a valid email address
+                    </p>
+                  )}
+                </div>
+              )}
 
               <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
                 {isLoading ? "Processing..." : `Pay ₦${Number(amount || 0).toLocaleString()}`}
