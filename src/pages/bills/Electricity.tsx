@@ -32,7 +32,10 @@ const Electricity = () => {
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const { initializePayment, isLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+
+  const isLoading = paystackLoading || walletLoading;
 
   const [disco, setDisco] = useState("");
   const [meterType, setMeterType] = useState<"prepaid" | "postpaid">("prepaid");
