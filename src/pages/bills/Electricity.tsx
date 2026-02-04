@@ -28,7 +28,7 @@ const discos = [
 
 const Electricity = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { initializePayment, isLoading } = usePaystack();
 
@@ -36,6 +36,29 @@ const Electricity = () => {
   const [meterType, setMeterType] = useState<"prepaid" | "postpaid">("prepaid");
   const [meterNumber, setMeterNumber] = useState("");
   const [amount, setAmount] = useState("");
+  const [paymentEmail, setPaymentEmail] = useState("");
+
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+  const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Pre-fill payment email from profile if valid
+  useEffect(() => {
+    if (profile?.email && isValidEmail(profile.email)) {
+      setPaymentEmail(profile.email);
+    }
+  }, [profile]);
+
+  // Save payment email to profile
+  const savePaymentEmail = async (email: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("profiles").update({ email }).eq("user_id", user.id);
+      await refreshProfile();
+    } catch (err) {
+      console.error("Error saving email:", err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
