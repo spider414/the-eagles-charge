@@ -269,8 +269,22 @@ const Electricity = () => {
                 </div>
               )}
 
+              {user && (
+                <PaymentMethodSelector
+                  selected={paymentMethod}
+                  onSelect={setPaymentMethod}
+                  walletBalance={walletBalance}
+                  amount={Number(amount) || 0}
+                />
+              )}
+
               <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? "Processing..." : `Pay ₦${Number(amount || 0).toLocaleString()}`}
+                {isLoading 
+                  ? "Processing..." 
+                  : paymentMethod === "wallet"
+                  ? `Pay ₦${Number(amount || 0).toLocaleString()} from Wallet`
+                  : `Pay ₦${Number(amount || 0).toLocaleString()}`
+                }
               </Button>
             </form>
           </CardContent>
