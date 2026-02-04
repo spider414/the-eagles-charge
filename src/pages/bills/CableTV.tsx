@@ -51,13 +51,36 @@ const providers = [
 
 const CableTV = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { initializePayment, isLoading } = usePaystack();
 
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<CablePlan | null>(null);
   const [smartcardNumber, setSmartcardNumber] = useState("");
+  const [paymentEmail, setPaymentEmail] = useState("");
+
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+  const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Pre-fill payment email from profile if valid
+  useEffect(() => {
+    if (profile?.email && isValidEmail(profile.email)) {
+      setPaymentEmail(profile.email);
+    }
+  }, [profile]);
+
+  // Save payment email to profile
+  const savePaymentEmail = async (email: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("profiles").update({ email }).eq("user_id", user.id);
+      await refreshProfile();
+    } catch (err) {
+      console.error("Error saving email:", err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
