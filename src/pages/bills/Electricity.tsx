@@ -10,6 +10,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
+import { useWalletPayment } from "@/hooks/useWalletPayment";
+import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 const discos = [
@@ -30,14 +32,17 @@ const Electricity = () => {
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const { initializePayment, isLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+
+  const isLoading = paystackLoading || walletLoading;
 
   const [disco, setDisco] = useState("");
   const [meterType, setMeterType] = useState<"prepaid" | "postpaid">("prepaid");
   const [meterNumber, setMeterNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
-
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
   const emailSuggestion = getEmailSuggestion(paymentEmail);
@@ -91,37 +96,51 @@ const Electricity = () => {
       return;
     }
 
-    // Get valid email for payment
-    const validEmail = hasSyntheticEmail() 
-      ? (isValidEmail(paymentEmail) ? paymentEmail : null)
-      : (isValidEmail(user.email || "") ? user.email : null);
+    const metadata = {
+      transaction_type: "electricity" as const,
+      electricity_provider: disco,
+      meter_number: meterNumber,
+      meter_type: meterType,
+    };
 
-    if (!validEmail) {
-      toast({
-        title: "Email Required",
-        description: hasSyntheticEmail()
-          ? "Please enter a valid email address for payments."
-          : "Please update your profile with a valid email address.",
-        variant: "destructive",
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: Number(amount),
+        metadata,
       });
-      return;
-    }
+      if (success) {
+        setDisco("");
+        setMeterNumber("");
+        setAmount("");
+      }
+    } else {
+      // Get valid email for payment
+      const validEmail = hasSyntheticEmail() 
+        ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+        : (isValidEmail(user.email || "") ? user.email : null);
 
-    // Save email to profile if different
-    if (hasSyntheticEmail() && validEmail !== profile?.email) {
-      await savePaymentEmail(validEmail);
-    }
+      if (!validEmail) {
+        toast({
+          title: "Email Required",
+          description: hasSyntheticEmail()
+            ? "Please enter a valid email address for payments."
+            : "Please update your profile with a valid email address.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    await initializePayment({
-      amount: Number(amount),
-      email: validEmail,
-      metadata: {
-        transaction_type: "electricity",
-        electricity_provider: disco,
-        meter_number: meterNumber,
-        meter_type: meterType,
-      },
-    });
+      // Save email to profile if different
+      if (hasSyntheticEmail() && validEmail !== profile?.email) {
+        await savePaymentEmail(validEmail);
+      }
+
+      await initializePayment({
+        amount: Number(amount),
+        email: validEmail,
+        metadata,
+      });
+    }
   };
 
   return (
@@ -217,7 +236,7 @@ const Electricity = () => {
                 />
               </div>
 
-              {user && hasSyntheticEmail() && (
+              {user && hasSyntheticEmail() && paymentMethod === "paystack" && (
                 <div className="space-y-2">
                   <Label htmlFor="electricity-email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
@@ -250,8 +269,22 @@ const Electricity = () => {
                 </div>
               )}
 
+              {user && (
+                <PaymentMethodSelector
+                  selected={paymentMethod}
+                  onSelect={setPaymentMethod}
+                  walletBalance={walletBalance}
+                  amount={Number(amount) || 0}
+                />
+              )}
+
               <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? "Processing..." : `Pay ₦${Number(amount || 0).toLocaleString()}`}
+                {isLoading 
+                  ? "Processing..." 
+                  : paymentMethod === "wallet"
+                  ? `Pay ₦${Number(amount || 0).toLocaleString()} from Wallet`
+                  : `Pay ₦${Number(amount || 0).toLocaleString()}`
+                }
               </Button>
             </form>
           </CardContent>

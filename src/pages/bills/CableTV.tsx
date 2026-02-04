@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
+import { useWalletPayment } from "@/hooks/useWalletPayment";
+import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -53,13 +55,16 @@ const CableTV = () => {
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const { initializePayment, isLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+
+  const isLoading = paystackLoading || walletLoading;
 
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<CablePlan | null>(null);
   const [smartcardNumber, setSmartcardNumber] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
-
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
   const emailSuggestion = getEmailSuggestion(paymentEmail);
@@ -104,37 +109,51 @@ const CableTV = () => {
       return;
     }
 
-    // Get valid email for payment
-    const validEmail = hasSyntheticEmail() 
-      ? (isValidEmail(paymentEmail) ? paymentEmail : null)
-      : (isValidEmail(user.email || "") ? user.email : null);
+    const metadata = {
+      transaction_type: "cable_tv" as const,
+      cable_provider: selectedPlan.provider,
+      cable_smartcard: smartcardNumber,
+      cable_plan: selectedPlan.name,
+    };
 
-    if (!validEmail) {
-      toast({
-        title: "Email Required",
-        description: hasSyntheticEmail()
-          ? "Please enter a valid email address for payments."
-          : "Please update your profile with a valid email address.",
-        variant: "destructive",
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: selectedPlan.price,
+        metadata,
       });
-      return;
-    }
+      if (success) {
+        setSelectedProvider(null);
+        setSelectedPlan(null);
+        setSmartcardNumber("");
+      }
+    } else {
+      // Get valid email for payment
+      const validEmail = hasSyntheticEmail() 
+        ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+        : (isValidEmail(user.email || "") ? user.email : null);
 
-    // Save email to profile if different
-    if (hasSyntheticEmail() && validEmail !== profile?.email) {
-      await savePaymentEmail(validEmail);
-    }
+      if (!validEmail) {
+        toast({
+          title: "Email Required",
+          description: hasSyntheticEmail()
+            ? "Please enter a valid email address for payments."
+            : "Please update your profile with a valid email address.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    await initializePayment({
-      amount: selectedPlan.price,
-      email: validEmail,
-      metadata: {
-        transaction_type: "cable_tv",
-        cable_provider: selectedPlan.provider,
-        cable_smartcard: smartcardNumber,
-        cable_plan: selectedPlan.name,
-      },
-    });
+      // Save email to profile if different
+      if (hasSyntheticEmail() && validEmail !== profile?.email) {
+        await savePaymentEmail(validEmail);
+      }
+
+      await initializePayment({
+        amount: selectedPlan.price,
+        email: validEmail,
+        metadata,
+      });
+    }
   };
 
   const currentPlans = selectedProvider ? cablePlans[selectedProvider] : [];
@@ -245,7 +264,7 @@ const CableTV = () => {
                 </div>
               )}
 
-              {user && hasSyntheticEmail() && (
+              {user && hasSyntheticEmail() && paymentMethod === "paystack" && (
                 <div className="space-y-2">
                   <Label htmlFor="cable-email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
@@ -278,11 +297,22 @@ const CableTV = () => {
                 </div>
               )}
 
+              {user && (
+                <PaymentMethodSelector
+                  selected={paymentMethod}
+                  onSelect={setPaymentMethod}
+                  walletBalance={walletBalance}
+                  amount={selectedPlan?.price || 0}
+                />
+              )}
+
               <Button type="submit" size="lg" className="w-full" disabled={isLoading || !selectedPlan}>
                 {isLoading
                   ? "Processing..."
                   : selectedPlan
-                  ? `Pay ₦${selectedPlan.price.toLocaleString()}`
+                  ? paymentMethod === "wallet"
+                    ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
+                    : `Pay ₦${selectedPlan.price.toLocaleString()}`
                   : "Select a Package"}
               </Button>
             </form>
