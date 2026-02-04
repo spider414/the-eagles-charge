@@ -42,7 +42,7 @@ const Electricity = () => {
   const [meterNumber, setMeterNumber] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
-
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
   const emailSuggestion = getEmailSuggestion(paymentEmail);
