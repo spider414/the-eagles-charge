@@ -96,37 +96,51 @@ const Electricity = () => {
       return;
     }
 
-    // Get valid email for payment
-    const validEmail = hasSyntheticEmail() 
-      ? (isValidEmail(paymentEmail) ? paymentEmail : null)
-      : (isValidEmail(user.email || "") ? user.email : null);
+    const metadata = {
+      transaction_type: "electricity" as const,
+      electricity_provider: disco,
+      meter_number: meterNumber,
+      meter_type: meterType,
+    };
 
-    if (!validEmail) {
-      toast({
-        title: "Email Required",
-        description: hasSyntheticEmail()
-          ? "Please enter a valid email address for payments."
-          : "Please update your profile with a valid email address.",
-        variant: "destructive",
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: Number(amount),
+        metadata,
       });
-      return;
-    }
+      if (success) {
+        setDisco("");
+        setMeterNumber("");
+        setAmount("");
+      }
+    } else {
+      // Get valid email for payment
+      const validEmail = hasSyntheticEmail() 
+        ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+        : (isValidEmail(user.email || "") ? user.email : null);
 
-    // Save email to profile if different
-    if (hasSyntheticEmail() && validEmail !== profile?.email) {
-      await savePaymentEmail(validEmail);
-    }
+      if (!validEmail) {
+        toast({
+          title: "Email Required",
+          description: hasSyntheticEmail()
+            ? "Please enter a valid email address for payments."
+            : "Please update your profile with a valid email address.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    await initializePayment({
-      amount: Number(amount),
-      email: validEmail,
-      metadata: {
-        transaction_type: "electricity",
-        electricity_provider: disco,
-        meter_number: meterNumber,
-        meter_type: meterType,
-      },
-    });
+      // Save email to profile if different
+      if (hasSyntheticEmail() && validEmail !== profile?.email) {
+        await savePaymentEmail(validEmail);
+      }
+
+      await initializePayment({
+        amount: Number(amount),
+        email: validEmail,
+        metadata,
+      });
+    }
   };
 
   return (
