@@ -104,9 +104,30 @@ const CableTV = () => {
       return;
     }
 
+    // Get valid email for payment
+    const validEmail = hasSyntheticEmail() 
+      ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+      : (isValidEmail(user.email || "") ? user.email : null);
+
+    if (!validEmail) {
+      toast({
+        title: "Email Required",
+        description: hasSyntheticEmail()
+          ? "Please enter a valid email address for payments."
+          : "Please update your profile with a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Save email to profile if different
+    if (hasSyntheticEmail() && validEmail !== profile?.email) {
+      await savePaymentEmail(validEmail);
+    }
+
     await initializePayment({
       amount: selectedPlan.price,
-      email: user.email || "",
+      email: validEmail,
       metadata: {
         transaction_type: "cable_tv",
         cable_provider: selectedPlan.provider,
