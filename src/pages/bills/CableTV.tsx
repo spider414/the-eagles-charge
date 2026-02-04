@@ -297,11 +297,22 @@ const CableTV = () => {
                 </div>
               )}
 
+              {user && (
+                <PaymentMethodSelector
+                  selected={paymentMethod}
+                  onSelect={setPaymentMethod}
+                  walletBalance={walletBalance}
+                  amount={selectedPlan?.price || 0}
+                />
+              )}
+
               <Button type="submit" size="lg" className="w-full" disabled={isLoading || !selectedPlan}>
                 {isLoading
                   ? "Processing..."
                   : selectedPlan
-                  ? `Pay ₦${selectedPlan.price.toLocaleString()}`
+                  ? paymentMethod === "wallet"
+                    ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
+                    : `Pay ₦${selectedPlan.price.toLocaleString()}`
                   : "Select a Package"}
               </Button>
             </form>
