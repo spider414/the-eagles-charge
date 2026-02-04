@@ -276,6 +276,18 @@ const Dashboard = () => {
                 </CardContent>
               </Card>
             </Link>
+
+            {/* Business Registration */}
+            <Link to="/business-registration">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl gradient-hero flex items-center justify-center mb-3">
+                    <Building2 className="h-7 w-7 text-primary-foreground" />
+                  </div>
+                  <span className="text-sm font-semibold">CAC Reg</span>
+                </CardContent>
+              </Card>
+            </Link>
           </div>
         </div>
         {/* Recent Transactions */}
