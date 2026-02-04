@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Globe, Check } from "lucide-react";
+import { Bird, ArrowLeft, Globe, Check, Mail, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
+import { useWalletPayment } from "@/hooks/useWalletPayment";
+import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
+import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 interface InternetPlan {
   id: string;
@@ -30,12 +34,39 @@ const internetPlans: InternetPlan[] = [
 
 const Internet = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const { initializePayment, isLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+
+  const isLoading = paystackLoading || walletLoading;
 
   const [selectedPlan, setSelectedPlan] = useState<InternetPlan | null>(null);
   const [accountNumber, setAccountNumber] = useState("");
+  const [paymentEmail, setPaymentEmail] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
+
+  // Check if user has a synthetic phone-based email
+  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+  const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Pre-fill payment email from profile if valid
+  useEffect(() => {
+    if (profile?.email && isValidEmail(profile.email)) {
+      setPaymentEmail(profile.email);
+    }
+  }, [profile]);
+
+  // Save payment email to profile
+  const savePaymentEmail = async (email: string) => {
+    if (!user) return;
+    try {
+      await supabase.from("profiles").update({ email }).eq("user_id", user.id);
+      await refreshProfile();
+    } catch (err) {
+      console.error("Error saving email:", err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,15 +90,49 @@ const Internet = () => {
       return;
     }
 
-    await initializePayment({
-      amount: selectedPlan.price,
-      email: user.email || "",
-      metadata: {
-        transaction_type: "internet",
-        internet_plan: selectedPlan.name,
-        account_number: accountNumber,
-      },
-    });
+    const metadata = {
+      transaction_type: "internet" as const,
+      internet_plan: selectedPlan.name,
+      account_number: accountNumber,
+    };
+
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: selectedPlan.price,
+        metadata,
+      });
+      if (success) {
+        setSelectedPlan(null);
+        setAccountNumber("");
+      }
+    } else {
+      // Get valid email for payment
+      const validEmail = hasSyntheticEmail() 
+        ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+        : (isValidEmail(user.email || "") ? user.email : null);
+
+      if (!validEmail) {
+        toast({
+          title: "Email Required",
+          description: hasSyntheticEmail()
+            ? "Please enter a valid email address for payments."
+            : "Please update your profile with a valid email address.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save email to profile if different
+      if (hasSyntheticEmail() && validEmail !== profile?.email) {
+        await savePaymentEmail(validEmail);
+      }
+
+      await initializePayment({
+        amount: selectedPlan.price,
+        email: validEmail,
+        metadata,
+      });
+    }
   };
 
   return (
@@ -95,7 +160,7 @@ const Internet = () => {
         <Card className="shadow-card border-2 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-purple-600" />
+              <Globe className="h-5 w-5 text-primary" />
               Internet Subscription
             </CardTitle>
             <CardDescription>
@@ -147,11 +212,55 @@ const Internet = () => {
                 </div>
               </div>
 
+              {user && hasSyntheticEmail() && paymentMethod === "paystack" && (
+                <div className="space-y-2">
+                  <Label htmlFor="internet-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    Email for Payment Receipt
+                  </Label>
+                  <Input
+                    id="internet-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={paymentEmail}
+                    onChange={(e) => setPaymentEmail(e.target.value)}
+                    className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
+                  />
+                  {emailSuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentEmail(emailSuggestion)}
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      Did you mean {emailSuggestion}?
+                    </button>
+                  )}
+                  {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Please enter a valid email address
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {user && (
+                <PaymentMethodSelector
+                  selected={paymentMethod}
+                  onSelect={setPaymentMethod}
+                  walletBalance={walletBalance}
+                  amount={selectedPlan?.price || 0}
+                />
+              )}
+
               <Button type="submit" size="lg" className="w-full" disabled={isLoading || !selectedPlan}>
                 {isLoading
                   ? "Processing..."
                   : selectedPlan
-                  ? `Pay ₦${selectedPlan.price.toLocaleString()}`
+                  ? paymentMethod === "wallet"
+                    ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
+                    : `Pay ₦${selectedPlan.price.toLocaleString()}`
                   : "Select a Plan"}
               </Button>
             </form>
