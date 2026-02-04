@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Briefcase, Clock, Bell } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, Building2, Briefcase, Clock, Bell, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,17 +24,22 @@ const ComingSoon = () => {
     );
   }
 
-  const upcomingServices = [
+  const availableServices = [
     {
       icon: Building2,
-      title: "Company Registration",
-      description: "Register your business with the Corporate Affairs Commission (CAC) seamlessly",
-      color: "bg-blue-500",
+      title: "Company & Business Registration",
+      description: "Register your business with the Corporate Affairs Commission (CAC)",
+      color: "gradient-hero",
+      link: "/business-registration",
+      available: true,
     },
+  ];
+
+  const upcomingServices = [
     {
       icon: Briefcase,
-      title: "Business Name Registration",
-      description: "Get your business name registered quickly and efficiently",
+      title: "Tax Identification Number (TIN)",
+      description: "Get your TIN for tax compliance",
       color: "bg-emerald-500",
     },
   ];
