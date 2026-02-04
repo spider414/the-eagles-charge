@@ -134,6 +134,20 @@ const Internet = () => {
       });
     }
   };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
+                <Bird className="h-6 w-6 text-secondary-foreground" />
+              </div>
               <span className="text-xl font-bold text-foreground">
                 Internet <span className="text-gradient-gold">Subscription</span>
               </span>
@@ -146,7 +160,7 @@ const Internet = () => {
         <Card className="shadow-card border-2 border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Globe className="h-5 w-5 text-purple-600" />
+              <Globe className="h-5 w-5 text-primary" />
               Internet Subscription
             </CardTitle>
             <CardDescription>
@@ -198,11 +212,55 @@ const Internet = () => {
                 </div>
               </div>
 
+              {user && hasSyntheticEmail() && paymentMethod === "paystack" && (
+                <div className="space-y-2">
+                  <Label htmlFor="internet-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    Email for Payment Receipt
+                  </Label>
+                  <Input
+                    id="internet-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={paymentEmail}
+                    onChange={(e) => setPaymentEmail(e.target.value)}
+                    className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
+                  />
+                  {emailSuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentEmail(emailSuggestion)}
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      Did you mean {emailSuggestion}?
+                    </button>
+                  )}
+                  {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Please enter a valid email address
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {user && (
+                <PaymentMethodSelector
+                  selected={paymentMethod}
+                  onSelect={setPaymentMethod}
+                  walletBalance={walletBalance}
+                  amount={selectedPlan?.price || 0}
+                />
+              )}
+
               <Button type="submit" size="lg" className="w-full" disabled={isLoading || !selectedPlan}>
                 {isLoading
                   ? "Processing..."
                   : selectedPlan
-                  ? `Pay ₦${selectedPlan.price.toLocaleString()}`
+                  ? paymentMethod === "wallet"
+                    ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
+                    : `Pay ₦${selectedPlan.price.toLocaleString()}`
                   : "Select a Plan"}
               </Button>
             </form>
