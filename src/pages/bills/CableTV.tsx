@@ -109,37 +109,51 @@ const CableTV = () => {
       return;
     }
 
-    // Get valid email for payment
-    const validEmail = hasSyntheticEmail() 
-      ? (isValidEmail(paymentEmail) ? paymentEmail : null)
-      : (isValidEmail(user.email || "") ? user.email : null);
+    const metadata = {
+      transaction_type: "cable_tv" as const,
+      cable_provider: selectedPlan.provider,
+      cable_smartcard: smartcardNumber,
+      cable_plan: selectedPlan.name,
+    };
 
-    if (!validEmail) {
-      toast({
-        title: "Email Required",
-        description: hasSyntheticEmail()
-          ? "Please enter a valid email address for payments."
-          : "Please update your profile with a valid email address.",
-        variant: "destructive",
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: selectedPlan.price,
+        metadata,
       });
-      return;
-    }
+      if (success) {
+        setSelectedProvider(null);
+        setSelectedPlan(null);
+        setSmartcardNumber("");
+      }
+    } else {
+      // Get valid email for payment
+      const validEmail = hasSyntheticEmail() 
+        ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+        : (isValidEmail(user.email || "") ? user.email : null);
 
-    // Save email to profile if different
-    if (hasSyntheticEmail() && validEmail !== profile?.email) {
-      await savePaymentEmail(validEmail);
-    }
+      if (!validEmail) {
+        toast({
+          title: "Email Required",
+          description: hasSyntheticEmail()
+            ? "Please enter a valid email address for payments."
+            : "Please update your profile with a valid email address.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-    await initializePayment({
-      amount: selectedPlan.price,
-      email: validEmail,
-      metadata: {
-        transaction_type: "cable_tv",
-        cable_provider: selectedPlan.provider,
-        cable_smartcard: smartcardNumber,
-        cable_plan: selectedPlan.name,
-      },
-    });
+      // Save email to profile if different
+      if (hasSyntheticEmail() && validEmail !== profile?.email) {
+        await savePaymentEmail(validEmail);
+      }
+
+      await initializePayment({
+        amount: selectedPlan.price,
+        email: validEmail,
+        metadata,
+      });
+    }
   };
 
   const currentPlans = selectedProvider ? cablePlans[selectedProvider] : [];
