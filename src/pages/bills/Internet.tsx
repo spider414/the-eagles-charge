@@ -90,30 +90,50 @@ const Internet = () => {
       return;
     }
 
-    await initializePayment({
-      amount: selectedPlan.price,
-      email: user.email || "",
-      metadata: {
-        transaction_type: "internet",
-        internet_plan: selectedPlan.name,
-        account_number: accountNumber,
-      },
-    });
-  };
+    const metadata = {
+      transaction_type: "internet" as const,
+      internet_plan: selectedPlan.name,
+      account_number: accountNumber,
+    };
 
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
-                <Bird className="h-6 w-6 text-secondary-foreground" />
-              </div>
+    if (paymentMethod === "wallet") {
+      const success = await payWithWallet({
+        amount: selectedPlan.price,
+        metadata,
+      });
+      if (success) {
+        setSelectedPlan(null);
+        setAccountNumber("");
+      }
+    } else {
+      // Get valid email for payment
+      const validEmail = hasSyntheticEmail() 
+        ? (isValidEmail(paymentEmail) ? paymentEmail : null)
+        : (isValidEmail(user.email || "") ? user.email : null);
+
+      if (!validEmail) {
+        toast({
+          title: "Email Required",
+          description: hasSyntheticEmail()
+            ? "Please enter a valid email address for payments."
+            : "Please update your profile with a valid email address.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Save email to profile if different
+      if (hasSyntheticEmail() && validEmail !== profile?.email) {
+        await savePaymentEmail(validEmail);
+      }
+
+      await initializePayment({
+        amount: selectedPlan.price,
+        email: validEmail,
+        metadata,
+      });
+    }
+  };
               <span className="text-xl font-bold text-foreground">
                 Internet <span className="text-gradient-gold">Subscription</span>
               </span>
