@@ -217,6 +217,39 @@ const Electricity = () => {
                 />
               </div>
 
+              {user && hasSyntheticEmail() && (
+                <div className="space-y-2">
+                  <Label htmlFor="electricity-email" className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    Email for Payment Receipt
+                  </Label>
+                  <Input
+                    id="electricity-email"
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={paymentEmail}
+                    onChange={(e) => setPaymentEmail(e.target.value)}
+                    className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
+                  />
+                  {emailSuggestion && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentEmail(emailSuggestion)}
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <AlertCircle className="h-3 w-3" />
+                      Did you mean {emailSuggestion}?
+                    </button>
+                  )}
+                  {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Please enter a valid email address
+                    </p>
+                  )}
+                </div>
+              )}
+
               <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
                 {isLoading ? "Processing..." : `Pay ₦${Number(amount || 0).toLocaleString()}`}
               </Button>
