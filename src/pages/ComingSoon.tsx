@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Building2, Briefcase, Clock, Bell } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { ArrowLeft, Building2, Briefcase, Clock, Bell, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,17 +24,22 @@ const ComingSoon = () => {
     );
   }
 
-  const upcomingServices = [
+  const availableServices = [
     {
       icon: Building2,
-      title: "Company Registration",
-      description: "Register your business with the Corporate Affairs Commission (CAC) seamlessly",
-      color: "bg-blue-500",
+      title: "Company & Business Registration",
+      description: "Register your business with the Corporate Affairs Commission (CAC)",
+      color: "gradient-hero",
+      link: "/business-registration",
+      available: true,
     },
+  ];
+
+  const upcomingServices = [
     {
       icon: Briefcase,
-      title: "Business Name Registration",
-      description: "Get your business name registered quickly and efficiently",
+      title: "Tax Identification Number (TIN)",
+      description: "Get your TIN for tax compliance",
       color: "bg-emerald-500",
     },
   ];
@@ -73,27 +78,57 @@ const ComingSoon = () => {
             </p>
           </div>
 
-          {/* Upcoming Services */}
-          <div className="space-y-4 mb-8">
-            {upcomingServices.map((service, index) => (
-              <Card 
-                key={service.title} 
-                className="overflow-hidden animate-fade-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-14 h-14 rounded-2xl ${service.color} flex items-center justify-center shrink-0`}>
-                      <service.icon className="h-7 w-7 text-white" />
+          {/* Available Services */}
+          <div className="mb-6">
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">NOW AVAILABLE</h2>
+            {availableServices.map((service, index) => (
+              <Link to={service.link} key={service.title}>
+                <Card 
+                  className="overflow-hidden animate-fade-in hover:shadow-card hover:border-primary/50 transition-all cursor-pointer"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-14 h-14 rounded-2xl ${service.color} flex items-center justify-center shrink-0`}>
+                        <service.icon className="h-7 w-7 text-primary-foreground" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold mb-1">{service.title}</h3>
+                        <p className="text-sm text-muted-foreground">{service.description}</p>
+                      </div>
+                      <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold mb-1">{service.title}</h3>
-                      <p className="text-sm text-muted-foreground">{service.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
+          </div>
+
+          {/* Upcoming Services */}
+          <div className="mb-8">
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">COMING SOON</h2>
+            <div className="space-y-4">
+              {upcomingServices.map((service, index) => (
+                <Card 
+                  key={service.title} 
+                  className="overflow-hidden animate-fade-in opacity-75"
+                  style={{ animationDelay: `${(index + 1) * 100}ms` }}
+                >
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <div className={`w-14 h-14 rounded-2xl ${service.color} flex items-center justify-center shrink-0`}>
+                        <service.icon className="h-7 w-7 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold mb-1">{service.title}</h3>
+                        <p className="text-sm text-muted-foreground">{service.description}</p>
+                      </div>
+                      <Clock className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
 
           {/* Notify Me Card */}
