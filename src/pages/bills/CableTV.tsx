@@ -64,7 +64,7 @@ const CableTV = () => {
   const [selectedPlan, setSelectedPlan] = useState<CablePlan | null>(null);
   const [smartcardNumber, setSmartcardNumber] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
-
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
   const emailSuggestion = getEmailSuggestion(paymentEmail);
