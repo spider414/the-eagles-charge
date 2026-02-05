@@ -184,8 +184,12 @@ const RecentTransactions = () => {
           {transactions.map((tx, index) => (
             <div 
               key={tx.id} 
-              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in"
+              className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors animate-fade-in cursor-pointer"
               style={{ animationDelay: `${index * 50}ms` }}
+              onClick={() => {
+                setSelectedTransaction(tx);
+                setDialogOpen(true);
+              }}
             >
               <div className={`w-10 h-10 rounded-xl ${getTransactionColor(tx.transaction_type)} flex items-center justify-center text-white`}>
                 {getTransactionIcon(tx.transaction_type)}
@@ -206,6 +210,12 @@ const RecentTransactions = () => {
           ))}
         </div>
       </CardContent>
+
+      <TransactionDetailDialog
+        transaction={selectedTransaction}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </Card>
   );
 };
