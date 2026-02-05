@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, ArrowLeft, Phone, Wifi, Zap, Tv, Globe, Receipt, Filter, Download } from "lucide-react";
+import { Bird, ArrowLeft, Phone, Wifi, Zap, Tv, Globe, Receipt, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import TransactionDetailDialog from "@/components/TransactionDetailDialog";
 
 interface Transaction {
   id: string;
