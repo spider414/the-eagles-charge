@@ -94,6 +94,8 @@ const RecentTransactions = () => {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchRecentTransactions = async () => {
