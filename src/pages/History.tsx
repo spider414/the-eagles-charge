@@ -169,54 +169,69 @@ const History = () => {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-4">
-            {transactions.map((tx) => {
-              const Icon = getTransactionIcon(tx.transaction_type);
-              return (
-                <Card key={tx.id} className="hover:shadow-card transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <div className="p-3 rounded-xl bg-muted">
-                          <Icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium capitalize">
-                              {tx.transaction_type.replace("_", " ")}
-                            </span>
-                            <Badge variant="secondary" className={getStatusColor(tx.status)}>
-                              {tx.status}
-                            </Badge>
+          <>
+            <div className="space-y-4">
+              {transactions.map((tx) => {
+                const Icon = getTransactionIcon(tx.transaction_type);
+                return (
+                  <Card 
+                    key={tx.id} 
+                    className="hover:shadow-card transition-shadow cursor-pointer"
+                    onClick={() => {
+                      setSelectedTransaction(tx);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                          <div className="p-3 rounded-xl bg-muted">
+                            <Icon className="h-5 w-5 text-primary" />
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            {tx.phone_number && `${tx.phone_number} • `}
-                            {tx.network && `${tx.network.toUpperCase()} • `}
-                            {tx.data_plan && `${tx.data_plan} • `}
-                            {tx.cable_provider && `${tx.cable_provider.toUpperCase()} • `}
-                            {tx.electricity_provider && `${tx.electricity_provider.toUpperCase()}`}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(tx.created_at), "MMM dd, yyyy 'at' h:mm a")}
-                          </p>
-                          {tx.paystack_reference && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Ref: {tx.paystack_reference}
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium capitalize">
+                                {tx.transaction_type.replace("_", " ")}
+                              </span>
+                              <Badge variant="secondary" className={getStatusColor(tx.status)}>
+                                {tx.status}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              {tx.phone_number && `${tx.phone_number} • `}
+                              {tx.network && `${tx.network.toUpperCase()} • `}
+                              {tx.data_plan && `${tx.data_plan} • `}
+                              {tx.cable_provider && `${tx.cable_provider.toUpperCase()} • `}
+                              {tx.electricity_provider && `${tx.electricity_provider.toUpperCase()}`}
                             </p>
-                          )}
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(new Date(tx.created_at), "MMM dd, yyyy 'at' h:mm a")}
+                            </p>
+                            {tx.paystack_reference && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Ref: {tx.paystack_reference}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-foreground">
+                            ₦{tx.amount.toLocaleString()}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-foreground">
-                          ₦{tx.amount.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+
+            <TransactionDetailDialog
+              transaction={selectedTransaction}
+              open={dialogOpen}
+              onOpenChange={setDialogOpen}
+            />
+          </>
         )}
       </main>
     </div>
