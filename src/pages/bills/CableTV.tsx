@@ -261,14 +261,81 @@ const CableTV = () => {
               {/* Smartcard Number */}
               <div className="space-y-3">
                 <Label htmlFor="smartcard">Smartcard / IUC Number</Label>
-                <Input
-                  id="smartcard"
-                  type="text"
-                  placeholder="Enter smartcard number"
-                  value={smartcardNumber}
-                  onChange={(e) => setSmartcardNumber(e.target.value.replace(/\D/g, ""))}
-                  className="h-12"
-                />
+                <div className="relative">
+                  <Input
+                    id="smartcard"
+                    type="text"
+                    placeholder="Enter smartcard number"
+                    value={smartcardNumber}
+                    onChange={(e) => {
+                      setSmartcardNumber(e.target.value.replace(/\D/g, ""));
+                      setIsSmartcardVerified(false);
+                    }}
+                    className={`h-12 pr-10 ${
+                      smartcardNumber.length >= 10
+                        ? isVerifying
+                          ? "border-muted"
+                          : isSmartcardVerified
+                          ? "border-green-500"
+                          : verificationError
+                          ? "border-destructive"
+                          : ""
+                        : ""
+                    }`}
+                  />
+                  {smartcardNumber.length >= 10 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {isVerifying ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      ) : isSmartcardVerified ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : verificationError ? (
+                        <XCircle className="h-5 w-5 text-destructive" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                {/* Verification Status */}
+                {smartcardNumber.length >= 10 && !isVerifying && (
+                  <>
+                    {verificationError && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                        <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                        <p className="text-sm text-destructive">{verificationError}</p>
+                      </div>
+                    )}
+                    {customerInfo && (
+                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 space-y-2 animate-fade-in">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium text-foreground">
+                            {customerInfo.customer_name}
+                          </span>
+                        </div>
+                        {customerInfo.current_package && (
+                          <div className="flex items-center gap-2">
+                            <Tv className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              Current: {customerInfo.current_package}
+                            </span>
+                          </div>
+                        )}
+                        {customerInfo.due_date && (
+                          <p className="text-xs text-muted-foreground">
+                            Due: {customerInfo.due_date}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!selectedProvider && smartcardNumber.length >= 10 && (
+                  <p className="text-xs text-muted-foreground">
+                    Please select a provider to verify your smartcard
+                  </p>
+                )}
               </div>
 
               {/* Plan Selection */}
