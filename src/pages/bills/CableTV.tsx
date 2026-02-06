@@ -59,6 +59,7 @@ const CableTV = () => {
   const { toast } = useToast();
   const { initializePayment, isLoading: paystackLoading } = usePaystack();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+  const { isVerifying, customerInfo, verificationError, verifySmartcard, resetVerification } = useSmartcardVerification();
 
   const isLoading = paystackLoading || walletLoading;
 
@@ -67,9 +68,32 @@ const CableTV = () => {
   const [smartcardNumber, setSmartcardNumber] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
+  const [isSmartcardVerified, setIsSmartcardVerified] = useState(false);
+  
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
   const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Debounced smartcard verification
+  const debouncedVerify = useDebouncedCallback(
+    async (number: string, provider: string) => {
+      if (number.length >= 10 && provider) {
+        const isValid = await verifySmartcard(number, provider as "dstv" | "gotv" | "startimes");
+        setIsSmartcardVerified(isValid);
+      }
+    },
+    800
+  );
+
+  // Trigger verification when smartcard number or provider changes
+  useEffect(() => {
+    if (smartcardNumber.length >= 10 && selectedProvider) {
+      debouncedVerify(smartcardNumber, selectedProvider);
+    } else {
+      resetVerification();
+      setIsSmartcardVerified(false);
+    }
+  }, [smartcardNumber, selectedProvider, debouncedVerify, resetVerification]);
 
   // Pre-fill payment email from profile if valid
   useEffect(() => {
