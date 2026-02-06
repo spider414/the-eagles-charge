@@ -135,6 +135,16 @@ const CableTV = () => {
       return;
     }
 
+    // Verify smartcard before payment
+    if (!isSmartcardVerified) {
+      toast({
+        title: "Invalid Smartcard",
+        description: verificationError || "Please enter a valid smartcard number before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const metadata = {
       transaction_type: "cable_tv" as const,
       cable_provider: selectedPlan.provider,
