@@ -161,6 +161,8 @@ const CableTV = () => {
         setSelectedProvider(null);
         setSelectedPlan(null);
         setSmartcardNumber("");
+        setIsSmartcardVerified(false);
+        resetVerification();
       }
     } else {
       // Get valid email for payment
