@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Zap, Mail, AlertCircle } from "lucide-react";
+import { Bird, ArrowLeft, Zap, Mail, AlertCircle, Loader2, User, MapPin, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
+import { useMeterVerification } from "@/hooks/useMeterVerification";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
+
 const discos = [
   { id: "ekedc", name: "Eko Electricity (EKEDC)" },
   { id: "ikedc", name: "Ikeja Electricity (IKEDC)" },
@@ -34,6 +37,7 @@ const Electricity = () => {
   const { toast } = useToast();
   const { initializePayment, isLoading: paystackLoading } = usePaystack();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+  const { isVerifying, customerInfo, verificationError, verifyMeter, resetVerification } = useMeterVerification();
 
   const isLoading = paystackLoading || walletLoading;
 
@@ -43,9 +47,32 @@ const Electricity = () => {
   const [amount, setAmount] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
+  const [isMeterVerified, setIsMeterVerified] = useState(false);
+
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
   const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Debounced meter verification
+  const debouncedVerify = useDebouncedCallback(
+    async (number: string, provider: string, type: "prepaid" | "postpaid") => {
+      if (number.length >= 10 && provider) {
+        const isValid = await verifyMeter(number, provider, type);
+        setIsMeterVerified(isValid);
+      }
+    },
+    800
+  );
+
+  // Trigger verification when meter number, disco, or type changes
+  useEffect(() => {
+    if (meterNumber.length >= 10 && disco) {
+      debouncedVerify(meterNumber, disco, meterType);
+    } else {
+      resetVerification();
+      setIsMeterVerified(false);
+    }
+  }, [meterNumber, disco, meterType, debouncedVerify, resetVerification]);
 
   // Pre-fill payment email from profile if valid
   useEffect(() => {
@@ -96,6 +123,16 @@ const Electricity = () => {
       return;
     }
 
+    // Verify meter before payment
+    if (!isMeterVerified) {
+      toast({
+        title: "Invalid Meter",
+        description: verificationError || "Please enter a valid meter number before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const metadata = {
       transaction_type: "electricity" as const,
       electricity_provider: disco,
@@ -112,6 +149,8 @@ const Electricity = () => {
         setDisco("");
         setMeterNumber("");
         setAmount("");
+        setIsMeterVerified(false);
+        resetVerification();
       }
     } else {
       // Get valid email for payment
@@ -179,7 +218,10 @@ const Electricity = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-3">
                 <Label>Distribution Company (DisCo)</Label>
-                <Select value={disco} onValueChange={setDisco}>
+                <Select value={disco} onValueChange={(val) => {
+                  setDisco(val);
+                  setIsMeterVerified(false);
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select your DisCo" />
                   </SelectTrigger>
@@ -197,7 +239,10 @@ const Electricity = () => {
                 <Label>Meter Type</Label>
                 <RadioGroup
                   value={meterType}
-                  onValueChange={(val) => setMeterType(val as "prepaid" | "postpaid")}
+                  onValueChange={(val) => {
+                    setMeterType(val as "prepaid" | "postpaid");
+                    setIsMeterVerified(false);
+                  }}
                   className="flex gap-4"
                 >
                   <div className="flex items-center space-x-2">
@@ -213,14 +258,81 @@ const Electricity = () => {
 
               <div className="space-y-3">
                 <Label htmlFor="meter-number">Meter Number</Label>
-                <Input
-                  id="meter-number"
-                  type="text"
-                  placeholder="Enter meter number"
-                  value={meterNumber}
-                  onChange={(e) => setMeterNumber(e.target.value.replace(/\D/g, ""))}
-                  className="h-12"
-                />
+                <div className="relative">
+                  <Input
+                    id="meter-number"
+                    type="text"
+                    placeholder="Enter meter number"
+                    value={meterNumber}
+                    onChange={(e) => {
+                      setMeterNumber(e.target.value.replace(/\D/g, ""));
+                      setIsMeterVerified(false);
+                    }}
+                    className={`h-12 pr-10 ${
+                      meterNumber.length >= 10
+                        ? isVerifying
+                          ? "border-muted"
+                          : isMeterVerified
+                          ? "border-green-500"
+                          : verificationError
+                          ? "border-destructive"
+                          : ""
+                        : ""
+                    }`}
+                  />
+                  {meterNumber.length >= 10 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {isVerifying ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      ) : isMeterVerified ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : verificationError ? (
+                        <XCircle className="h-5 w-5 text-destructive" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                {/* Verification Status */}
+                {meterNumber.length >= 10 && !isVerifying && (
+                  <>
+                    {verificationError && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                        <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                        <p className="text-sm text-destructive">{verificationError}</p>
+                      </div>
+                    )}
+                    {customerInfo && (
+                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 space-y-2 animate-fade-in">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium text-foreground">
+                            {customerInfo.customer_name}
+                          </span>
+                        </div>
+                        {customerInfo.customer_address && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              {customerInfo.customer_address}
+                            </span>
+                          </div>
+                        )}
+                        {customerInfo.outstanding_balance && (
+                          <p className="text-xs text-muted-foreground">
+                            Outstanding: ₦{customerInfo.outstanding_balance}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!disco && meterNumber.length >= 10 && (
+                  <p className="text-xs text-muted-foreground">
+                    Please select a DisCo to verify your meter
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3">
