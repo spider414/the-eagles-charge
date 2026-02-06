@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Tv, Check, Mail, AlertCircle } from "lucide-react";
+import { Bird, ArrowLeft, Tv, Check, Mail, AlertCircle, Loader2, User, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +9,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
+import { useSmartcardVerification } from "@/hooks/useSmartcardVerification";
 import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 interface CablePlan {
   id: string;
