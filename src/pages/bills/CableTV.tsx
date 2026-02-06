@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Tv, Check, Mail, AlertCircle } from "lucide-react";
+import { Bird, ArrowLeft, Tv, Check, Mail, AlertCircle, Loader2, User, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,9 +9,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
+import { useSmartcardVerification } from "@/hooks/useSmartcardVerification";
 import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 
 interface CablePlan {
   id: string;
@@ -57,6 +59,7 @@ const CableTV = () => {
   const { toast } = useToast();
   const { initializePayment, isLoading: paystackLoading } = usePaystack();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
+  const { isVerifying, customerInfo, verificationError, verifySmartcard, resetVerification } = useSmartcardVerification();
 
   const isLoading = paystackLoading || walletLoading;
 
@@ -65,9 +68,32 @@ const CableTV = () => {
   const [smartcardNumber, setSmartcardNumber] = useState("");
   const [paymentEmail, setPaymentEmail] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("paystack");
+  const [isSmartcardVerified, setIsSmartcardVerified] = useState(false);
+  
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
   const emailSuggestion = getEmailSuggestion(paymentEmail);
+
+  // Debounced smartcard verification
+  const debouncedVerify = useDebouncedCallback(
+    async (number: string, provider: string) => {
+      if (number.length >= 10 && provider) {
+        const isValid = await verifySmartcard(number, provider as "dstv" | "gotv" | "startimes");
+        setIsSmartcardVerified(isValid);
+      }
+    },
+    800
+  );
+
+  // Trigger verification when smartcard number or provider changes
+  useEffect(() => {
+    if (smartcardNumber.length >= 10 && selectedProvider) {
+      debouncedVerify(smartcardNumber, selectedProvider);
+    } else {
+      resetVerification();
+      setIsSmartcardVerified(false);
+    }
+  }, [smartcardNumber, selectedProvider, debouncedVerify, resetVerification]);
 
   // Pre-fill payment email from profile if valid
   useEffect(() => {
@@ -109,6 +135,16 @@ const CableTV = () => {
       return;
     }
 
+    // Verify smartcard before payment
+    if (!isSmartcardVerified) {
+      toast({
+        title: "Invalid Smartcard",
+        description: verificationError || "Please enter a valid smartcard number before proceeding.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const metadata = {
       transaction_type: "cable_tv" as const,
       cable_provider: selectedPlan.provider,
@@ -125,6 +161,8 @@ const CableTV = () => {
         setSelectedProvider(null);
         setSelectedPlan(null);
         setSmartcardNumber("");
+        setIsSmartcardVerified(false);
+        resetVerification();
       }
     } else {
       // Get valid email for payment
@@ -225,14 +263,81 @@ const CableTV = () => {
               {/* Smartcard Number */}
               <div className="space-y-3">
                 <Label htmlFor="smartcard">Smartcard / IUC Number</Label>
-                <Input
-                  id="smartcard"
-                  type="text"
-                  placeholder="Enter smartcard number"
-                  value={smartcardNumber}
-                  onChange={(e) => setSmartcardNumber(e.target.value.replace(/\D/g, ""))}
-                  className="h-12"
-                />
+                <div className="relative">
+                  <Input
+                    id="smartcard"
+                    type="text"
+                    placeholder="Enter smartcard number"
+                    value={smartcardNumber}
+                    onChange={(e) => {
+                      setSmartcardNumber(e.target.value.replace(/\D/g, ""));
+                      setIsSmartcardVerified(false);
+                    }}
+                    className={`h-12 pr-10 ${
+                      smartcardNumber.length >= 10
+                        ? isVerifying
+                          ? "border-muted"
+                          : isSmartcardVerified
+                          ? "border-green-500"
+                          : verificationError
+                          ? "border-destructive"
+                          : ""
+                        : ""
+                    }`}
+                  />
+                  {smartcardNumber.length >= 10 && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {isVerifying ? (
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      ) : isSmartcardVerified ? (
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      ) : verificationError ? (
+                        <XCircle className="h-5 w-5 text-destructive" />
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
+                {/* Verification Status */}
+                {smartcardNumber.length >= 10 && !isVerifying && (
+                  <>
+                    {verificationError && (
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                        <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                        <p className="text-sm text-destructive">{verificationError}</p>
+                      </div>
+                    )}
+                    {customerInfo && (
+                      <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20 space-y-2 animate-fade-in">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-green-600" />
+                          <span className="text-sm font-medium text-foreground">
+                            {customerInfo.customer_name}
+                          </span>
+                        </div>
+                        {customerInfo.current_package && (
+                          <div className="flex items-center gap-2">
+                            <Tv className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              Current: {customerInfo.current_package}
+                            </span>
+                          </div>
+                        )}
+                        {customerInfo.due_date && (
+                          <p className="text-xs text-muted-foreground">
+                            Due: {customerInfo.due_date}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {!selectedProvider && smartcardNumber.length >= 10 && (
+                  <p className="text-xs text-muted-foreground">
+                    Please select a provider to verify your smartcard
+                  </p>
+                )}
               </div>
 
               {/* Plan Selection */}
