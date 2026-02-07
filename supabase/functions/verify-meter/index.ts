@@ -11,19 +11,19 @@ interface VerifyRequest {
   meter_type: "prepaid" | "postpaid";
 }
 
-// Electricity DisCo to Provider ID mapping (same as vtu-service)
-const ELECTRICITY_PROVIDER_IDS: Record<string, number> = {
-  aedc: 1,
-  ekedc: 2,
-  ibedc: 3,
-  ikedc: 4,
-  kedco: 5,
-  phedc: 6,
-  jedc: 7,
-  eedc: 8,
-  yedc: 9,
-  bedc: 10,
-  kaedco: 5, // Map kaedco to same as kedco if needed
+// VTPass serviceID mapping for electricity DisCos
+const VTPASS_ELECTRICITY_IDS: Record<string, string> = {
+  ikedc: "ikeja-electric",
+  ekedc: "eko-electric",
+  aedc: "abuja-electric",
+  phedc: "portharcourt-electric",
+  kedco: "kano-electric",
+  ibedc: "ibadan-electric",
+  eedc: "enugu-electric",
+  bedc: "benin-electric",
+  jedc: "jos-electric",
+  kaedco: "kaduna-electric",
+  yedc: "yola-electric",
 };
 
 serve(async (req) => {
@@ -43,7 +43,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate meter number format (typically 11-13 digits)
     if (meter_number.length < 10 || meter_number.length > 15) {
       return new Response(
         JSON.stringify({ 
@@ -54,52 +53,54 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get("CHEAPDATAHUB2_API_KEY");
-    if (!apiKey) {
-      console.error("CHEAPDATAHUB2_API_KEY not configured");
+    const vtpassApiKey = Deno.env.get("VTPASS_API_KEY");
+    const vtpassPublicKey = Deno.env.get("VTPASS_PUBLIC_KEY");
+    
+    if (!vtpassApiKey || !vtpassPublicKey) {
+      console.error("VTPass credentials not configured");
       return new Response(
         JSON.stringify({ error: "Service configuration error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const providerId = ELECTRICITY_PROVIDER_IDS[provider.toLowerCase()];
-    if (!providerId) {
+    const serviceID = VTPASS_ELECTRICITY_IDS[provider.toLowerCase()];
+    if (!serviceID) {
       return new Response(
         JSON.stringify({ valid: false, error: "Invalid electricity provider" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Call the CheapDataHub verification API
-    const verifyUrl = "https://www.cheapdatahub.ng/api/v1/resellers/electricity/validate/";
+    // VTPass uses Basic Authentication: api-key:public-key
+    const authString = btoa(`${vtpassApiKey}:${vtpassPublicKey}`);
     
-    console.log(`Calling verification API: ${verifyUrl}`);
-    
+    const verifyUrl = "https://vtpass.com/api/merchant-verify";
+    console.log(`Calling VTPass verify API: ${verifyUrl} with serviceID: ${serviceID}, type: ${meter_type}`);
+
     const verifyResponse = await fetch(verifyUrl, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        "Authorization": `Basic ${authString}`,
         "Content-Type": "application/json",
         "Accept": "application/json",
       },
       body: JSON.stringify({
-        provider_id: providerId,
-        meter_number: meter_number,
-        meter_type: meter_type || "prepaid",
+        billersCode: meter_number,
+        serviceID: serviceID,
+        type: meter_type || "prepaid",
       }),
     });
 
     const responseText = await verifyResponse.text();
-    console.log(`Verification API response status: ${verifyResponse.status}`);
-    console.log(`Verification API response: ${responseText.substring(0, 500)}`);
+    console.log(`VTPass response status: ${verifyResponse.status}`);
+    console.log(`VTPass response: ${responseText.substring(0, 500)}`);
 
-    // Try to parse as JSON
     let verifyData;
     try {
       verifyData = JSON.parse(responseText);
     } catch {
-      console.error("Failed to parse verification response:", responseText.substring(0, 200));
+      console.error("Failed to parse VTPass response:", responseText.substring(0, 200));
       return new Response(
         JSON.stringify({ 
           valid: false, 
@@ -109,47 +110,33 @@ serve(async (req) => {
       );
     }
 
-    // Check if verification was successful
-    const isSuccess = verifyData.status === "success" || 
-                      verifyData.success === true || 
-                      verifyData.code === "000" ||
-                      verifyData.customer_name ||
-                      verifyData.data?.customer_name;
-
-    if (isSuccess) {
-      const customerName = verifyData.customer_name || 
-                          verifyData.data?.customer_name || 
-                          verifyData.name ||
-                          verifyData.data?.name;
-      
-      const customerAddress = verifyData.address || 
-                             verifyData.data?.address || 
-                             verifyData.customer_address ||
-                             verifyData.data?.customer_address;
-
-      const outstandingBalance = verifyData.outstanding || 
-                                verifyData.data?.outstanding ||
-                                verifyData.arrears ||
-                                verifyData.data?.arrears;
+    // VTPass returns code "000" for success (BILLER CONFIRMED)
+    if (verifyData.code === "000" && verifyData.content) {
+      const content = verifyData.content;
+      const customerName = content.Customer_Name || content.customer_name || "Customer";
+      const customerAddress = content.Address || content.address || content.Customer_Address;
+      const meterNumber = content.Meter_Number || content.meter_number;
+      const customerDistrict = content.Customer_District || content.district;
 
       console.log(`Verification successful: ${customerName}, Address: ${customerAddress}`);
 
       return new Response(
         JSON.stringify({
           valid: true,
-          customer_name: customerName || "Customer",
+          customer_name: customerName,
           customer_address: customerAddress,
-          outstanding_balance: outstandingBalance,
+          meter_number: meterNumber,
+          district: customerDistrict,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     } else {
-      const errorMessage = verifyData.message || 
-                          verifyData.error || 
-                          verifyData.data?.message ||
+      const errorMessage = verifyData.content?.error || 
+                          verifyData.response_description ||
+                          verifyData.message ||
                           "Invalid meter number. Please verify and try again.";
       
-      console.log(`Verification failed: ${errorMessage}`);
+      console.log(`Verification failed - code: ${verifyData.code}, error: ${errorMessage}`);
       
       return new Response(
         JSON.stringify({

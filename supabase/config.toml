@@ -1,22 +1,5 @@
 project_id = "gwyjgljnpntorbjphnbq"
 
-# Edge Function JWT Configuration
-# 
-# All functions use verify_jwt = false because Lovable Cloud uses signing-keys system.
-# JWT validation is performed manually in code using supabase.auth.getClaims().
-# See: https://docs.lovable.dev/features/security
-#
-# Authentication Status:
-# - paystack-payment: Manual JWT validation (authenticated users only)
-# - paystack-webhook: Paystack signature verification (webhook from Paystack)
-# - vtu-service: Manual JWT validation (authenticated users only)
-# - send-otp: Public endpoint (rate-limited, no auth needed)
-# - verify-otp: Public endpoint (rate-limited, no auth needed)
-# - reset-password: Public endpoint (rate-limited, for password recovery)
-# - support-chat: Manual JWT validation (authenticated users only)
-# - cleanup-deleted-accounts: Service-role-only (rejects anon/user tokens)
-# - get-security-question: Public endpoint (for password reset flow)
-
 [functions.paystack-payment]
 verify_jwt = false
 
@@ -42,4 +25,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.get-security-question]
+verify_jwt = false
+
+[functions.verify-smartcard]
+verify_jwt = false
+
+[functions.verify-meter]
 verify_jwt = false
