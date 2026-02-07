@@ -10,19 +10,12 @@ interface VerifyRequest {
   provider: "dstv" | "gotv" | "startimes";
 }
 
-// Cable TV Provider ID mapping (same as vtu-service)
-const CABLE_PROVIDER_IDS: Record<string, number> = {
-  gotv: 1,
-  dstv: 2,
-  startimes: 3,
+// VTPass serviceID mapping
+const VTPASS_SERVICE_IDS: Record<string, string> = {
+  dstv: "dstv",
+  gotv: "gotv",
+  startimes: "startimes",
 };
-
-// Try multiple possible endpoints for verification
-const VERIFY_ENDPOINTS = [
-  "/cable/verify/",
-  "/cable/validate/",
-  "/cable/verify-iuc/",
-];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -41,7 +34,6 @@ serve(async (req) => {
       );
     }
 
-    // Validate smartcard number format
     if (smartcard_number.length < 10 || smartcard_number.length > 15) {
       return new Response(
         JSON.stringify({ 
@@ -52,140 +44,101 @@ serve(async (req) => {
       );
     }
 
-    const apiKey = Deno.env.get("CHEAPDATAHUB2_API_KEY");
-    if (!apiKey) {
-      console.error("CHEAPDATAHUB2_API_KEY not configured");
+    const vtpassApiKey = Deno.env.get("VTPASS_API_KEY");
+    const vtpassPublicKey = Deno.env.get("VTPASS_PUBLIC_KEY");
+    
+    if (!vtpassApiKey || !vtpassPublicKey) {
+      console.error("VTPass credentials not configured");
       return new Response(
         JSON.stringify({ error: "Service configuration error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const providerId = CABLE_PROVIDER_IDS[provider];
-    if (!providerId) {
+    const serviceID = VTPASS_SERVICE_IDS[provider];
+    if (!serviceID) {
       return new Response(
         JSON.stringify({ valid: false, error: "Invalid provider" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const baseUrl = "https://www.cheapdatahub.ng/api/v1/resellers";
+    // VTPass uses Basic Authentication: api-key:public-key
+    const authString = btoa(`${vtpassApiKey}:${vtpassPublicKey}`);
     
-    // Try each verification endpoint until one works
-    for (const endpoint of VERIFY_ENDPOINTS) {
-      const verifyUrl = `${baseUrl}${endpoint}`;
-      console.log(`Trying verification API: ${verifyUrl}`);
-      
-      try {
-        const verifyResponse = await fetch(verifyUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-            "Accept": "application/json",
-          },
-          body: JSON.stringify({
-            provider_id: providerId,
-            iuc_number: smartcard_number,
-          }),
-        });
+    const verifyUrl = "https://vtpass.com/api/merchant-verify";
+    console.log(`Calling VTPass verify API: ${verifyUrl} with serviceID: ${serviceID}`);
 
-        console.log(`Response status for ${endpoint}: ${verifyResponse.status}`);
+    const verifyResponse = await fetch(verifyUrl, {
+      method: "POST",
+      headers: {
+        "Authorization": `Basic ${authString}`,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: JSON.stringify({
+        billersCode: smartcard_number,
+        serviceID: serviceID,
+      }),
+    });
 
-        // If 404, try next endpoint
-        if (verifyResponse.status === 404) {
-          console.log(`Endpoint ${endpoint} returned 404, trying next...`);
-          continue;
-        }
+    const responseText = await verifyResponse.text();
+    console.log(`VTPass response status: ${verifyResponse.status}`);
+    console.log(`VTPass response: ${responseText.substring(0, 500)}`);
 
-        const responseText = await verifyResponse.text();
-        console.log(`Response body: ${responseText.substring(0, 500)}`);
-
-        // Check if it's HTML (not JSON)
-        if (responseText.trim().startsWith("<!") || responseText.trim().startsWith("<html")) {
-          console.log(`Endpoint ${endpoint} returned HTML, trying next...`);
-          continue;
-        }
-
-        // Try to parse as JSON
-        let verifyData;
-        try {
-          verifyData = JSON.parse(responseText);
-        } catch {
-          console.error("Failed to parse response as JSON:", responseText.substring(0, 200));
-          continue;
-        }
-
-        // Check if verification was successful
-        const isSuccess = verifyData.status === "success" || 
-                          verifyData.success === true || 
-                          verifyData.code === "000" ||
-                          verifyData.customer_name ||
-                          verifyData.data?.customer_name ||
-                          verifyData.data?.name;
-
-        if (isSuccess) {
-          const customerName = verifyData.customer_name || 
-                              verifyData.data?.customer_name || 
-                              verifyData.name ||
-                              verifyData.data?.name;
-          
-          const currentPackage = verifyData.current_package || 
-                                verifyData.data?.current_package || 
-                                verifyData.package ||
-                                verifyData.data?.package ||
-                                verifyData.bouquet ||
-                                verifyData.data?.bouquet ||
-                                verifyData.current_bouquet ||
-                                verifyData.data?.current_bouquet;
-
-          const dueDate = verifyData.due_date || 
-                         verifyData.data?.due_date ||
-                         verifyData.renewal_date ||
-                         verifyData.data?.renewal_date;
-
-          console.log(`Verification successful: ${customerName}, Package: ${currentPackage}`);
-
-          return new Response(
-            JSON.stringify({
-              valid: true,
-              customer_name: customerName || "Customer",
-              current_package: currentPackage,
-              due_date: dueDate,
-            }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        } else {
-          const errorMessage = verifyData.message || 
-                              verifyData.error || 
-                              verifyData.data?.message ||
-                              "Invalid smartcard number. Please verify and try again.";
-          
-          console.log(`Verification failed: ${errorMessage}`);
-          
-          return new Response(
-            JSON.stringify({
-              valid: false,
-              error: errorMessage,
-            }),
-            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-      } catch (fetchErr) {
-        console.error(`Error calling ${endpoint}:`, fetchErr);
-        continue;
-      }
+    let verifyData;
+    try {
+      verifyData = JSON.parse(responseText);
+    } catch {
+      console.error("Failed to parse VTPass response:", responseText.substring(0, 200));
+      return new Response(
+        JSON.stringify({ 
+          valid: false, 
+          error: "Unable to verify smartcard. Service temporarily unavailable." 
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    // If all endpoints failed, return error
-    console.error("All verification endpoints failed");
-    return new Response(
-      JSON.stringify({ 
-        valid: false,
-        error: "Smartcard verification is currently unavailable. Please try again later." 
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    // VTPass returns code "000" for success (BILLER CONFIRMED)
+    if (verifyData.code === "000" && verifyData.content) {
+      const content = verifyData.content;
+      const customerName = content.Customer_Name || content.customer_name || "Customer";
+      const currentBouquet = content.Current_Bouquet || content.current_bouquet;
+      const dueDate = content.Due_Date || content.due_date;
+      const renewalAmount = content.Renewal_Amount || content.renewal_amount;
+      const status = content.Status || content.status;
+
+      console.log(`Verification successful: ${customerName}, Bouquet: ${currentBouquet}, Due: ${dueDate}`);
+
+      return new Response(
+        JSON.stringify({
+          valid: true,
+          customer_name: customerName,
+          current_package: currentBouquet,
+          due_date: dueDate,
+          renewal_amount: renewalAmount,
+          status: status,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } else {
+      // VTPass error codes: 011 = invalid arguments, 012 = product not found, etc.
+      const errorMessage = verifyData.content?.error || 
+                          verifyData.response_description ||
+                          verifyData.message ||
+                          "Invalid smartcard number. Please verify and try again.";
+      
+      console.log(`Verification failed - code: ${verifyData.code}, error: ${errorMessage}`);
+      
+      return new Response(
+        JSON.stringify({
+          valid: false,
+          error: errorMessage,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
   } catch (error) {
     console.error("Verification error:", error);
     return new Response(
