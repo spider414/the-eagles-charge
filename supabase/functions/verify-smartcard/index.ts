@@ -17,6 +17,13 @@ const CABLE_PROVIDER_IDS: Record<string, number> = {
   startimes: 3,
 };
 
+// Try multiple possible endpoints for verification
+const VERIFY_ENDPOINTS = [
+  "/cable/verify/",
+  "/cable/validate/",
+  "/cable/verify-iuc/",
+];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -62,97 +69,123 @@ serve(async (req) => {
       );
     }
 
-    // Call the CheapDataHub verification API using correct base URL
-    const verifyUrl = "https://www.cheapdatahub.ng/api/v1/resellers/cable/validate/";
+    const baseUrl = "https://www.cheapdatahub.ng/api/v1/resellers";
     
-    console.log(`Calling verification API: ${verifyUrl}`);
-    
-    const verifyResponse = await fetch(verifyUrl, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-      },
-      body: JSON.stringify({
-        provider_id: providerId,
-        iuc_number: smartcard_number,
-      }),
-    });
+    // Try each verification endpoint until one works
+    for (const endpoint of VERIFY_ENDPOINTS) {
+      const verifyUrl = `${baseUrl}${endpoint}`;
+      console.log(`Trying verification API: ${verifyUrl}`);
+      
+      try {
+        const verifyResponse = await fetch(verifyUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+          },
+          body: JSON.stringify({
+            provider_id: providerId,
+            iuc_number: smartcard_number,
+          }),
+        });
 
-    const responseText = await verifyResponse.text();
-    console.log(`Verification API response status: ${verifyResponse.status}`);
-    console.log(`Verification API response: ${responseText.substring(0, 500)}`);
+        console.log(`Response status for ${endpoint}: ${verifyResponse.status}`);
 
-    // Try to parse as JSON
-    let verifyData;
-    try {
-      verifyData = JSON.parse(responseText);
-    } catch {
-      console.error("Failed to parse verification response:", responseText.substring(0, 200));
-      return new Response(
-        JSON.stringify({ 
-          valid: false, 
-          error: "Unable to verify smartcard. Service temporarily unavailable." 
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+        // If 404, try next endpoint
+        if (verifyResponse.status === 404) {
+          console.log(`Endpoint ${endpoint} returned 404, trying next...`);
+          continue;
+        }
 
-    // Check if verification was successful
-    const isSuccess = verifyData.status === "success" || 
-                      verifyData.success === true || 
-                      verifyData.code === "000" ||
-                      verifyData.customer_name ||
-                      verifyData.data?.customer_name;
+        const responseText = await verifyResponse.text();
+        console.log(`Response body: ${responseText.substring(0, 500)}`);
 
-    if (isSuccess) {
-      const customerName = verifyData.customer_name || 
-                          verifyData.data?.customer_name || 
-                          verifyData.name ||
+        // Check if it's HTML (not JSON)
+        if (responseText.trim().startsWith("<!") || responseText.trim().startsWith("<html")) {
+          console.log(`Endpoint ${endpoint} returned HTML, trying next...`);
+          continue;
+        }
+
+        // Try to parse as JSON
+        let verifyData;
+        try {
+          verifyData = JSON.parse(responseText);
+        } catch {
+          console.error("Failed to parse response as JSON:", responseText.substring(0, 200));
+          continue;
+        }
+
+        // Check if verification was successful
+        const isSuccess = verifyData.status === "success" || 
+                          verifyData.success === true || 
+                          verifyData.code === "000" ||
+                          verifyData.customer_name ||
+                          verifyData.data?.customer_name ||
                           verifyData.data?.name;
-      
-      const currentPackage = verifyData.current_package || 
-                            verifyData.data?.current_package || 
-                            verifyData.package ||
-                            verifyData.data?.package ||
-                            verifyData.bouquet ||
-                            verifyData.data?.bouquet ||
-                            verifyData.current_bouquet ||
-                            verifyData.data?.current_bouquet;
 
-      const dueDate = verifyData.due_date || 
-                     verifyData.data?.due_date ||
-                     verifyData.renewal_date ||
-                     verifyData.data?.renewal_date;
+        if (isSuccess) {
+          const customerName = verifyData.customer_name || 
+                              verifyData.data?.customer_name || 
+                              verifyData.name ||
+                              verifyData.data?.name;
+          
+          const currentPackage = verifyData.current_package || 
+                                verifyData.data?.current_package || 
+                                verifyData.package ||
+                                verifyData.data?.package ||
+                                verifyData.bouquet ||
+                                verifyData.data?.bouquet ||
+                                verifyData.current_bouquet ||
+                                verifyData.data?.current_bouquet;
 
-      console.log(`Verification successful: ${customerName}, Package: ${currentPackage}`);
+          const dueDate = verifyData.due_date || 
+                         verifyData.data?.due_date ||
+                         verifyData.renewal_date ||
+                         verifyData.data?.renewal_date;
 
-      return new Response(
-        JSON.stringify({
-          valid: true,
-          customer_name: customerName || "Customer",
-          current_package: currentPackage,
-          due_date: dueDate,
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } else {
-      const errorMessage = verifyData.message || 
-                          verifyData.error || 
-                          verifyData.data?.message ||
-                          "Invalid smartcard number. Please verify and try again.";
-      
-      console.log(`Verification failed: ${errorMessage}`);
-      
-      return new Response(
-        JSON.stringify({
-          valid: false,
-          error: errorMessage,
-        }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+          console.log(`Verification successful: ${customerName}, Package: ${currentPackage}`);
+
+          return new Response(
+            JSON.stringify({
+              valid: true,
+              customer_name: customerName || "Customer",
+              current_package: currentPackage,
+              due_date: dueDate,
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          const errorMessage = verifyData.message || 
+                              verifyData.error || 
+                              verifyData.data?.message ||
+                              "Invalid smartcard number. Please verify and try again.";
+          
+          console.log(`Verification failed: ${errorMessage}`);
+          
+          return new Response(
+            JSON.stringify({
+              valid: false,
+              error: errorMessage,
+            }),
+            { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      } catch (fetchErr) {
+        console.error(`Error calling ${endpoint}:`, fetchErr);
+        continue;
+      }
     }
+
+    // If all endpoints failed, return error
+    console.error("All verification endpoints failed");
+    return new Response(
+      JSON.stringify({ 
+        valid: false,
+        error: "Smartcard verification is currently unavailable. Please try again later." 
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   } catch (error) {
     console.error("Verification error:", error);
     return new Response(
