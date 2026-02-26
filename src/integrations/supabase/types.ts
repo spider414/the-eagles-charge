@@ -83,6 +83,9 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          nin_full_name: string | null
+          nin_number: string | null
+          nin_verified: boolean | null
           payment_email_locked: boolean | null
           paystack_customer_code: string | null
           phone_number: string | null
@@ -107,6 +110,9 @@ export type Database = {
           email: string
           full_name?: string | null
           id?: string
+          nin_full_name?: string | null
+          nin_number?: string | null
+          nin_verified?: boolean | null
           payment_email_locked?: boolean | null
           paystack_customer_code?: string | null
           phone_number?: string | null
@@ -131,6 +137,9 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          nin_full_name?: string | null
+          nin_number?: string | null
+          nin_verified?: boolean | null
           payment_email_locked?: boolean | null
           paystack_customer_code?: string | null
           phone_number?: string | null
