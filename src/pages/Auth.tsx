@@ -468,6 +468,9 @@ const Auth = () => {
     setSecurityQuestion("");
     setSecurityAnswer("");
     setPhoneVerified(false);
+    setNinVerified(false);
+    setNinData(null);
+    setIsVerifyingNin(false);
     setForgotPhone("");
     setForgotOtp("");
     setForgotSecurityAnswer("");
