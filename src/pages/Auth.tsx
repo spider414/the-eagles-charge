@@ -45,6 +45,9 @@ const Auth = () => {
   const [securityQuestion, setSecurityQuestion] = useState("");
   const [securityAnswer, setSecurityAnswer] = useState("");
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [ninVerified, setNinVerified] = useState(false);
+  const [ninData, setNinData] = useState<{ full_name: string; nin: string; photo?: string | null } | null>(null);
+  const [isVerifyingNin, setIsVerifyingNin] = useState(false);
   
   // Forgot password state
   const [forgotPhone, setForgotPhone] = useState("");
