@@ -19,7 +19,7 @@ const phoneSchema = z.string()
   .regex(/^[0-9+]+$/, "Please enter a valid phone number");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
-type AuthStep = "login" | "signup-phone" | "signup-otp" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-security" | "forgot-reset";
+type AuthStep = "login" | "signup-phone" | "signup-otp" | "signup-nin" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-security" | "forgot-reset";
 
 const Auth = () => {
   const navigate = useNavigate();
