@@ -24,7 +24,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   isLoading: boolean;
-  signUp: (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string) => Promise<{ error: Error | null }>;
+  signUp: (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string, ninData?: { nin: string; full_name: string } | null) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -150,7 +150,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   };
 
-  const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string) => {
+  const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string, ninData?: { nin: string; full_name: string } | null) => {
     // Create a fake email from phone number for Supabase auth (phone auth requires SMS setup)
     const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
     const redirectUrl = `${window.location.origin}/`;
@@ -196,6 +196,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           security_question: securityQuestion || null,
           security_answer: hashedSecurityAnswer,
           phone_verified: true,
+          nin_verified: !!ninData,
+          nin_number: ninData?.nin || null,
+          nin_full_name: ninData?.full_name || null,
         });
 
       if (profileError) {

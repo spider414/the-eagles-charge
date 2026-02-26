@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint } from "lucide-react";
+import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint, ScanFace, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,7 +19,7 @@ const phoneSchema = z.string()
   .regex(/^[0-9+]+$/, "Please enter a valid phone number");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
-type AuthStep = "login" | "signup-phone" | "signup-otp" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-security" | "forgot-reset";
+type AuthStep = "login" | "signup-phone" | "signup-otp" | "signup-nin" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-security" | "forgot-reset";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -45,6 +45,9 @@ const Auth = () => {
   const [securityQuestion, setSecurityQuestion] = useState("");
   const [securityAnswer, setSecurityAnswer] = useState("");
   const [phoneVerified, setPhoneVerified] = useState(false);
+  const [ninVerified, setNinVerified] = useState(false);
+  const [ninData, setNinData] = useState<{ full_name: string; nin: string; photo?: string | null } | null>(null);
+  const [isVerifyingNin, setIsVerifyingNin] = useState(false);
   
   // Forgot password state
   const [forgotPhone, setForgotPhone] = useState("");
@@ -210,7 +213,50 @@ const Auth = () => {
     const verificationResult = await verifyOtp(signupPhone, signupOtp, "signup");
     if (verificationResult) {
       setPhoneVerified(true);
-      setStep("signup-details");
+      setStep("signup-nin");
+    }
+  };
+
+  const handleVerifyNin = async () => {
+    setIsVerifyingNin(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-nin-phone", {
+        body: { phone_number: signupPhone },
+      });
+
+      if (error || !data?.success) {
+        toast({
+          title: "NIN Verification Failed",
+          description: data?.error || "Could not verify NIN for this phone number. You can skip this step.",
+          variant: "destructive",
+        });
+        setIsVerifyingNin(false);
+        return;
+      }
+
+      setNinData({
+        full_name: data.data.full_name,
+        nin: data.data.nin,
+        photo: data.data.photo,
+      });
+      setNinVerified(true);
+      // Auto-fill the name from NIN data
+      if (data.data.full_name) {
+        setSignupName(data.data.full_name);
+      }
+      toast({
+        title: "Identity Verified!",
+        description: `NIN verified for ${data.data.full_name}`,
+      });
+    } catch (err) {
+      console.error("NIN verification error:", err);
+      toast({
+        title: "Verification Error",
+        description: "Failed to verify NIN. You can skip this step.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingNin(false);
     }
   };
 
@@ -249,7 +295,7 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode, securityQuestion, securityAnswer);
+    const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode, securityQuestion, securityAnswer, ninData);
     setIsLoading(false);
 
     if (error) {
@@ -422,6 +468,9 @@ const Auth = () => {
     setSecurityQuestion("");
     setSecurityAnswer("");
     setPhoneVerified(false);
+    setNinVerified(false);
+    setNinData(null);
+    setIsVerifyingNin(false);
     setForgotPhone("");
     setForgotOtp("");
     setForgotSecurityAnswer("");
@@ -638,14 +687,103 @@ const Auth = () => {
             </CardContent>
           )}
 
-          {/* Signup - Details */}
-          {step === "signup-details" && (
+          {/* Signup - NIN Verification */}
+          {step === "signup-nin" && (
             <CardContent className="pt-6">
               {renderBackButton("signup-phone")}
               <div className="flex items-center gap-2 mb-4">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-sm text-green-600">Phone verified: {signupPhone}</span>
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span className="text-sm text-primary">Phone verified: {signupPhone}</span>
               </div>
+              <CardTitle className="text-xl mb-2">Identity Verification</CardTitle>
+              <CardDescription className="mb-6">
+                Verify your identity using NIN linked to your phone number
+              </CardDescription>
+              
+              <div className="space-y-4">
+                {!ninVerified ? (
+                  <>
+                    <div className="p-4 bg-muted rounded-lg text-center space-y-2">
+                      <ScanFace className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        We'll look up your NIN using your registered phone number <strong>{signupPhone}</strong>
+                      </p>
+                    </div>
+
+                    <Button 
+                      onClick={handleVerifyNin} 
+                      className="w-full" 
+                      disabled={isVerifyingNin}
+                    >
+                      {isVerifyingNin ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Verifying Identity...
+                        </>
+                      ) : (
+                        <>
+                          <ScanFace className="h-4 w-4 mr-2" />
+                          Verify My NIN
+                        </>
+                      )}
+                    </Button>
+
+                    <Button 
+                      variant="ghost" 
+                      className="w-full text-muted-foreground" 
+                      onClick={() => setStep("signup-details")}
+                    >
+                      Skip for now
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-4 bg-muted rounded-lg space-y-3">
+                      <div className="flex items-center gap-3">
+                        {ninData?.photo && (
+                          <img 
+                            src={`data:image/jpeg;base64,${ninData.photo}`} 
+                            alt="NIN Photo" 
+                            className="h-16 w-16 rounded-full object-cover border-2 border-primary"
+                          />
+                        )}
+                        <div>
+                          <p className="font-semibold text-foreground">{ninData?.full_name}</p>
+                          <p className="text-xs text-muted-foreground">NIN: {ninData?.nin?.substring(0, 4)}****{ninData?.nin?.slice(-3)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary" />
+                        <span className="text-sm text-primary font-medium">Identity Verified</span>
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={() => setStep("signup-details")} 
+                      className="w-full"
+                    >
+                      Continue to Profile Setup
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          )}
+
+          {/* Signup - Details */}
+          {step === "signup-details" && (
+            <CardContent className="pt-6">
+              {renderBackButton("signup-nin")}
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span className="text-sm text-primary">Phone verified: {signupPhone}</span>
+              </div>
+              {ninVerified && (
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span className="text-sm text-primary">NIN verified: {ninData?.full_name}</span>
+                </div>
+              )}
               <CardTitle className="text-xl mb-2">Complete Your Profile</CardTitle>
               <CardDescription className="mb-6">
                 Fill in your details to create your account
