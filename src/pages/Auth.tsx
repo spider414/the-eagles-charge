@@ -295,7 +295,7 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode, securityQuestion, securityAnswer);
+    const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode, securityQuestion, securityAnswer, ninData);
     setIsLoading(false);
 
     if (error) {
