@@ -213,7 +213,50 @@ const Auth = () => {
     const verificationResult = await verifyOtp(signupPhone, signupOtp, "signup");
     if (verificationResult) {
       setPhoneVerified(true);
-      setStep("signup-details");
+      setStep("signup-nin");
+    }
+  };
+
+  const handleVerifyNin = async () => {
+    setIsVerifyingNin(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("verify-nin-phone", {
+        body: { phone_number: signupPhone },
+      });
+
+      if (error || !data?.success) {
+        toast({
+          title: "NIN Verification Failed",
+          description: data?.error || "Could not verify NIN for this phone number. You can skip this step.",
+          variant: "destructive",
+        });
+        setIsVerifyingNin(false);
+        return;
+      }
+
+      setNinData({
+        full_name: data.data.full_name,
+        nin: data.data.nin,
+        photo: data.data.photo,
+      });
+      setNinVerified(true);
+      // Auto-fill the name from NIN data
+      if (data.data.full_name) {
+        setSignupName(data.data.full_name);
+      }
+      toast({
+        title: "Identity Verified!",
+        description: `NIN verified for ${data.data.full_name}`,
+      });
+    } catch (err) {
+      console.error("NIN verification error:", err);
+      toast({
+        title: "Verification Error",
+        description: "Failed to verify NIN. You can skip this step.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingNin(false);
     }
   };
 
