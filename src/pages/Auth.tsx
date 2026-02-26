@@ -687,14 +687,103 @@ const Auth = () => {
             </CardContent>
           )}
 
-          {/* Signup - Details */}
-          {step === "signup-details" && (
+          {/* Signup - NIN Verification */}
+          {step === "signup-nin" && (
             <CardContent className="pt-6">
               {renderBackButton("signup-phone")}
               <div className="flex items-center gap-2 mb-4">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <span className="text-sm text-green-600">Phone verified: {signupPhone}</span>
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span className="text-sm text-primary">Phone verified: {signupPhone}</span>
               </div>
+              <CardTitle className="text-xl mb-2">Identity Verification</CardTitle>
+              <CardDescription className="mb-6">
+                Verify your identity using NIN linked to your phone number
+              </CardDescription>
+              
+              <div className="space-y-4">
+                {!ninVerified ? (
+                  <>
+                    <div className="p-4 bg-muted rounded-lg text-center space-y-2">
+                      <ScanFace className="h-12 w-12 mx-auto text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        We'll look up your NIN using your registered phone number <strong>{signupPhone}</strong>
+                      </p>
+                    </div>
+
+                    <Button 
+                      onClick={handleVerifyNin} 
+                      className="w-full" 
+                      disabled={isVerifyingNin}
+                    >
+                      {isVerifyingNin ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Verifying Identity...
+                        </>
+                      ) : (
+                        <>
+                          <ScanFace className="h-4 w-4 mr-2" />
+                          Verify My NIN
+                        </>
+                      )}
+                    </Button>
+
+                    <Button 
+                      variant="ghost" 
+                      className="w-full text-muted-foreground" 
+                      onClick={() => setStep("signup-details")}
+                    >
+                      Skip for now
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="p-4 bg-muted rounded-lg space-y-3">
+                      <div className="flex items-center gap-3">
+                        {ninData?.photo && (
+                          <img 
+                            src={`data:image/jpeg;base64,${ninData.photo}`} 
+                            alt="NIN Photo" 
+                            className="h-16 w-16 rounded-full object-cover border-2 border-primary"
+                          />
+                        )}
+                        <div>
+                          <p className="font-semibold text-foreground">{ninData?.full_name}</p>
+                          <p className="text-xs text-muted-foreground">NIN: {ninData?.nin?.substring(0, 4)}****{ninData?.nin?.slice(-3)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-primary" />
+                        <span className="text-sm text-primary font-medium">Identity Verified</span>
+                      </div>
+                    </div>
+
+                    <Button 
+                      onClick={() => setStep("signup-details")} 
+                      className="w-full"
+                    >
+                      Continue to Profile Setup
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          )}
+
+          {/* Signup - Details */}
+          {step === "signup-details" && (
+            <CardContent className="pt-6">
+              {renderBackButton("signup-nin")}
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="h-5 w-5 text-primary" />
+                <span className="text-sm text-primary">Phone verified: {signupPhone}</span>
+              </div>
+              {ninVerified && (
+                <div className="flex items-center gap-2 mb-4">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span className="text-sm text-primary">NIN verified: {ninData?.full_name}</span>
+                </div>
+              )}
               <CardTitle className="text-xl mb-2">Complete Your Profile</CardTitle>
               <CardDescription className="mb-6">
                 Fill in your details to create your account
