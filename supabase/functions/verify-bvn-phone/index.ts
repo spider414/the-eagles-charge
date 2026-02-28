@@ -36,7 +36,7 @@ serve(async (req) => {
         "x-api-key": apiKey,
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ number: cleanPhone, consent: true }),
+      body: JSON.stringify({ phone: cleanPhone, consent: true }),
     });
 
     const responseText = await response.text();
@@ -51,19 +51,23 @@ serve(async (req) => {
     }
 
     if (data.status === "success" && data.data) {
-      const { firstname, middlename, surname, nin, gender, birthdate, photo, telephoneno } = data.data;
+      const { firstname, middlename, lastname, phone, email, bvn, dob, gender, state_of_origin, state_of_residence, nationality, photo } = data.data;
       return new Response(
         JSON.stringify({
           success: true,
           data: {
-            full_name: [firstname, middlename, surname].filter(Boolean).join(" "),
+            full_name: [firstname, middlename, lastname].filter(Boolean).join(" "),
             first_name: firstname || "",
             middle_name: middlename || "",
-            last_name: surname || "",
-            nin: nin || "",
+            last_name: lastname || "",
+            bvn: bvn || "",
             gender: gender || "",
-            date_of_birth: birthdate || "",
-            phone: telephoneno || "",
+            date_of_birth: dob || "",
+            phone: phone || "",
+            email: email || "",
+            state_of_origin: state_of_origin || "",
+            state_of_residence: state_of_residence || "",
+            nationality: nationality || "",
             photo: photo || null,
           },
         }),
