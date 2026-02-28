@@ -35,7 +35,7 @@ serve(async (req) => {
         "x-api-key": apiKey,
         "Authorization": `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({ number: tracking_id.trim(), consent: true }),
+      body: JSON.stringify({ tracking_id: tracking_id.trim(), consent: true }),
     });
 
     const responseText = await response.text();
