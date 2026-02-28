@@ -215,8 +215,8 @@ const Verification = () => {
                 <Input id="fname" placeholder="First name" value={firstname} onChange={(e) => setFirstname(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="sname">Surname *</Label>
-                <Input id="sname" placeholder="Surname" value={surname} onChange={(e) => setSurname(e.target.value)} />
+                <Label htmlFor="lname">Last Name *</Label>
+                <Input id="lname" placeholder="Last name" value={lastname} onChange={(e) => setLastname(e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
