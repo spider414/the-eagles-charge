@@ -324,7 +324,7 @@ const Verification = () => {
                       </div>
                       {result.photo && (
                         <div className="flex justify-center">
-                          <img src={`data:image/jpeg;base64,${result.photo}`} alt="Photo" className="w-24 h-24 rounded-xl object-cover border-2 border-primary/20" />
+                          <img src={result.photo.startsWith("data:") ? result.photo : `data:image/jpeg;base64,${result.photo}`} alt="Photo" className="w-24 h-24 rounded-xl object-cover border-2 border-primary/20" />
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-3 text-sm">
