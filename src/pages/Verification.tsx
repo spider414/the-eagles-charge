@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  Bird,
   Fingerprint,
   Phone,
   ShieldCheck,
@@ -16,116 +15,65 @@ import {
   Sparkles,
   Clock,
   CheckCircle2,
-  AlertCircle,
+  Search,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PageTransition from "@/components/PageTransition";
 
-interface NinResult {
-  full_name: string;
-  first_name: string;
-  middle_name: string;
-  last_name: string;
-  nin: string;
-  gender: string;
-  date_of_birth: string;
-  photo: string | null;
+interface VerificationResult {
+  full_name?: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  nin?: string;
+  bvn?: string;
+  gender?: string;
+  date_of_birth?: string;
+  phone?: string;
+  state?: string;
+  address?: string;
+  photo?: string | null;
 }
 
-const services = [
-  {
-    title: "NIN Verification",
-    description: "Verify any NIN number instantly",
-    icon: ShieldCheck,
-    color: "bg-primary",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "Retrieve NIN With Phone",
-    description: "Look up NIN using phone number",
-    icon: Phone,
-    color: "bg-emerald-500",
-    status: "active" as const,
-    id: "nin-phone",
-  },
-  {
-    title: "NIN Validation",
-    description: "Validate NIN details and data",
-    icon: FileSearch,
-    color: "bg-teal-500",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "NIN Demography",
-    description: "Retrieve NIN demographic data",
-    icon: Users,
-    color: "bg-cyan-600",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "Print NIN Slip",
-    description: "Download and print NIN slip",
-    icon: Printer,
-    color: "bg-indigo-500",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "BVN Verification",
-    description: "Verify any BVN number",
-    icon: CreditCard,
-    color: "bg-blue-600",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "BVN Retrieval with Phone",
-    description: "Look up BVN using phone number",
-    icon: Phone,
-    color: "bg-sky-500",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "Print BVN Slip",
-    description: "Download and print BVN slip",
-    icon: Printer,
-    color: "bg-violet-500",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "TIN Registration/Retrieval",
-    description: "Register or retrieve your TIN",
-    icon: FileText,
-    color: "bg-orange-500",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "CAC Registration",
-    description: "Register your business with CAC",
-    icon: Building2,
-    color: "bg-amber-600",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "SCUML Registration",
-    description: "Register with SCUML for compliance",
-    icon: FileText,
-    color: "bg-rose-500",
-    badge: "NEW",
-    status: "coming_soon" as const,
-  },
-  {
-    title: "IPE Clearance",
-    description: "IPE clearance verification",
-    icon: ShieldCheck,
-    color: "bg-red-600",
-    status: "coming_soon" as const,
-  },
+type ServiceId = "nin-verification" | "nin-phone" | "nin-tracking" | "nin-demography" | "bvn-verification" | "bvn-phone";
+
+interface ServiceConfig {
+  id: ServiceId;
+  title: string;
+  description: string;
+  icon: typeof ShieldCheck;
+  color: string;
+  price: string;
+  status: "active" | "coming_soon";
+  category: "nin" | "bvn" | "other";
+  edgeFunction: string;
+}
+
+const services: ServiceConfig[] = [
+  { id: "nin-verification", title: "NIN Verification", description: "Verify NIN by number", icon: ShieldCheck, color: "bg-primary", price: "₦150", status: "active", category: "nin", edgeFunction: "verify-nin" },
+  { id: "nin-phone", title: "NIN With Phone", description: "Search NIN by phone number", icon: Phone, color: "bg-emerald-500", price: "₦200", status: "active", category: "nin", edgeFunction: "verify-nin-phone" },
+  { id: "nin-tracking", title: "NIN Tracking", description: "Search NIN by tracking ID", icon: Search, color: "bg-teal-500", price: "₦200", status: "active", category: "nin", edgeFunction: "verify-nin-tracking" },
+  { id: "nin-demography", title: "NIN Demography", description: "Search NIN by demographics", icon: Users, color: "bg-cyan-600", price: "₦250", status: "active", category: "nin", edgeFunction: "verify-nin-demography" },
+  { id: "bvn-verification", title: "BVN Verification", description: "Verify BVN by number", icon: CreditCard, color: "bg-blue-600", price: "₦100", status: "active", category: "bvn", edgeFunction: "verify-bvn" },
+  { id: "bvn-phone", title: "BVN With Phone", description: "Search BVN by phone number", icon: Phone, color: "bg-sky-500", price: "₦150", status: "active", category: "bvn", edgeFunction: "verify-bvn-phone" },
+];
+
+const otherServices = [
+  { title: "Print NIN Slip", icon: Printer, color: "bg-indigo-500", badge: null },
+  { title: "Print BVN Slip", icon: Printer, color: "bg-violet-500", badge: null },
+  { title: "TIN Registration", icon: FileText, color: "bg-orange-500", badge: null },
+  { title: "CAC Registration", icon: Building2, color: "bg-amber-600", badge: null },
+  { title: "SCUML Registration", icon: FileText, color: "bg-rose-500", badge: "NEW" },
+  { title: "IPE Clearance", icon: ShieldCheck, color: "bg-red-600", badge: null },
 ];
 
 const Verification = () => {
@@ -133,10 +81,20 @@ const Verification = () => {
   const { user, profile, isLoading } = useAuth();
   const { toast } = useToast();
 
-  const [activeService, setActiveService] = useState<string | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [activeService, setActiveService] = useState<ServiceId | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [ninResult, setNinResult] = useState<NinResult | null>(null);
+  const [result, setResult] = useState<VerificationResult | null>(null);
+
+  // Form fields
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [ninNumber, setNinNumber] = useState("");
+  const [bvnNumber, setBvnNumber] = useState("");
+  const [trackingId, setTrackingId] = useState("");
+  const [firstname, setFirstname] = useState("");
+  const [surname, setSurname] = useState("");
+  const [gender, setGender] = useState("");
+  const [dob, setDob] = useState("");
+  const [state, setState] = useState("");
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -144,44 +102,154 @@ const Verification = () => {
     }
   }, [user, isLoading, navigate]);
 
-  const handleNinPhoneLookup = async () => {
-    if (!phoneNumber || phoneNumber.length < 10) {
-      toast({
-        title: "Invalid Phone Number",
-        description: "Please enter a valid phone number",
-        variant: "destructive",
-      });
-      return;
+  const resetForm = () => {
+    setPhoneNumber("");
+    setNinNumber("");
+    setBvnNumber("");
+    setTrackingId("");
+    setFirstname("");
+    setSurname("");
+    setGender("");
+    setDob("");
+    setState("");
+    setResult(null);
+  };
+
+  const handleVerify = async () => {
+    if (!activeService) return;
+
+    const service = services.find((s) => s.id === activeService);
+    if (!service) return;
+
+    let body: Record<string, unknown> = {};
+
+    switch (activeService) {
+      case "nin-verification":
+        if (!ninNumber || ninNumber.replace(/\D/g, "").length !== 11) {
+          toast({ title: "Invalid NIN", description: "NIN must be exactly 11 digits", variant: "destructive" });
+          return;
+        }
+        body = { nin: ninNumber };
+        break;
+      case "nin-phone":
+      case "bvn-phone":
+        if (!phoneNumber || phoneNumber.replace(/\D/g, "").length < 10) {
+          toast({ title: "Invalid Phone", description: "Enter a valid phone number", variant: "destructive" });
+          return;
+        }
+        body = { phone_number: phoneNumber };
+        break;
+      case "nin-tracking":
+        if (!trackingId || trackingId.trim().length < 5) {
+          toast({ title: "Invalid Tracking ID", description: "Enter a valid tracking ID", variant: "destructive" });
+          return;
+        }
+        body = { tracking_id: trackingId };
+        break;
+      case "nin-demography":
+        if (!firstname || !surname || !gender || !dob) {
+          toast({ title: "Missing Fields", description: "Fill in all required fields", variant: "destructive" });
+          return;
+        }
+        body = { firstname, surname, gender, dob, state };
+        break;
+      case "bvn-verification":
+        if (!bvnNumber || bvnNumber.replace(/\D/g, "").length !== 11) {
+          toast({ title: "Invalid BVN", description: "BVN must be exactly 11 digits", variant: "destructive" });
+          return;
+        }
+        body = { bvn: bvnNumber };
+        break;
     }
 
     setIsVerifying(true);
-    setNinResult(null);
+    setResult(null);
 
     try {
-      const { data, error } = await supabase.functions.invoke("verify-nin-phone", {
-        body: { phone_number: phoneNumber },
-      });
-
+      const { data, error } = await supabase.functions.invoke(service.edgeFunction, { body });
       if (error) throw error;
 
       if (data?.success) {
-        setNinResult(data.data);
-        toast({ title: "Success", description: "NIN retrieved successfully!" });
+        setResult(data.data);
+        toast({ title: "Success!", description: "Verification completed successfully" });
       } else {
-        toast({
-          title: "Verification Failed",
-          description: data?.error || "No NIN found for this phone number",
-          variant: "destructive",
-        });
+        toast({ title: "Failed", description: data?.error || "Verification failed", variant: "destructive" });
       }
     } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Something went wrong. Try again.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: err.message || "Something went wrong", variant: "destructive" });
     } finally {
       setIsVerifying(false);
+    }
+  };
+
+  const renderForm = () => {
+    switch (activeService) {
+      case "nin-verification":
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="nin">NIN Number (11 digits)</Label>
+            <Input id="nin" type="text" placeholder="e.g. 12345678901" value={ninNumber} onChange={(e) => setNinNumber(e.target.value)} maxLength={11} />
+          </div>
+        );
+      case "nin-phone":
+      case "bvn-phone":
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input id="phone" type="tel" placeholder="e.g. 08012345678" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} maxLength={15} />
+          </div>
+        );
+      case "nin-tracking":
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="tracking">Tracking ID</Label>
+            <Input id="tracking" type="text" placeholder="Enter tracking ID" value={trackingId} onChange={(e) => setTrackingId(e.target.value)} />
+          </div>
+        );
+      case "nin-demography":
+        return (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="fname">First Name *</Label>
+                <Input id="fname" placeholder="First name" value={firstname} onChange={(e) => setFirstname(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="sname">Surname *</Label>
+                <Input id="sname" placeholder="Surname" value={surname} onChange={(e) => setSurname(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label>Gender *</Label>
+                <Select value={gender} onValueChange={setGender}>
+                  <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="dob">Date of Birth *</Label>
+                <Input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="state">State (optional)</Label>
+              <Input id="state" placeholder="e.g. Lagos" value={state} onChange={(e) => setState(e.target.value)} />
+            </div>
+          </div>
+        );
+      case "bvn-verification":
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="bvn">BVN Number (11 digits)</Label>
+            <Input id="bvn" type="text" placeholder="e.g. 12345678901" value={bvnNumber} onChange={(e) => setBvnNumber(e.target.value)} maxLength={11} />
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
@@ -194,6 +262,8 @@ const Verification = () => {
   }
 
   if (!user) return null;
+
+  const activeConfig = services.find((s) => s.id === activeService);
 
   return (
     <PageTransition>
@@ -212,103 +282,60 @@ const Verification = () => {
                 <span className="text-lg font-bold text-foreground">Verifications</span>
               </div>
             </div>
-
             <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
               <Wallet className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold">
-                ₦{profile?.wallet_balance?.toLocaleString() || "0.00"}
-              </span>
+              <span className="text-sm font-semibold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</span>
             </div>
           </div>
         </header>
 
         <main className="container py-6 pb-8 space-y-6">
-          {/* NIN Phone Lookup Panel */}
-          {activeService === "nin-phone" && (
-            <Card className="border-primary/20 shadow-card">
+          {/* Active Service Panel */}
+          {activeService && activeConfig && (
+            <Card className="border-primary/20 shadow-card animate-fade-in">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
-                    <Phone className="h-5 w-5 text-primary" />
-                    Retrieve NIN With Phone
+                    <activeConfig.icon className="h-5 w-5 text-primary" />
+                    {activeConfig.title}
+                    <Badge variant="outline" className="text-[10px] ml-1">{activeConfig.price}</Badge>
                   </CardTitle>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setActiveService(null);
-                      setNinResult(null);
-                      setPhoneNumber("");
-                    }}
-                  >
-                    Close
+                  <Button variant="ghost" size="icon" onClick={() => { setActiveService(null); resetForm(); }}>
+                    <X className="h-4 w-4" />
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    placeholder="e.g. 08012345678"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    maxLength={15}
-                  />
-                </div>
-                <Button
-                  className="w-full"
-                  onClick={handleNinPhoneLookup}
-                  disabled={isVerifying || !phoneNumber}
-                >
+                {renderForm()}
+                <Button className="w-full" onClick={handleVerify} disabled={isVerifying}>
                   {isVerifying ? (
-                    <>
-                      <Clock className="h-4 w-4 mr-2 animate-spin" />
-                      Verifying...
-                    </>
+                    <><Clock className="h-4 w-4 mr-2 animate-spin" />Verifying...</>
                   ) : (
-                    <>
-                      <ShieldCheck className="h-4 w-4 mr-2" />
-                      Retrieve NIN
-                    </>
+                    <><ShieldCheck className="h-4 w-4 mr-2" />Verify Now</>
                   )}
                 </Button>
 
-                {/* Result */}
-                {ninResult && (
+                {result && (
                   <Card className="bg-accent/30 border-primary/20">
                     <CardContent className="p-4 space-y-3">
                       <div className="flex items-center gap-2 text-primary font-semibold">
                         <CheckCircle2 className="h-5 w-5" />
-                        NIN Retrieved Successfully
+                        Verification Successful
                       </div>
-                      {ninResult.photo && (
+                      {result.photo && (
                         <div className="flex justify-center">
-                          <img
-                            src={`data:image/jpeg;base64,${ninResult.photo}`}
-                            alt="NIN Photo"
-                            className="w-24 h-24 rounded-xl object-cover border-2 border-primary/20"
-                          />
+                          <img src={`data:image/jpeg;base64,${result.photo}`} alt="Photo" className="w-24 h-24 rounded-xl object-cover border-2 border-primary/20" />
                         </div>
                       )}
                       <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Full Name</p>
-                          <p className="font-semibold">{ninResult.full_name}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">NIN</p>
-                          <p className="font-mono font-semibold">{ninResult.nin}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Gender</p>
-                          <p className="font-semibold capitalize">{ninResult.gender}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Date of Birth</p>
-                          <p className="font-semibold">{ninResult.date_of_birth}</p>
-                        </div>
+                        {result.full_name && <div><p className="text-muted-foreground">Full Name</p><p className="font-semibold">{result.full_name}</p></div>}
+                        {result.nin && <div><p className="text-muted-foreground">NIN</p><p className="font-mono font-semibold">{result.nin}</p></div>}
+                        {result.bvn && <div><p className="text-muted-foreground">BVN</p><p className="font-mono font-semibold">{result.bvn}</p></div>}
+                        {result.gender && <div><p className="text-muted-foreground">Gender</p><p className="font-semibold capitalize">{result.gender}</p></div>}
+                        {result.date_of_birth && <div><p className="text-muted-foreground">Date of Birth</p><p className="font-semibold">{result.date_of_birth}</p></div>}
+                        {result.phone && <div><p className="text-muted-foreground">Phone</p><p className="font-semibold">{result.phone}</p></div>}
+                        {result.state && <div><p className="text-muted-foreground">State</p><p className="font-semibold">{result.state}</p></div>}
+                        {result.address && <div className="col-span-2"><p className="text-muted-foreground">Address</p><p className="font-semibold">{result.address}</p></div>}
                       </div>
                     </CardContent>
                   </Card>
@@ -317,81 +344,78 @@ const Verification = () => {
             </Card>
           )}
 
-          {/* Services Section */}
+          {/* NIN Services */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Sparkles className="h-5 w-5 text-primary" />
               <h2 className="text-xl font-bold">NIN Services</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {services.filter((s) => s.title.includes("NIN") || s.title.includes("IPE") || s.title === "Print NIN Slip").map((service) => (
+              {services.filter((s) => s.category === "nin").map((service) => (
                 <Card
-                  key={service.title}
-                  className={`relative hover:shadow-card hover:border-primary/20 transition-all cursor-pointer ${
-                    service.status === "coming_soon" ? "opacity-70" : ""
-                  } ${activeService === service.id ? "ring-2 ring-primary" : ""}`}
-                  onClick={() => {
-                    if (service.status === "active" && service.id) {
-                      setActiveService(service.id);
-                      setNinResult(null);
-                    } else {
-                      toast({ title: "Coming Soon", description: `${service.title} will be available soon!` });
-                    }
-                  }}
+                  key={service.id}
+                  className={`relative hover:shadow-card hover:border-primary/20 transition-all cursor-pointer ${activeService === service.id ? "ring-2 ring-primary" : ""}`}
+                  onClick={() => { setActiveService(service.id); resetForm(); }}
                 >
-                  {service.badge && (
-                    <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 gradient-gold text-secondary-foreground border-0">
-                      {service.badge}
-                    </Badge>
-                  )}
                   <CardContent className="p-4 flex flex-col items-center text-center gap-2">
                     <div className={`w-12 h-12 rounded-2xl ${service.color} flex items-center justify-center`}>
                       <service.icon className="h-6 w-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold leading-tight">{service.title}</span>
-                    {service.status === "active" ? (
-                      <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
-                        Active
-                      </Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                        Soon
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">{service.price}</Badge>
                   </CardContent>
                 </Card>
               ))}
             </div>
           </div>
 
-          {/* BVN & Other Services */}
+          {/* BVN Services */}
           <div>
             <div className="flex items-center gap-2 mb-4">
               <CreditCard className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-bold">BVN & Other Services</h2>
+              <h2 className="text-xl font-bold">BVN Services</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {services.filter((s) => !s.title.includes("NIN") && !s.title.includes("IPE") && s.title !== "Print NIN Slip").map((service) => (
+              {services.filter((s) => s.category === "bvn").map((service) => (
+                <Card
+                  key={service.id}
+                  className={`relative hover:shadow-card hover:border-primary/20 transition-all cursor-pointer ${activeService === service.id ? "ring-2 ring-primary" : ""}`}
+                  onClick={() => { setActiveService(service.id); resetForm(); }}
+                >
+                  <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                    <div className={`w-12 h-12 rounded-2xl ${service.color} flex items-center justify-center`}>
+                      <service.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold leading-tight">{service.title}</span>
+                    <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">{service.price}</Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Other Services */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-bold">Other Services</h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {otherServices.map((service) => (
                 <Card
                   key={service.title}
-                  className="relative hover:shadow-card hover:border-primary/20 transition-all cursor-pointer opacity-70"
-                  onClick={() =>
-                    toast({ title: "Coming Soon", description: `${service.title} will be available soon!` })
-                  }
+                  className="relative hover:shadow-card transition-all cursor-pointer opacity-70"
+                  onClick={() => toast({ title: "Coming Soon", description: `${service.title} will be available soon!` })}
                 >
                   {service.badge && (
-                    <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 gradient-gold text-secondary-foreground border-0">
-                      {service.badge}
-                    </Badge>
+                    <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 gradient-gold text-secondary-foreground border-0">{service.badge}</Badge>
                   )}
                   <CardContent className="p-4 flex flex-col items-center text-center gap-2">
                     <div className={`w-12 h-12 rounded-2xl ${service.color} flex items-center justify-center`}>
                       <service.icon className="h-6 w-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold leading-tight">{service.title}</span>
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                      Soon
-                    </Badge>
+                    <Badge variant="outline" className="text-[10px] text-muted-foreground">Soon</Badge>
                   </CardContent>
                 </Card>
               ))}
