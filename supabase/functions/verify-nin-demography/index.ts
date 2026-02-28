@@ -11,11 +11,11 @@ serve(async (req) => {
   }
 
   try {
-    const { firstname, surname, gender, dob, state } = await req.json();
+    const { firstname, lastname, gender, dob } = await req.json();
 
-    if (!firstname || !surname || !gender || !dob) {
+    if (!firstname || !lastname || !gender || !dob) {
       return new Response(
-        JSON.stringify({ success: false, error: "First name, surname, gender, and date of birth are required" }),
+        JSON.stringify({ success: false, error: "First name, last name, gender, and date of birth are required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -37,10 +37,9 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         firstname: firstname.trim(),
-        surname: surname.trim(),
+        lastname: lastname.trim(),
         gender: gender.trim(),
         dob: dob.trim(),
-        state: state?.trim() || "",
         consent: true,
       }),
     });

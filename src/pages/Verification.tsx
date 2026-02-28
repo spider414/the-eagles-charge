@@ -91,7 +91,7 @@ const Verification = () => {
   const [bvnNumber, setBvnNumber] = useState("");
   const [trackingId, setTrackingId] = useState("");
   const [firstname, setFirstname] = useState("");
-  const [surname, setSurname] = useState("");
+  const [lastname, setLastname] = useState("");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
   const [state, setState] = useState("");
@@ -108,7 +108,7 @@ const Verification = () => {
     setBvnNumber("");
     setTrackingId("");
     setFirstname("");
-    setSurname("");
+    setLastname("");
     setGender("");
     setDob("");
     setState("");
@@ -147,11 +147,11 @@ const Verification = () => {
         body = { tracking_id: trackingId };
         break;
       case "nin-demography":
-        if (!firstname || !surname || !gender || !dob) {
+        if (!firstname || !lastname || !gender || !dob) {
           toast({ title: "Missing Fields", description: "Fill in all required fields", variant: "destructive" });
           return;
         }
-        body = { firstname, surname, gender, dob, state };
+        body = { firstname, lastname, gender, dob };
         break;
       case "bvn-verification":
         if (!bvnNumber || bvnNumber.replace(/\D/g, "").length !== 11) {
@@ -215,8 +215,8 @@ const Verification = () => {
                 <Input id="fname" placeholder="First name" value={firstname} onChange={(e) => setFirstname(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="sname">Surname *</Label>
-                <Input id="sname" placeholder="Surname" value={surname} onChange={(e) => setSurname(e.target.value)} />
+                <Label htmlFor="lname">Last Name *</Label>
+                <Input id="lname" placeholder="Last name" value={lastname} onChange={(e) => setLastname(e.target.value)} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -234,10 +234,6 @@ const Verification = () => {
                 <Label htmlFor="dob">Date of Birth *</Label>
                 <Input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
               </div>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="state">State (optional)</Label>
-              <Input id="state" placeholder="e.g. Lagos" value={state} onChange={(e) => setState(e.target.value)} />
             </div>
           </div>
         );
