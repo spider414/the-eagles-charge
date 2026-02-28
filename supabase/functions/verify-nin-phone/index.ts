@@ -45,6 +45,7 @@ serve(async (req) => {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
+        "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         number: cleanPhone,
