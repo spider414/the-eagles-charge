@@ -39,7 +39,11 @@ interface VerificationResult {
   gender?: string;
   date_of_birth?: string;
   phone?: string;
+  email?: string;
   state?: string;
+  state_of_origin?: string;
+  state_of_residence?: string;
+  nationality?: string;
   address?: string;
   photo?: string | null;
 }
@@ -330,7 +334,12 @@ const Verification = () => {
                         {result.gender && <div><p className="text-muted-foreground">Gender</p><p className="font-semibold capitalize">{result.gender}</p></div>}
                         {result.date_of_birth && <div><p className="text-muted-foreground">Date of Birth</p><p className="font-semibold">{result.date_of_birth}</p></div>}
                         {result.phone && <div><p className="text-muted-foreground">Phone</p><p className="font-semibold">{result.phone}</p></div>}
+                        {result.email && <div><p className="text-muted-foreground">Email</p><p className="font-semibold">{result.email}</p></div>}
                         {result.state && <div><p className="text-muted-foreground">State</p><p className="font-semibold">{result.state}</p></div>}
+                        {result.state_of_origin && <div><p className="text-muted-foreground">State of Origin</p><p className="font-semibold">{result.state_of_origin}</p></div>}
+                        {result.state_of_residence && <div><p className="text-muted-foreground">State of Residence</p><p className="font-semibold">{result.state_of_residence}</p></div>}
+                        {result.nationality && <div><p className="text-muted-foreground">Nationality</p><p className="font-semibold">{result.nationality}</p></div>}
+                        {result.address && <div className="col-span-2"><p className="text-muted-foreground">Address</p><p className="font-semibold">{result.address}</p></div>}
                         {result.address && <div className="col-span-2"><p className="text-muted-foreground">Address</p><p className="font-semibold">{result.address}</p></div>}
                       </div>
                     </CardContent>
