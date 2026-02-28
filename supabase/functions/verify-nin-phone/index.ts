@@ -48,7 +48,7 @@ serve(async (req) => {
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        number: cleanPhone,
+        phone: cleanPhone,
         consent: true,
       }),
     });
