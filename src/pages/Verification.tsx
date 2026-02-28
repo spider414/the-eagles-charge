@@ -235,10 +235,6 @@ const Verification = () => {
                 <Input id="dob" type="date" value={dob} onChange={(e) => setDob(e.target.value)} />
               </div>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="state">State (optional)</Label>
-              <Input id="state" placeholder="e.g. Lagos" value={state} onChange={(e) => setState(e.target.value)} />
-            </div>
           </div>
         );
       case "bvn-verification":
