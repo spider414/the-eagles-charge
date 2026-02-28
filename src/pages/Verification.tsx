@@ -91,7 +91,7 @@ const Verification = () => {
   const [bvnNumber, setBvnNumber] = useState("");
   const [trackingId, setTrackingId] = useState("");
   const [firstname, setFirstname] = useState("");
-  const [surname, setSurname] = useState("");
+  const [lastname, setLastname] = useState("");
   const [gender, setGender] = useState("");
   const [dob, setDob] = useState("");
   const [state, setState] = useState("");
@@ -108,7 +108,7 @@ const Verification = () => {
     setBvnNumber("");
     setTrackingId("");
     setFirstname("");
-    setSurname("");
+    setLastname("");
     setGender("");
     setDob("");
     setState("");
@@ -147,11 +147,11 @@ const Verification = () => {
         body = { tracking_id: trackingId };
         break;
       case "nin-demography":
-        if (!firstname || !surname || !gender || !dob) {
+        if (!firstname || !lastname || !gender || !dob) {
           toast({ title: "Missing Fields", description: "Fill in all required fields", variant: "destructive" });
           return;
         }
-        body = { firstname, surname, gender, dob, state };
+        body = { firstname, lastname, gender, dob };
         break;
       case "bvn-verification":
         if (!bvnNumber || bvnNumber.replace(/\D/g, "").length !== 11) {
