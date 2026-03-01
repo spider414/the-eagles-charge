@@ -338,6 +338,12 @@ const Verification = () => {
         </header>
 
         <main className="container py-6 pb-8 space-y-6">
+          {/* Transaction History Link */}
+          <Button variant="outline" className="w-full" onClick={() => navigate("/verification-history")}>
+            <FileSearch className="h-4 w-4 mr-2" />
+            My Verification Transactions
+          </Button>
+
           {/* Active Service Panel */}
           {activeService && activeConfig && (
             <Card className="border-primary/20 shadow-card animate-fade-in">
