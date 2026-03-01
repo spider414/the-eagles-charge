@@ -420,7 +420,7 @@ const Verification = () => {
                       <service.icon className="h-6 w-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold leading-tight">{service.title}</span>
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">Soon</Badge>
+                    <Badge variant="outline" className={`text-[10px] ${service.route ? "border-primary/30 text-primary" : "text-muted-foreground"}`}>{service.route ? "Active" : "Soon"}</Badge>
                   </CardContent>
                 </Card>
               ))}
