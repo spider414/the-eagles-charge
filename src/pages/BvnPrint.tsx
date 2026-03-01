@@ -76,7 +76,7 @@ const getSlipHtml = (content: string, title: string) => `
 
 const BvnPrint = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -116,13 +116,20 @@ const BvnPrint = () => {
     setResult(null);
 
     try {
-      const { data: debitResult, error: debitError } = await supabase.rpc("debit_wallet", {
-        p_profile_id: profile!.id,
-        p_amount: price,
+      // Debit wallet via edge function (has service_role permissions)
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke("paystack-payment", {
+        body: {
+          action: "wallet_payment",
+          amount: price,
+          metadata: {
+            transaction_type: "verification",
+            phone_number: bvnNumber,
+          },
+        },
       });
-      if (debitError) throw debitError;
-      if (!debitResult?.[0]?.success) {
-        toast({ title: "Insufficient Balance", description: "Failed to debit wallet.", variant: "destructive" });
+      if (paymentError) throw new Error(paymentError.message);
+      if (!paymentData?.success) {
+        toast({ title: "Insufficient Balance", description: paymentData?.error || "Failed to debit wallet.", variant: "destructive" });
         setIsVerifying(false);
         return;
       }
@@ -142,10 +149,17 @@ const BvnPrint = () => {
           data_plan: `bvn-print-${slipType === "bvn-card" ? "card" : "slip"}`,
           api_response: data.data,
           phone_number: bvnNumber,
+          balance_before: paymentData.balance_before,
+          balance_after: paymentData.balance_after,
+          description: `Payment for BVN Print (${slipType === "bvn-card" ? "Card" : "Slip"})`,
         });
+        await refreshProfile();
         toast({ title: "Verified!", description: "BVN verification successful. You can now print." });
       } else {
-        await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price });
+        // Refund via edge function
+        await supabase.functions.invoke("paystack-payment", {
+          body: { action: "credit_wallet", amount: price },
+        });
         await supabase.from("transactions").insert({
           user_id: user!.id,
           transaction_type: "verification" as any,
@@ -155,10 +169,16 @@ const BvnPrint = () => {
           api_response: { error: data?.error },
           phone_number: bvnNumber,
         });
+        await refreshProfile();
         toast({ title: "Failed", description: data?.error || "BVN verification failed. Wallet refunded.", variant: "destructive" });
       }
     } catch (err: any) {
-      try { await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price }); } catch {}
+      try {
+        await supabase.functions.invoke("paystack-payment", {
+          body: { action: "credit_wallet", amount: price },
+        });
+        await refreshProfile();
+      } catch {}
       toast({ title: "Error", description: err.message || "Something went wrong. Wallet refunded.", variant: "destructive" });
     } finally {
       setIsVerifying(false);
