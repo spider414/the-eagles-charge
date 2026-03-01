@@ -57,18 +57,19 @@ interface ServiceConfig {
   icon: typeof ShieldCheck;
   color: string;
   price: string;
+  priceNum: number;
   status: "active" | "coming_soon";
   category: "nin" | "bvn" | "other";
   edgeFunction: string;
 }
 
 const services: ServiceConfig[] = [
-  { id: "nin-verification", title: "NIN Verification", description: "Verify NIN by number", icon: ShieldCheck, color: "bg-primary", price: "₦150", status: "active", category: "nin", edgeFunction: "verify-nin" },
-  { id: "nin-phone", title: "NIN With Phone", description: "Search NIN by phone number", icon: Phone, color: "bg-emerald-500", price: "₦200", status: "active", category: "nin", edgeFunction: "verify-nin-phone" },
-  { id: "nin-tracking", title: "NIN Tracking", description: "Search NIN by tracking ID", icon: Search, color: "bg-teal-500", price: "₦200", status: "active", category: "nin", edgeFunction: "verify-nin-tracking" },
-  { id: "nin-demography", title: "NIN Demography", description: "Search NIN by demographics", icon: Users, color: "bg-cyan-600", price: "₦250", status: "active", category: "nin", edgeFunction: "verify-nin-demography" },
-  { id: "bvn-verification", title: "BVN Verification", description: "Verify BVN by number", icon: CreditCard, color: "bg-blue-600", price: "₦100", status: "active", category: "bvn", edgeFunction: "verify-bvn" },
-  { id: "bvn-phone", title: "BVN With Phone", description: "Search BVN by phone number", icon: Phone, color: "bg-sky-500", price: "₦150", status: "active", category: "bvn", edgeFunction: "verify-bvn-phone" },
+  { id: "nin-verification", title: "NIN Verification", description: "Verify NIN by number", icon: ShieldCheck, color: "bg-primary", price: "₦300", priceNum: 300, status: "active", category: "nin", edgeFunction: "verify-nin" },
+  { id: "nin-phone", title: "NIN With Phone", description: "Search NIN by phone number", icon: Phone, color: "bg-emerald-500", price: "₦500", priceNum: 500, status: "active", category: "nin", edgeFunction: "verify-nin-phone" },
+  { id: "nin-tracking", title: "NIN Tracking", description: "Search NIN by tracking ID", icon: Search, color: "bg-teal-500", price: "₦400", priceNum: 400, status: "active", category: "nin", edgeFunction: "verify-nin-tracking" },
+  { id: "nin-demography", title: "NIN Demography", description: "Search NIN by demographics", icon: Users, color: "bg-cyan-600", price: "₦500", priceNum: 500, status: "active", category: "nin", edgeFunction: "verify-nin-demography" },
+  { id: "bvn-verification", title: "BVN Verification", description: "Verify BVN by number", icon: CreditCard, color: "bg-blue-600", price: "₦500", priceNum: 500, status: "active", category: "bvn", edgeFunction: "verify-bvn" },
+  { id: "bvn-phone", title: "BVN With Phone", description: "Search BVN by phone number", icon: Phone, color: "bg-sky-500", price: "₦400", priceNum: 400, status: "active", category: "bvn", edgeFunction: "verify-bvn-phone" },
 ];
 
 const otherServices = [
