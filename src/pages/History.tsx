@@ -177,10 +177,7 @@ const History = () => {
                   <Card 
                     key={tx.id} 
                     className="hover:shadow-card transition-shadow cursor-pointer"
-                    onClick={() => {
-                      setSelectedTransaction(tx);
-                      setDialogOpen(true);
-                    }}
+                    onClick={() => navigate(`/transaction/${tx.id}`)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
