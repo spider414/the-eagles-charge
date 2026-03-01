@@ -84,7 +84,7 @@ const services: ServiceConfig[] = [
 const otherServices = [
   { title: "Print NIN Slip", icon: Printer, color: "bg-indigo-500", badge: null, route: "/nin-print" },
   { title: "Print BVN Slip", icon: Printer, color: "bg-violet-500", badge: null, route: "/bvn-print" },
-  { title: "TIN Registration", icon: FileText, color: "bg-orange-500", badge: null, route: null },
+  { title: "TIN Registration", icon: FileText, color: "bg-orange-500", badge: null, route: "/tin-registration" },
   { title: "CAC Registration", icon: Building2, color: "bg-amber-600", badge: null, route: null },
   { title: "SCUML Registration", icon: FileText, color: "bg-rose-500", badge: "NEW", route: null },
   { title: "IPE Clearance", icon: ShieldCheck, color: "bg-red-600", badge: null, route: null },

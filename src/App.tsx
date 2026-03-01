@@ -32,6 +32,7 @@ import Verification from "./pages/Verification";
 import BvnPrint from "./pages/BvnPrint";
 import NinPrint from "./pages/NinPrint";
 import VerificationHistory from "./pages/VerificationHistory";
+import TinRegistration from "./pages/TinRegistration";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 
@@ -73,6 +74,7 @@ const App = () => {
                   <Route path="/bvn-print" element={<BvnPrint />} />
                   <Route path="/nin-print" element={<NinPrint />} />
                   <Route path="/verification-history" element={<VerificationHistory />} />
+                  <Route path="/tin-registration" element={<TinRegistration />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
