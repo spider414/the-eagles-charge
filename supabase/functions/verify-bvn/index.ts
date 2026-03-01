@@ -49,25 +49,44 @@ serve(async (req) => {
       );
     }
 
-    if (data.status === "success" && data.data) {
-      const { firstname, middlename, lastname, phone, email, bvn: bvnNum, dob, gender, state_of_origin, state_of_residence, nationality, photo } = data.data;
+    console.log("CheckMyNINBVN raw response:", JSON.stringify(data).substring(0, 1000));
+
+    if ((data.status === "success" || data.success) && (data.data || data.result)) {
+      const d = data.data || data.result;
+      console.log("BVN data keys:", Object.keys(d));
+
+      const firstName = d.firstname || d.first_name || d.firstName || "";
+      const middleName = d.middlename || d.middle_name || d.middleName || "";
+      const lastName = d.lastname || d.last_name || d.lastName || d.surname || d.surName || "";
+      const bvnNum = d.bvn || d.BVN || bvn.replace(/\D/g, "");
+      const gender = d.gender || d.Gender || "";
+      const dob = d.dob || d.date_of_birth || d.dateOfBirth || d.birthdate || "";
+      const phone = d.phone || d.telephoneno || d.phoneNumber || d.mobile || "";
+      const email = d.email || d.Email || "";
+      const stateOfOrigin = d.state_of_origin || d.stateOfOrigin || d.self_origin_state || "";
+      const stateOfResidence = d.state_of_residence || d.stateOfResidence || d.residence_state || "";
+      const nationality = d.nationality || d.Nationality || "Nigerian";
+      const photo = d.photo || d.image || d.picture || d.base64Image || null;
+      const address = d.address || d.residence_address || d.residentialAddress || "";
+
       return new Response(
         JSON.stringify({
           success: true,
           data: {
-            full_name: [firstname, middlename, lastname].filter(Boolean).join(" "),
-            first_name: firstname || "",
-            middle_name: middlename || "",
-            last_name: lastname || "",
-            bvn: bvnNum || bvn.replace(/\D/g, ""),
-            gender: gender || "",
-            date_of_birth: dob || "",
-            phone: phone || "",
-            email: email || "",
-            state_of_origin: state_of_origin || "",
-            state_of_residence: state_of_residence || "",
-            nationality: nationality || "",
-            photo: photo || null,
+            full_name: [firstName, middleName, lastName].filter(Boolean).join(" "),
+            first_name: firstName,
+            middle_name: middleName,
+            last_name: lastName,
+            bvn: bvnNum,
+            gender: gender,
+            date_of_birth: dob,
+            phone: phone,
+            email: email,
+            state_of_origin: stateOfOrigin,
+            state_of_residence: stateOfResidence,
+            nationality: nationality,
+            address: address,
+            photo: photo,
           },
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
