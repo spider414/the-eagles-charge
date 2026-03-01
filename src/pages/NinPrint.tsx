@@ -99,6 +99,7 @@ const NinPrint = () => {
   const [consent, setConsent] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [result, setResult] = useState<NinData | null>(null);
+  const lastLookupRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!isLoading && !user) navigate("/auth");
