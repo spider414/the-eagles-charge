@@ -90,7 +90,7 @@ const getSlipHtml = (content: string, title: string) => `
 
 const NinPrint = () => {
   const navigate = useNavigate();
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, isLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const printRef = useRef<HTMLDivElement>(null);
 
