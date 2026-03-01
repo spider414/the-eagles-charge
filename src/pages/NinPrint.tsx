@@ -10,10 +10,10 @@ import {
   FileText,
   Award,
   Star,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -49,11 +49,43 @@ interface NinData {
   photo?: string | null;
 }
 
+const sampleData: NinData = {
+  full_name: "JOHN DOE SMITH",
+  nin: "12345678901",
+  gender: "Male",
+  date_of_birth: "01-01-1990",
+  phone: "08012345678",
+  email: "john@example.com",
+  state_of_origin: "Lagos",
+  state_of_residence: "Abuja",
+  nationality: "Nigerian",
+  address: "123 Sample Street, Lagos",
+};
+
 const slipOptions: { value: SlipType; label: string; price: number; icon: typeof Star }[] = [
   { value: "premium", label: "Premium Slip", price: 450, icon: Award },
   { value: "standard", label: "Standard Slip", price: 400, icon: Star },
   { value: "regular", label: "Regular Slip", price: 350, icon: FileText },
 ];
+
+const getSlipHtml = (content: string, title: string) => `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>${title}</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
+      .print-container { background: white; }
+      @media print {
+        body { background: white; }
+        .print-container { box-shadow: none !important; }
+      }
+    </style>
+  </head>
+  <body>${content}</body>
+  </html>
+`;
 
 const NinPrint = () => {
   const navigate = useNavigate();
@@ -114,28 +146,21 @@ const NinPrint = () => {
     if (!printRef.current) return;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-
-    const content = printRef.current.innerHTML;
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>NIN ${selectedSlip?.label || "Slip"}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
-          .print-container { background: white; }
-          @media print {
-            body { background: white; }
-            .print-container { box-shadow: none !important; }
-          }
-        </style>
-      </head>
-      <body>${content}</body>
-      </html>
-    `);
+    printWindow.document.write(getSlipHtml(printRef.current.innerHTML, `NIN ${selectedSlip?.label || "Slip"}`));
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
+  };
+
+  const handleDownloadPdf = () => {
+    if (!printRef.current) return;
+    const pdfWindow = window.open("", "_blank");
+    if (!pdfWindow) return;
+    pdfWindow.document.write(getSlipHtml(printRef.current.innerHTML, `NIN ${selectedSlip?.label || "Slip"}`));
+    pdfWindow.document.close();
+    setTimeout(() => {
+      pdfWindow.print();
+    }, 500);
+    toast({ title: "Download PDF", description: "Select 'Save as PDF' in the print dialog to download." });
   };
 
   const photoSrc = result?.photo
@@ -212,14 +237,39 @@ const NinPrint = () => {
             </CardContent>
           </Card>
 
-          {/* Preview Area (before verification) */}
+          {/* Sample Preview (before verification) */}
           {!result && (
-            <Card className="border-dashed border-2 border-muted-foreground/20">
-              <CardContent className="p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
-                <Printer className="h-10 w-10 mb-3 opacity-30" />
-                <p className="text-sm">Preview will appear here when you verify a NIN</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground text-center font-medium">
+                {slipType ? `Preview: ${selectedSlip?.label} format` : "Select a slip type to see preview"}
+              </p>
+              {slipType ? (
+                <div className="relative">
+                  <div className="opacity-70 pointer-events-none">
+                    {slipType === "premium" ? (
+                      <NinPremiumSlip data={sampleData} photoSrc={null} />
+                    ) : slipType === "standard" ? (
+                      <NinStandardSlip data={sampleData} photoSrc={null} />
+                    ) : (
+                      <NinRegularSlip data={sampleData} photoSrc={null} />
+                    )}
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px] rounded-xl">
+                    <div className="bg-background border border-border rounded-lg px-4 py-2 shadow-lg text-center">
+                      <p className="text-xs font-semibold text-foreground">Sample Preview</p>
+                      <p className="text-[10px] text-muted-foreground">Verify NIN to see actual data</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Card className="border-dashed border-2 border-muted-foreground/20">
+                  <CardContent className="p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
+                    <Printer className="h-10 w-10 mb-3 opacity-30" />
+                    <p className="text-sm">Preview will appear here when you select a slip type</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           {/* NIN Input */}
@@ -270,7 +320,7 @@ const NinPrint = () => {
             </CardContent>
           </Card>
 
-          {/* Result & Print Preview */}
+          {/* Result & Print/Download */}
           {result && (
             <div className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-2 text-primary font-semibold">
@@ -278,7 +328,6 @@ const NinPrint = () => {
                 NIN Verified Successfully
               </div>
 
-              {/* Printable Content */}
               <div ref={printRef}>
                 {slipType === "premium" ? (
                   <NinPremiumSlip data={result} photoSrc={photoSrc} />
@@ -289,10 +338,16 @@ const NinPrint = () => {
                 )}
               </div>
 
-              <Button className="w-full" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-2" />
-                Print NIN {selectedSlip?.label}
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button className="w-full" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleDownloadPdf}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Save as PDF
+                </Button>
+              </div>
             </div>
           )}
         </main>
@@ -309,18 +364,13 @@ const NinPremiumSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | 
     borderRadius: "16px", padding: "24px", color: "white", fontFamily: "'Segoe UI', sans-serif",
     boxShadow: "0 8px 32px rgba(0,0,0,0.25)", position: "relative", overflow: "hidden",
   }}>
-    {/* Watermark */}
     <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(-30deg)", fontSize: "80px", opacity: 0.03, fontWeight: "bold", whiteSpace: "nowrap" }}>NIMC</div>
-    
-    {/* Header */}
     <div style={{ textAlign: "center", marginBottom: "16px", borderBottom: "2px solid rgba(255,255,255,0.2)", paddingBottom: "12px" }}>
       <div style={{ fontSize: "9px", letterSpacing: "3px", opacity: 0.8, textTransform: "uppercase" }}>Federal Republic of Nigeria</div>
       <div style={{ fontSize: "17px", fontWeight: "bold", marginTop: "4px", letterSpacing: "1px" }}>NATIONAL IDENTITY NUMBER</div>
       <div style={{ fontSize: "9px", opacity: 0.6, marginTop: "2px" }}>National Identity Management Commission (NIMC)</div>
       <div style={{ display: "inline-block", background: "rgba(255,215,0,0.2)", border: "1px solid rgba(255,215,0,0.4)", borderRadius: "4px", padding: "2px 8px", marginTop: "6px", fontSize: "8px", color: "#ffd700", letterSpacing: "2px" }}>PREMIUM</div>
     </div>
-
-    {/* Photo + Info */}
     <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
       {photoSrc ? (
         <img src={photoSrc} alt="NIN Photo" style={{ width: "95px", height: "115px", objectFit: "cover", borderRadius: "8px", border: "2px solid rgba(255,255,255,0.3)" }} />
@@ -334,8 +384,6 @@ const NinPremiumSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | 
         <div><span style={{ opacity: 0.6 }}>DOB:</span> <strong>{data.date_of_birth || "N/A"}</strong></div>
       </div>
     </div>
-
-    {/* Additional Details */}
     <div style={{ marginTop: "14px", borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: "10px", fontSize: "10px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
       {data.phone && <div><span style={{ opacity: 0.6 }}>Phone:</span> {data.phone}</div>}
       {data.email && <div><span style={{ opacity: 0.6 }}>Email:</span> {data.email}</div>}
@@ -343,15 +391,13 @@ const NinPremiumSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | 
       {data.nationality && <div><span style={{ opacity: 0.6 }}>Nationality:</span> {data.nationality}</div>}
       {data.address && <div style={{ gridColumn: "1 / -1" }}><span style={{ opacity: 0.6 }}>Address:</span> {data.address}</div>}
     </div>
-
-    {/* Footer */}
     <div style={{ marginTop: "12px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "8px", textAlign: "center", fontSize: "8px", opacity: 0.5 }}>
       Powered by THE EAGLES VTU • For verification purposes only
     </div>
   </div>
 );
 
-/* ─── Standard Slip (₦400) - Clean bordered format ─── */
+/* ─── Standard Slip (₦400) ─── */
 const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
   <div className="print-container" style={{
     width: "100%", maxWidth: "480px", margin: "0 auto",
@@ -359,15 +405,12 @@ const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string |
     borderRadius: "10px", padding: "24px", fontFamily: "'Segoe UI', sans-serif",
     boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
   }}>
-    {/* Header */}
     <div style={{ textAlign: "center", borderBottom: "2px solid #0a4d27", paddingBottom: "12px", marginBottom: "16px" }}>
       <div style={{ fontSize: "10px", letterSpacing: "2px", color: "#666", textTransform: "uppercase" }}>Federal Republic of Nigeria</div>
       <div style={{ fontSize: "17px", fontWeight: "bold", color: "#0a4d27", marginTop: "4px" }}>NIN VERIFICATION SLIP</div>
       <div style={{ fontSize: "9px", color: "#999", marginTop: "2px" }}>National Identity Management Commission</div>
       <div style={{ display: "inline-block", background: "#f0f7f3", border: "1px solid #0a4d27", borderRadius: "4px", padding: "2px 8px", marginTop: "6px", fontSize: "8px", color: "#0a4d27", letterSpacing: "1px" }}>STANDARD</div>
     </div>
-
-    {/* Content */}
     <div style={{ display: "flex", gap: "20px" }}>
       <div style={{ flexShrink: 0 }}>
         {photoSrc ? (
@@ -376,11 +419,10 @@ const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string |
           <div style={{ width: "100px", height: "120px", background: "#f0f0f0", border: "2px solid #ccc", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#999" }}>No Photo</div>
         )}
       </div>
-
       <div style={{ flex: 1 }}>
         <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
           <tbody>
-            {[
+            {([
               ["Full Name", data.full_name],
               ["NIN", data.nin],
               ["Gender", data.gender],
@@ -390,24 +432,23 @@ const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string |
               ["State of Origin", data.state_of_origin || data.state],
               ["Nationality", data.nationality],
               ["Address", data.address],
-            ].filter(([, val]) => val).map(([label, value]) => (
-              <tr key={label as string}>
+            ] as [string, string | undefined][]).filter(([, val]) => val).map(([label, value]) => (
+              <tr key={label}>
                 <td style={{ padding: "3px 8px 3px 0", color: "#666", whiteSpace: "nowrap", verticalAlign: "top", fontSize: "11px" }}>{label}:</td>
-                <td style={{ padding: "3px 0", fontWeight: "600", textTransform: label === "Gender" ? "capitalize" : "none" }}>{value as string}</td>
+                <td style={{ padding: "3px 0", fontWeight: "600", textTransform: label === "Gender" ? "capitalize" : "none" }}>{value}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
     </div>
-
     <div style={{ marginTop: "16px", borderTop: "1px solid #ddd", paddingTop: "8px", textAlign: "center", fontSize: "8px", color: "#999" }}>
       This slip is generated for verification purposes only. • Powered by THE EAGLES VTU
     </div>
   </div>
 );
 
-/* ─── Regular Slip (₦350) - Simple compact format ─── */
+/* ─── Regular Slip (₦350) ─── */
 const NinRegularSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
   <div className="print-container" style={{
     width: "100%", maxWidth: "440px", margin: "0 auto",
@@ -415,12 +456,10 @@ const NinRegularSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | 
     borderRadius: "8px", padding: "20px", fontFamily: "'Segoe UI', sans-serif",
     boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
   }}>
-    {/* Header */}
     <div style={{ textAlign: "center", borderBottom: "1px solid #eee", paddingBottom: "10px", marginBottom: "14px" }}>
       <div style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>NIN VERIFICATION</div>
       <div style={{ fontSize: "9px", color: "#999", marginTop: "2px" }}>National Identity Management Commission</div>
     </div>
-
     <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
       {photoSrc ? (
         <img src={photoSrc} alt="NIN Photo" style={{ width: "80px", height: "100px", objectFit: "cover", border: "1px solid #ddd", borderRadius: "4px" }} />
@@ -436,7 +475,6 @@ const NinRegularSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | 
         {(data.state_of_origin || data.state) && <div style={{ color: "#666" }}>State: {data.state_of_origin || data.state}</div>}
       </div>
     </div>
-
     <div style={{ marginTop: "12px", borderTop: "1px solid #eee", paddingTop: "6px", textAlign: "center", fontSize: "8px", color: "#bbb" }}>
       Powered by THE EAGLES VTU
     </div>
