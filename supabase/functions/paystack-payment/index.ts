@@ -687,6 +687,35 @@ Deno.serve(async (req) => {
       }
     }
 
+    if (body.action === "credit_wallet") {
+      const { amount } = body as { action: string; amount: number };
+
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("user_id", userId)
+        .single();
+
+      if (!userProfile) throw new Error("Profile not found");
+
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      const { data: newBalance, error: creditError } = await supabaseAdmin.rpc("credit_wallet", {
+        p_profile_id: userProfile.id,
+        p_amount: amount,
+      });
+
+      if (creditError) throw creditError;
+
+      return new Response(
+        JSON.stringify({ success: true, new_balance: newBalance }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (body.action === "bank_transfer") {
       const { amount, email } = body;
       
