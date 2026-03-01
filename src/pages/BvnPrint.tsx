@@ -288,31 +288,48 @@ const BvnPrint = () => {
           </Card>
 
           {!result && (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground text-center font-medium">
-                {slipType ? `Preview: ${slipType === "bvn-card" ? "BVN Card" : "BVN Slip"} format` : "Select a slip type to see preview"}
-              </p>
+            <div className="space-y-3">
               {slipType ? (
-                <div className="relative">
-                  <div className="opacity-70 pointer-events-none">
-                    {slipType === "bvn-card" ? (
-                      <BvnCardPreview data={sampleData} photoSrc={null} />
-                    ) : (
-                      <BvnSlipPreview data={sampleData} photoSrc={null} />
-                    )}
+                <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">
+                      {slipType === "bvn-card" ? "BVN Card" : "BVN Slip"} Preview
+                    </p>
+                    <span className="text-xs bg-primary/10 text-primary font-medium px-2.5 py-1 rounded-full">
+                      Sample
+                    </span>
                   </div>
-                  <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px] rounded-xl">
-                    <div className="bg-background border border-border rounded-lg px-4 py-2 shadow-lg text-center">
-                      <p className="text-xs font-semibold text-foreground">Sample Preview</p>
-                      <p className="text-[10px] text-muted-foreground">Verify BVN to see actual data</p>
+                  <div className="relative rounded-2xl border-2 border-dashed border-primary/20 bg-muted/30 p-6 overflow-hidden">
+                    <div className="opacity-60 pointer-events-none scale-[0.92] origin-center transition-transform">
+                      {slipType === "bvn-card" ? (
+                        <BvnCardPreview data={sampleData} photoSrc={null} />
+                      ) : (
+                        <BvnSlipPreview data={sampleData} photoSrc={null} />
+                      )}
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-t from-background/70 via-background/30 to-background/70 backdrop-blur-[1.5px]">
+                      <div className="bg-background/95 border border-border/80 rounded-xl px-5 py-3 shadow-xl text-center space-y-1">
+                        <ShieldCheck className="h-5 w-5 text-primary mx-auto" />
+                        <p className="text-sm font-semibold text-foreground">Sample Preview</p>
+                        <p className="text-[11px] text-muted-foreground">Enter your BVN & verify to see actual data</p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                  <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+                    <CreditCard className="h-3.5 w-3.5" />
+                    <span>Service Fee: <strong className="text-foreground">₦{price.toLocaleString()}.00</strong></span>
+                  </div>
+                </>
               ) : (
-                <Card className="border-dashed border-2 border-muted-foreground/20">
-                  <CardContent className="p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
-                    <Printer className="h-10 w-10 mb-3 opacity-30" />
-                    <p className="text-sm">Preview will appear here when you select a slip type</p>
+                <Card className="border-dashed border-2 border-muted-foreground/20 bg-muted/20">
+                  <CardContent className="p-10 flex flex-col items-center justify-center text-center text-muted-foreground gap-3">
+                    <div className="h-14 w-14 rounded-2xl bg-muted flex items-center justify-center">
+                      <Printer className="h-7 w-7 opacity-40" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">No slip type selected</p>
+                      <p className="text-xs mt-0.5">Choose a format above to preview the layout</p>
+                    </div>
                   </CardContent>
                 </Card>
               )}
