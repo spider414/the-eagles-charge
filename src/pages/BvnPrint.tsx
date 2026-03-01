@@ -146,6 +146,9 @@ const BvnPrint = () => {
         return;
       }
 
+      // Record lookup timestamp for rate limiting
+      lastLookupRef.current[cleanBvn] = Date.now();
+
       const { data, error } = await supabase.functions.invoke("verify-bvn", {
         body: { bvn: bvnNumber },
       });

@@ -162,6 +162,9 @@ const NinPrint = () => {
         return;
       }
 
+      // Record lookup timestamp for rate limiting
+      lastLookupRef.current[cleanNin] = Date.now();
+
       const { data, error } = await supabase.functions.invoke("verify-nin", {
         body: { nin: ninNumber },
       });
