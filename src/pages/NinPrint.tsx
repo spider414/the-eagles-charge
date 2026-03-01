@@ -185,7 +185,14 @@ const NinPrint = () => {
           api_response: { error: data?.error },
           phone_number: ninNumber,
         });
-        toast({ title: "Failed", description: data?.error || "NIN verification failed. Wallet refunded.", variant: "destructive" });
+        await refreshProfile();
+        const errorMsg = data?.error || "NIN verification failed.";
+        const isRateLimit = errorMsg.toLowerCase().includes("recent") || errorMsg.toLowerCase().includes("try again");
+        toast({ 
+          title: isRateLimit ? "Please Wait" : "Failed", 
+          description: `${errorMsg} Your ₦${price} has been refunded.`, 
+          variant: "destructive" 
+        });
       }
     } catch (err: any) {
       try {
