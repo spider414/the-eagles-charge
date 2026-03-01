@@ -63,6 +63,15 @@ interface ServiceConfig {
   edgeFunction: string;
 }
 
+const serviceLabels: Record<string, string> = {
+  "nin-verification": "NIN Search",
+  "nin-phone": "NIN Phone Search",
+  "nin-tracking": "NIN Tracking",
+  "nin-demography": "NIN Demography",
+  "bvn-verification": "BVN Verification",
+  "bvn-phone": "BVN Phone Search",
+};
+
 const services: ServiceConfig[] = [
   { id: "nin-verification", title: "NIN Verification", description: "Verify NIN by number", icon: ShieldCheck, color: "bg-primary", price: "₦300", priceNum: 300, status: "active", category: "nin", edgeFunction: "verify-nin" },
   { id: "nin-phone", title: "NIN With Phone", description: "Search NIN by phone number", icon: Phone, color: "bg-emerald-500", price: "₦500", priceNum: 500, status: "active", category: "nin", edgeFunction: "verify-nin-phone" },
