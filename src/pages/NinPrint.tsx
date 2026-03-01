@@ -132,14 +132,20 @@ const NinPrint = () => {
     setResult(null);
 
     try {
-      // Debit wallet
-      const { data: debitResult, error: debitError } = await supabase.rpc("debit_wallet", {
-        p_profile_id: profile!.id,
-        p_amount: price,
+      // Debit wallet via edge function (has service_role permissions)
+      const { data: paymentData, error: paymentError } = await supabase.functions.invoke("paystack-payment", {
+        body: {
+          action: "wallet_payment",
+          amount: price,
+          metadata: {
+            transaction_type: "verification",
+            phone_number: ninNumber,
+          },
+        },
       });
-      if (debitError) throw debitError;
-      if (!debitResult?.[0]?.success) {
-        toast({ title: "Insufficient Balance", description: "Failed to debit wallet.", variant: "destructive" });
+      if (paymentError) throw new Error(paymentError.message);
+      if (!paymentData?.success) {
+        toast({ title: "Insufficient Balance", description: paymentData?.error || "Failed to debit wallet.", variant: "destructive" });
         setIsVerifying(false);
         return;
       }
@@ -159,10 +165,16 @@ const NinPrint = () => {
           data_plan: `nin-print-${slipType}`,
           api_response: data.data,
           phone_number: ninNumber,
+          balance_before: paymentData.balance_before,
+          balance_after: paymentData.balance_after,
+          description: `Payment for NIN Print (${selectedSlip?.label || slipType})`,
         });
         toast({ title: "Verified!", description: "NIN verification successful. You can now print." });
       } else {
-        await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price });
+        // Refund via edge function
+        await supabase.functions.invoke("paystack-payment", {
+          body: { action: "credit_wallet", amount: price },
+        });
         await supabase.from("transactions").insert({
           user_id: user!.id,
           transaction_type: "verification" as any,
@@ -175,7 +187,11 @@ const NinPrint = () => {
         toast({ title: "Failed", description: data?.error || "NIN verification failed. Wallet refunded.", variant: "destructive" });
       }
     } catch (err: any) {
-      try { await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price }); } catch {}
+      try {
+        await supabase.functions.invoke("paystack-payment", {
+          body: { action: "credit_wallet", amount: price },
+        });
+      } catch {}
       toast({ title: "Error", description: err.message || "Something went wrong. Wallet refunded.", variant: "destructive" });
     } finally {
       setIsVerifying(false);
