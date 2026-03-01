@@ -67,10 +67,7 @@ const getSlipHtml = (content: string, title: string) => `
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
       .print-container { background: white; }
-      @media print {
-        body { background: white; }
-        .print-container { box-shadow: none !important; }
-      }
+      @media print { body { background: white; } .print-container { box-shadow: none !important; } }
     </style>
   </head>
   <body>${content}</body>
@@ -93,7 +90,7 @@ const BvnPrint = () => {
     if (!isLoading && !user) navigate("/auth");
   }, [user, isLoading, navigate]);
 
-  const price = slipType === "bvn-card" ? 450 : slipType === "bvn-slip" ? 350 : 0;
+  const price = slipType === "bvn-card" ? 650 : slipType === "bvn-slip" ? 550 : 0;
 
   const handleVerify = async () => {
     if (!slipType) {
@@ -109,10 +106,27 @@ const BvnPrint = () => {
       return;
     }
 
+    const walletBalance = profile?.wallet_balance || 0;
+    if (walletBalance < price) {
+      toast({ title: "Insufficient Balance", description: `You need ₦${price} but have ₦${walletBalance.toLocaleString()}. Please top up your wallet.`, variant: "destructive" });
+      return;
+    }
+
     setIsVerifying(true);
     setResult(null);
 
     try {
+      const { data: debitResult, error: debitError } = await supabase.rpc("debit_wallet", {
+        p_profile_id: profile!.id,
+        p_amount: price,
+      });
+      if (debitError) throw debitError;
+      if (!debitResult?.[0]?.success) {
+        toast({ title: "Insufficient Balance", description: "Failed to debit wallet.", variant: "destructive" });
+        setIsVerifying(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("verify-bvn", {
         body: { bvn: bvnNumber },
       });
@@ -120,12 +134,32 @@ const BvnPrint = () => {
 
       if (data?.success) {
         setResult(data.data);
+        await supabase.from("transactions").insert({
+          user_id: user!.id,
+          transaction_type: "verification" as any,
+          amount: price,
+          status: "completed",
+          data_plan: `bvn-print-${slipType === "bvn-card" ? "card" : "slip"}`,
+          api_response: data.data,
+          phone_number: bvnNumber,
+        });
         toast({ title: "Verified!", description: "BVN verification successful. You can now print." });
       } else {
-        toast({ title: "Failed", description: data?.error || "BVN verification failed", variant: "destructive" });
+        await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price });
+        await supabase.from("transactions").insert({
+          user_id: user!.id,
+          transaction_type: "verification" as any,
+          amount: price,
+          status: "failed",
+          data_plan: `bvn-print-${slipType === "bvn-card" ? "card" : "slip"}`,
+          api_response: { error: data?.error },
+          phone_number: bvnNumber,
+        });
+        toast({ title: "Failed", description: data?.error || "BVN verification failed. Wallet refunded.", variant: "destructive" });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Something went wrong", variant: "destructive" });
+      try { await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price }); } catch {}
+      toast({ title: "Error", description: err.message || "Something went wrong. Wallet refunded.", variant: "destructive" });
     } finally {
       setIsVerifying(false);
     }
@@ -151,9 +185,7 @@ const BvnPrint = () => {
   };
 
   const photoSrc = result?.photo
-    ? result.photo.startsWith("data:")
-      ? result.photo
-      : `data:image/jpeg;base64,${result.photo}`
+    ? result.photo.startsWith("data:") ? result.photo : `data:image/jpeg;base64,${result.photo}`
     : null;
 
   if (isLoading) {
@@ -169,7 +201,6 @@ const BvnPrint = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
           <div className="container flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
@@ -191,13 +222,11 @@ const BvnPrint = () => {
         </header>
 
         <main className="container py-6 pb-8 space-y-6 max-w-lg mx-auto">
-          {/* Title */}
           <div className="text-center space-y-1">
             <h1 className="text-2xl font-bold text-foreground">BVN Verification</h1>
             <p className="text-sm text-muted-foreground">Choose your preferred slip format and verify BVN details</p>
           </div>
 
-          {/* Slip Type Selection */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
@@ -213,21 +242,16 @@ const BvnPrint = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="bvn-card">
-                    <span className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" /> BVN Card - ₦450.00
-                    </span>
+                    <span className="flex items-center gap-2"><CreditCard className="h-4 w-4" /> BVN Card - ₦650.00</span>
                   </SelectItem>
                   <SelectItem value="bvn-slip">
-                    <span className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" /> BVN Slip - ₦350.00
-                    </span>
+                    <span className="flex items-center gap-2"><FileText className="h-4 w-4" /> BVN Slip - ₦550.00</span>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </CardContent>
           </Card>
 
-          {/* Sample Preview (before verification) */}
           {!result && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground text-center font-medium">
@@ -260,7 +284,6 @@ const BvnPrint = () => {
             </div>
           )}
 
-          {/* BVN Input */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Enter BVN Details</CardTitle>
@@ -268,31 +291,16 @@ const BvnPrint = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="bvn">Bank Verification Number (BVN)</Label>
-                <Input
-                  id="bvn"
-                  type="text"
-                  placeholder="Enter 11-digit BVN"
-                  value={bvnNumber}
-                  onChange={(e) => setBvnNumber(e.target.value.replace(/\D/g, ""))}
-                  maxLength={11}
-                />
+                <Input id="bvn" type="text" placeholder="Enter 11-digit BVN" value={bvnNumber} onChange={(e) => setBvnNumber(e.target.value.replace(/\D/g, ""))} maxLength={11} />
               </div>
 
               <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground flex items-start gap-2">
                 <ShieldCheck className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                <p>
-                  <strong>Privacy Notice:</strong> Your BVN information is encrypted and securely processed.
-                  We never store your personal data after verification.
-                </p>
+                <p><strong>Privacy Notice:</strong> Your BVN information is encrypted and securely processed. We never store your personal data after verification.</p>
               </div>
 
               <div className="flex items-start gap-2">
-                <Checkbox
-                  id="consent"
-                  checked={consent}
-                  onCheckedChange={(checked) => setConsent(checked === true)}
-                  className="mt-0.5"
-                />
+                <Checkbox id="consent" checked={consent} onCheckedChange={(checked) => setConsent(checked === true)} className="mt-0.5" />
                 <Label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
                   I confirm that I have obtained proper consent from the BVN owner for this verification.
                 </Label>
@@ -308,7 +316,6 @@ const BvnPrint = () => {
             </CardContent>
           </Card>
 
-          {/* Result & Print/Download */}
           {result && (
             <div className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-2 text-primary font-semibold">
@@ -326,12 +333,10 @@ const BvnPrint = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <Button className="w-full" onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print
+                  <Printer className="h-4 w-4 mr-2" />Print
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleDownloadPdf}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Save as PDF
+                  <Download className="h-4 w-4 mr-2" />Save as PDF
                 </Button>
               </div>
             </div>
@@ -342,7 +347,7 @@ const BvnPrint = () => {
   );
 };
 
-/* ─── BVN Card Preview (ID-card style) ─── */
+/* ─── BVN Card Preview (₦650) ─── */
 const BvnCardPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | null }) => (
   <div className="print-container" style={{
     width: "100%", maxWidth: "400px", margin: "0 auto",
@@ -378,7 +383,7 @@ const BvnCardPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | 
   </div>
 );
 
-/* ─── BVN Slip Preview (traditional slip) ─── */
+/* ─── BVN Slip Preview (₦550) ─── */
 const BvnSlipPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | null }) => (
   <div className="print-container" style={{
     width: "100%", maxWidth: "500px", margin: "0 auto",
@@ -403,15 +408,9 @@ const BvnSlipPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | 
         <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
           <tbody>
             {([
-              ["Full Name", data.full_name],
-              ["BVN", data.bvn],
-              ["Gender", data.gender],
-              ["Date of Birth", data.date_of_birth],
-              ["Phone Number", data.phone],
-              ["Email", data.email],
-              ["State of Origin", data.state_of_origin],
-              ["State of Residence", data.state_of_residence],
-              ["Nationality", data.nationality],
+              ["Full Name", data.full_name], ["BVN", data.bvn], ["Gender", data.gender],
+              ["Date of Birth", data.date_of_birth], ["Phone Number", data.phone], ["Email", data.email],
+              ["State of Origin", data.state_of_origin], ["State of Residence", data.state_of_residence], ["Nationality", data.nationality],
             ] as [string, string | undefined][]).filter(([, val]) => val).map(([label, value]) => (
               <tr key={label}>
                 <td style={{ padding: "4px 8px 4px 0", color: "#666", whiteSpace: "nowrap", verticalAlign: "top" }}>{label}:</td>

@@ -57,18 +57,19 @@ interface ServiceConfig {
   icon: typeof ShieldCheck;
   color: string;
   price: string;
+  priceNum: number;
   status: "active" | "coming_soon";
   category: "nin" | "bvn" | "other";
   edgeFunction: string;
 }
 
 const services: ServiceConfig[] = [
-  { id: "nin-verification", title: "NIN Verification", description: "Verify NIN by number", icon: ShieldCheck, color: "bg-primary", price: "₦150", status: "active", category: "nin", edgeFunction: "verify-nin" },
-  { id: "nin-phone", title: "NIN With Phone", description: "Search NIN by phone number", icon: Phone, color: "bg-emerald-500", price: "₦200", status: "active", category: "nin", edgeFunction: "verify-nin-phone" },
-  { id: "nin-tracking", title: "NIN Tracking", description: "Search NIN by tracking ID", icon: Search, color: "bg-teal-500", price: "₦200", status: "active", category: "nin", edgeFunction: "verify-nin-tracking" },
-  { id: "nin-demography", title: "NIN Demography", description: "Search NIN by demographics", icon: Users, color: "bg-cyan-600", price: "₦250", status: "active", category: "nin", edgeFunction: "verify-nin-demography" },
-  { id: "bvn-verification", title: "BVN Verification", description: "Verify BVN by number", icon: CreditCard, color: "bg-blue-600", price: "₦100", status: "active", category: "bvn", edgeFunction: "verify-bvn" },
-  { id: "bvn-phone", title: "BVN With Phone", description: "Search BVN by phone number", icon: Phone, color: "bg-sky-500", price: "₦150", status: "active", category: "bvn", edgeFunction: "verify-bvn-phone" },
+  { id: "nin-verification", title: "NIN Verification", description: "Verify NIN by number", icon: ShieldCheck, color: "bg-primary", price: "₦300", priceNum: 300, status: "active", category: "nin", edgeFunction: "verify-nin" },
+  { id: "nin-phone", title: "NIN With Phone", description: "Search NIN by phone number", icon: Phone, color: "bg-emerald-500", price: "₦500", priceNum: 500, status: "active", category: "nin", edgeFunction: "verify-nin-phone" },
+  { id: "nin-tracking", title: "NIN Tracking", description: "Search NIN by tracking ID", icon: Search, color: "bg-teal-500", price: "₦400", priceNum: 400, status: "active", category: "nin", edgeFunction: "verify-nin-tracking" },
+  { id: "nin-demography", title: "NIN Demography", description: "Search NIN by demographics", icon: Users, color: "bg-cyan-600", price: "₦500", priceNum: 500, status: "active", category: "nin", edgeFunction: "verify-nin-demography" },
+  { id: "bvn-verification", title: "BVN Verification", description: "Verify BVN by number", icon: CreditCard, color: "bg-blue-600", price: "₦500", priceNum: 500, status: "active", category: "bvn", edgeFunction: "verify-bvn" },
+  { id: "bvn-phone", title: "BVN With Phone", description: "Search BVN by phone number", icon: Phone, color: "bg-sky-500", price: "₦400", priceNum: 400, status: "active", category: "bvn", edgeFunction: "verify-bvn-phone" },
 ];
 
 const otherServices = [
@@ -166,21 +167,68 @@ const Verification = () => {
         break;
     }
 
+    // Check wallet balance
+    const walletBalance = profile?.wallet_balance || 0;
+    if (walletBalance < service.priceNum) {
+      toast({ title: "Insufficient Balance", description: `You need ₦${service.priceNum} but have ₦${walletBalance.toLocaleString()}. Please top up your wallet.`, variant: "destructive" });
+      return;
+    }
+
     setIsVerifying(true);
     setResult(null);
 
     try {
+      // Debit wallet first
+      const { data: debitResult, error: debitError } = await supabase.rpc("debit_wallet", {
+        p_profile_id: profile!.id,
+        p_amount: service.priceNum,
+      });
+      if (debitError) throw debitError;
+      const debitSuccess = debitResult?.[0]?.success;
+      if (!debitSuccess) {
+        toast({ title: "Insufficient Balance", description: "Failed to debit wallet. Please top up.", variant: "destructive" });
+        setIsVerifying(false);
+        return;
+      }
+
+      // Call verification API
       const { data, error } = await supabase.functions.invoke(service.edgeFunction, { body });
       if (error) throw error;
 
       if (data?.success) {
         setResult(data.data);
+        // Save transaction
+        await supabase.from("transactions").insert({
+          user_id: user!.id,
+          transaction_type: "verification" as any,
+          amount: service.priceNum,
+          status: "completed",
+          data_plan: service.id,
+          api_response: data.data,
+          phone_number: ninNumber || bvnNumber || phoneNumber || trackingId,
+        });
         toast({ title: "Success!", description: "Verification completed successfully" });
       } else {
-        toast({ title: "Failed", description: data?.error || "Verification failed", variant: "destructive" });
+        // Refund on failure
+        await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: service.priceNum });
+        // Save failed transaction
+        await supabase.from("transactions").insert({
+          user_id: user!.id,
+          transaction_type: "verification" as any,
+          amount: service.priceNum,
+          status: "failed",
+          data_plan: service.id,
+          api_response: { error: data?.error },
+          phone_number: ninNumber || bvnNumber || phoneNumber || trackingId,
+        });
+        toast({ title: "Failed", description: data?.error || "Verification failed. Wallet refunded.", variant: "destructive" });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Something went wrong", variant: "destructive" });
+      // Refund on error
+      try {
+        await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: service.priceNum });
+      } catch {}
+      toast({ title: "Error", description: err.message || "Something went wrong. Wallet refunded.", variant: "destructive" });
     } finally {
       setIsVerifying(false);
     }
@@ -290,6 +338,12 @@ const Verification = () => {
         </header>
 
         <main className="container py-6 pb-8 space-y-6">
+          {/* Transaction History Link */}
+          <Button variant="outline" className="w-full" onClick={() => navigate("/verification-history")}>
+            <FileSearch className="h-4 w-4 mr-2" />
+            My Verification Transactions
+          </Button>
+
           {/* Active Service Panel */}
           {activeService && activeConfig && (
             <Card className="border-primary/20 shadow-card animate-fade-in">
