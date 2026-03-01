@@ -64,9 +64,9 @@ const sampleData: NinData = {
 };
 
 const slipOptions: { value: SlipType; label: string; price: number; icon: typeof Star }[] = [
-  { value: "premium", label: "Premium Slip", price: 700, icon: Award },
-  { value: "standard", label: "Standard Slip", price: 600, icon: Star },
-  { value: "regular", label: "Regular Slip", price: 500, icon: FileText },
+  { value: "premium", label: "Premium Slip", price: 450, icon: Award },
+  { value: "standard", label: "Standard Slip", price: 400, icon: Star },
+  { value: "regular", label: "Regular Slip", price: 350, icon: FileText },
 ];
 
 const getSlipHtml = (content: string, title: string) => `
@@ -480,124 +480,273 @@ const NinPrint = () => {
   );
 };
 
-/* ─── Premium Slip (₦700) ─── */
-const NinPremiumSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
-  <div className="print-container" style={{
-    width: "100%", maxWidth: "420px", margin: "0 auto",
-    background: "linear-gradient(135deg, #0a4d27 0%, #063d1e 40%, #0a6b35 100%)",
-    borderRadius: "16px", padding: "24px", color: "white", fontFamily: "'Segoe UI', sans-serif",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.25)", position: "relative", overflow: "hidden",
-  }}>
-    <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(-30deg)", fontSize: "80px", opacity: 0.03, fontWeight: "bold", whiteSpace: "nowrap" }}>NIMC</div>
-    <div style={{ textAlign: "center", marginBottom: "16px", borderBottom: "2px solid rgba(255,255,255,0.2)", paddingBottom: "12px" }}>
-      <div style={{ fontSize: "9px", letterSpacing: "3px", opacity: 0.8, textTransform: "uppercase" }}>Federal Republic of Nigeria</div>
-      <div style={{ fontSize: "17px", fontWeight: "bold", marginTop: "4px", letterSpacing: "1px" }}>NATIONAL IDENTITY NUMBER</div>
-      <div style={{ fontSize: "9px", opacity: 0.6, marginTop: "2px" }}>National Identity Management Commission (NIMC)</div>
-      <div style={{ display: "inline-block", background: "rgba(255,215,0,0.2)", border: "1px solid rgba(255,215,0,0.4)", borderRadius: "4px", padding: "2px 8px", marginTop: "6px", fontSize: "8px", color: "#ffd700", letterSpacing: "2px" }}>PREMIUM</div>
-    </div>
-    <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-      {photoSrc ? (
-        <img src={photoSrc} alt="NIN Photo" style={{ width: "95px", height: "115px", objectFit: "cover", borderRadius: "8px", border: "2px solid rgba(255,255,255,0.3)" }} />
-      ) : (
-        <div style={{ width: "95px", height: "115px", background: "rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", opacity: 0.5 }}>No Photo</div>
-      )}
-      <div style={{ flex: 1, fontSize: "11px", lineHeight: "1.7" }}>
-        <div><span style={{ opacity: 0.6 }}>Full Name:</span><br /><strong>{data.full_name || "N/A"}</strong></div>
-        <div style={{ marginTop: "4px" }}><span style={{ opacity: 0.6 }}>NIN:</span><br /><strong style={{ letterSpacing: "2px", fontSize: "13px" }}>{data.nin || "N/A"}</strong></div>
-        <div style={{ marginTop: "4px" }}><span style={{ opacity: 0.6 }}>Gender:</span> <strong style={{ textTransform: "capitalize" }}>{data.gender || "N/A"}</strong></div>
-        <div><span style={{ opacity: 0.6 }}>DOB:</span> <strong>{data.date_of_birth || "N/A"}</strong></div>
-      </div>
-    </div>
-    <div style={{ marginTop: "14px", borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: "10px", fontSize: "10px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
-      {data.phone && <div><span style={{ opacity: 0.6 }}>Phone:</span> {data.phone}</div>}
-      {data.email && <div><span style={{ opacity: 0.6 }}>Email:</span> {data.email}</div>}
-      {data.state_of_origin && <div><span style={{ opacity: 0.6 }}>State:</span> {data.state_of_origin}</div>}
-      {data.nationality && <div><span style={{ opacity: 0.6 }}>Nationality:</span> {data.nationality}</div>}
-      {data.address && <div style={{ gridColumn: "1 / -1" }}><span style={{ opacity: 0.6 }}>Address:</span> {data.address}</div>}
-    </div>
-    <div style={{ marginTop: "12px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "8px", textAlign: "center", fontSize: "8px", opacity: 0.5 }}>
-      Powered by THE EAGLES VTU • For verification purposes only
-    </div>
-  </div>
-);
+/* ─── Premium Slip (₦450) — Digital NIN Card Style ─── */
+const NinPremiumSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => {
+  const surname = data.last_name || data.full_name?.split(" ").slice(-1)[0] || "RESIDENT";
+  const givenNames = data.first_name
+    ? `${data.first_name}${data.middle_name ? ", " + data.middle_name : ""}`
+    : data.full_name?.split(" ").slice(0, -1).join(", ") || "PROUD, NIGERIAN";
+  const dob = data.date_of_birth || "01 JAN 1990";
+  const gender = data.gender?.charAt(0).toUpperCase() || "M";
+  const nin = data.nin || "0000 000 0000";
+  const formattedNin = nin.replace(/(\d{4})(\d{3})(\d{4})/, "$1 $2 $3");
 
-/* ─── Standard Slip (₦600) ─── */
-const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
-  <div className="print-container" style={{
-    width: "100%", maxWidth: "480px", margin: "0 auto",
-    background: "white", border: "2px solid #0a4d27",
-    borderRadius: "10px", padding: "24px", fontFamily: "'Segoe UI', sans-serif",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-  }}>
-    <div style={{ textAlign: "center", borderBottom: "2px solid #0a4d27", paddingBottom: "12px", marginBottom: "16px" }}>
-      <div style={{ fontSize: "10px", letterSpacing: "2px", color: "#666", textTransform: "uppercase" }}>Federal Republic of Nigeria</div>
-      <div style={{ fontSize: "17px", fontWeight: "bold", color: "#0a4d27", marginTop: "4px" }}>NIN VERIFICATION SLIP</div>
-      <div style={{ fontSize: "9px", color: "#999", marginTop: "2px" }}>National Identity Management Commission</div>
-      <div style={{ display: "inline-block", background: "#f0f7f3", border: "1px solid #0a4d27", borderRadius: "4px", padding: "2px 8px", marginTop: "6px", fontSize: "8px", color: "#0a4d27", letterSpacing: "1px" }}>STANDARD</div>
-    </div>
-    <div style={{ display: "flex", gap: "20px" }}>
-      <div style={{ flexShrink: 0 }}>
-        {photoSrc ? (
-          <img src={photoSrc} alt="NIN Photo" style={{ width: "100px", height: "120px", objectFit: "cover", border: "2px solid #0a4d27", borderRadius: "6px" }} />
-        ) : (
-          <div style={{ width: "100px", height: "120px", background: "#f0f0f0", border: "2px solid #ccc", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#999" }}>No Photo</div>
-        )}
+  return (
+    <div className="print-container" style={{
+      width: "100%", maxWidth: "480px", margin: "0 auto",
+      background: "linear-gradient(145deg, #f0f7f0 0%, #e8f5e8 30%, #f5f9f5 60%, #eef6ee 100%)",
+      borderRadius: "12px", padding: "0", fontFamily: "'Segoe UI', sans-serif",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.15)", position: "relative", overflow: "hidden",
+      border: "1px solid #c5dfc5",
+    }}>
+      {/* Watermark pattern */}
+      <div style={{ position: "absolute", inset: 0, opacity: 0.04, backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 20px, #0a4d27 20px, #0a4d27 21px)", pointerEvents: "none" }} />
+
+      {/* Header */}
+      <div style={{ textAlign: "center", padding: "16px 20px 10px", position: "relative" }}>
+        <div style={{ fontSize: "11px", color: "#0a4d27", fontWeight: "bold", letterSpacing: "1px" }}>FEDERAL REPUBLIC OF NIGERIA</div>
+        <div style={{ fontSize: "14px", fontWeight: "bold", color: "#1a1a1a", marginTop: "2px" }}>DIGITAL NIN SLIP</div>
       </div>
-      <div style={{ flex: 1 }}>
-        <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
-          <tbody>
-            {([
-              ["Full Name", data.full_name], ["NIN", data.nin], ["Gender", data.gender],
-              ["Date of Birth", data.date_of_birth], ["Phone", data.phone], ["Email", data.email],
-              ["State of Origin", data.state_of_origin || data.state], ["Nationality", data.nationality], ["Address", data.address],
-            ] as [string, string | undefined][]).filter(([, val]) => val).map(([label, value]) => (
-              <tr key={label}>
-                <td style={{ padding: "3px 8px 3px 0", color: "#666", whiteSpace: "nowrap", verticalAlign: "top", fontSize: "11px" }}>{label}:</td>
-                <td style={{ padding: "3px 0", fontWeight: "600", textTransform: label === "Gender" ? "capitalize" : "none" }}>{value}</td>
+
+      {/* Card body */}
+      <div style={{ padding: "0 24px 10px", display: "flex", gap: "16px", position: "relative" }}>
+        {/* Photo */}
+        <div style={{ flexShrink: 0 }}>
+          {photoSrc ? (
+            <img src={photoSrc} alt="Photo" style={{ width: "90px", height: "110px", objectFit: "cover", borderRadius: "6px", border: "2px solid #b5d5b5" }} />
+          ) : (
+            <div style={{ width: "90px", height: "110px", background: "#d4e8d4", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #b5d5b5" }}>
+              <div style={{ fontSize: "9px", color: "#666", textAlign: "center" }}>Photo</div>
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div style={{ flex: 1, fontSize: "10px", color: "#333" }}>
+          <div style={{ marginBottom: "6px" }}>
+            <div style={{ fontSize: "8px", color: "#0a6b35", fontStyle: "italic" }}>Surname/Nom</div>
+            <div style={{ fontWeight: "bold", fontSize: "12px" }}>{surname.toUpperCase()}</div>
+          </div>
+          <div style={{ marginBottom: "6px" }}>
+            <div style={{ fontSize: "8px", color: "#0a6b35", fontStyle: "italic" }}>Given Names/Prénoms</div>
+            <div style={{ fontWeight: "bold", fontSize: "11px" }}>{givenNames.toUpperCase()}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: "8px", color: "#0a6b35", fontStyle: "italic" }}>Date of Birth</div>
+            <div style={{ fontWeight: "bold", fontSize: "11px" }}>{dob}</div>
+          </div>
+        </div>
+
+        {/* Right side - NGA + QR placeholder */}
+        <div style={{ flexShrink: 0, textAlign: "center", width: "80px" }}>
+          <div style={{ fontWeight: "bold", fontSize: "18px", color: "#333", marginBottom: "4px" }}>NGA</div>
+          <div style={{ width: "60px", height: "60px", margin: "0 auto", background: "#ddd", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ fontSize: "7px", color: "#999" }}>QR Code</div>
+          </div>
+          <div style={{ marginTop: "4px", fontSize: "7px", color: "#666" }}>ISSUE DATE</div>
+          <div style={{ fontSize: "8px", fontWeight: "bold", color: "#333" }}>{new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()}</div>
+        </div>
+      </div>
+
+      {/* NIN display */}
+      <div style={{ textAlign: "center", padding: "10px 20px 6px" }}>
+        <div style={{ fontSize: "9px", color: "#666" }}>National Identification Number (NIN)</div>
+        <div style={{ fontSize: "28px", fontWeight: "bold", color: "#1a1a1a", letterSpacing: "4px", fontFamily: "'Courier New', monospace" }}>{formattedNin}</div>
+      </div>
+
+      {/* Green bar at bottom */}
+      <div style={{ background: "linear-gradient(90deg, #0a6b35, #15a35c)", height: "28px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 0 12px 12px" }}>
+        <span style={{ fontSize: "8px", color: "white", opacity: 0.8 }}>Powered by THE EAGLES VTU • For verification purposes only</span>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Standard Slip (₦400) — NIN Card with Coat of Arms ─── */
+const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => {
+  const surname = data.last_name || data.full_name?.split(" ").slice(-1)[0] || "RESIDENT";
+  const givenNames = data.first_name
+    ? `${data.first_name}${data.middle_name ? ", " + data.middle_name : ""}`
+    : data.full_name?.split(" ").slice(0, -1).join(", ") || "PROUD, NIGERIAN";
+  const dob = data.date_of_birth || "01 OCT 1960";
+  const nin = data.nin || "0000 000 0000";
+  const formattedNin = nin.replace(/(\d{4})(\d{3})(\d{4})/, "$1 $2 $3");
+
+  return (
+    <div className="print-container" style={{
+      width: "100%", maxWidth: "480px", margin: "0 auto",
+      background: "linear-gradient(160deg, #fafdf8 0%, #f0f5ec 50%, #f8faf6 100%)",
+      borderRadius: "12px", fontFamily: "'Segoe UI', sans-serif",
+      boxShadow: "0 6px 24px rgba(0,0,0,0.12)", position: "relative", overflow: "hidden",
+      border: "1px solid #d5e5d0",
+    }}>
+      {/* Watermark */}
+      <div style={{ position: "absolute", inset: 0, opacity: 0.03, backgroundImage: "repeating-linear-gradient(-45deg, transparent, transparent 25px, #0a4d27 25px, #0a4d27 26px)", pointerEvents: "none" }} />
+
+      {/* Coat of arms header */}
+      <div style={{ textAlign: "center", padding: "16px 20px 8px", position: "relative" }}>
+        <div style={{ fontSize: "24px", marginBottom: "2px" }}>🇳🇬</div>
+        <div style={{ marginBottom: "6px" }}>
+          <div style={{ fontSize: "8px", color: "#0a6b35", fontStyle: "italic" }}>Surname/Nom</div>
+          <div style={{ fontWeight: "bold", fontSize: "13px", color: "#333" }}>{surname.toUpperCase()}</div>
+        </div>
+      </div>
+
+      <div style={{ padding: "0 24px", display: "flex", gap: "16px", position: "relative" }}>
+        <div style={{ flexShrink: 0 }}>
+          {photoSrc ? (
+            <img src={photoSrc} alt="Photo" style={{ width: "85px", height: "105px", objectFit: "cover", borderRadius: "6px", border: "2px solid #c5dfc5" }} />
+          ) : (
+            <div style={{ width: "85px", height: "105px", background: "#e0ede0", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #c5dfc5" }}>
+              <div style={{ fontSize: "9px", color: "#888" }}>Photo</div>
+            </div>
+          )}
+        </div>
+        <div style={{ flex: 1, fontSize: "10px" }}>
+          <div style={{ marginBottom: "6px" }}>
+            <div style={{ fontSize: "8px", color: "#0a6b35", fontStyle: "italic" }}>Given Names/Prénoms</div>
+            <div style={{ fontWeight: "bold", fontSize: "11px", color: "#333" }}>{givenNames.toUpperCase()}</div>
+          </div>
+          <div style={{ marginBottom: "6px" }}>
+            <div style={{ fontSize: "8px", color: "#0a6b35", fontStyle: "italic" }}>Date of Birth</div>
+            <div style={{ fontWeight: "bold", fontSize: "11px", color: "#333" }}>{dob}</div>
+          </div>
+          {data.gender && (
+            <div>
+              <div style={{ fontSize: "8px", color: "#0a6b35", fontStyle: "italic" }}>Sex/Sexe</div>
+              <div style={{ fontWeight: "bold", fontSize: "11px", color: "#333" }}>{data.gender.charAt(0).toUpperCase()}</div>
+            </div>
+          )}
+        </div>
+        <div style={{ flexShrink: 0, textAlign: "center", width: "70px" }}>
+          <div style={{ fontWeight: "bold", fontSize: "16px", color: "#333", marginBottom: "4px" }}>NGA</div>
+          <div style={{ width: "55px", height: "55px", margin: "0 auto", background: "#e8e8e8", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ fontSize: "7px", color: "#aaa" }}>QR Code</div>
+          </div>
+          <div style={{ marginTop: "4px", fontSize: "7px", color: "#666" }}>ISSUE DATE</div>
+          <div style={{ fontSize: "8px", fontWeight: "bold" }}>{new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase()}</div>
+        </div>
+      </div>
+
+      <div style={{ textAlign: "center", padding: "12px 20px 6px" }}>
+        <div style={{ fontSize: "9px", color: "#666" }}>National Identification Number (NIN)</div>
+        <div style={{ fontSize: "26px", fontWeight: "bold", color: "#1a1a1a", letterSpacing: "4px", fontFamily: "'Courier New', monospace" }}>{formattedNin}</div>
+      </div>
+
+      <div style={{ background: "linear-gradient(90deg, #0a8a4a, #20c070)", height: "26px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "0 0 12px 12px" }}>
+        <span style={{ fontSize: "8px", color: "white", opacity: 0.8 }}>Powered by THE EAGLES VTU</span>
+      </div>
+    </div>
+  );
+};
+
+/* ─── Regular Slip (₦350) — Official NIMC Table Format ─── */
+const NinRegularSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => {
+  const surname = data.last_name || data.full_name?.split(" ").slice(-1)[0] || "N/A";
+  const firstName = data.first_name || data.full_name?.split(" ")[0] || "N/A";
+  const middleName = data.middle_name || data.full_name?.split(" ").slice(1, -1).join(" ") || "";
+  const nin = data.nin || "00000000000";
+
+  return (
+    <div className="print-container" style={{
+      width: "100%", maxWidth: "520px", margin: "0 auto",
+      background: "linear-gradient(160deg, #fffef8 0%, #fefcf0 100%)",
+      borderRadius: "8px", fontFamily: "'Segoe UI', sans-serif",
+      boxShadow: "0 4px 16px rgba(0,0,0,0.1)", overflow: "hidden",
+      border: "1px solid #e0d8c0",
+    }}>
+      {/* Header */}
+      <div style={{ textAlign: "center", padding: "12px 16px 8px", borderBottom: "2px solid #0a4d27" }}>
+        <div style={{ fontSize: "24px", marginBottom: "2px" }}>🇳🇬</div>
+        <div style={{ fontSize: "13px", fontWeight: "bold", color: "#0a4d27" }}>National Identity Management System</div>
+        <div style={{ fontSize: "10px", color: "#555" }}>Federal Republic of Nigeria</div>
+        <div style={{ fontSize: "9px", color: "#888", marginTop: "2px" }}>National Identification Number Slip (NINS)</div>
+      </div>
+
+      {/* Table layout body */}
+      <div style={{ padding: "12px 16px", display: "flex", gap: "12px" }}>
+        <div style={{ flex: 1 }}>
+          <table style={{ width: "100%", fontSize: "10px", borderCollapse: "collapse", border: "1px solid #ccc" }}>
+            <tbody>
+              <tr>
+                <td style={{ ...cellStyle, color: "#666", width: "35%" }}>Tracking ID</td>
+                <td style={{ ...cellStyle, fontWeight: "600", fontSize: "9px" }}>EAGLES{Date.now().toString().slice(-8)}</td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <div style={{ marginTop: "16px", borderTop: "1px solid #ddd", paddingTop: "8px", textAlign: "center", fontSize: "8px", color: "#999" }}>
-      This slip is generated for verification purposes only. • Powered by THE EAGLES VTU
-    </div>
-  </div>
-);
+              <tr>
+                <td style={{ ...cellStyle, color: "#666" }}>NIN</td>
+                <td style={{ ...cellStyle, fontWeight: "bold", color: "#c00" }}>
+                  <span style={{ border: "1px solid #c00", borderRadius: "8px", padding: "1px 6px", fontSize: "10px" }}>{nin}</span>
+                </td>
+              </tr>
+              <tr>
+                <td style={{ ...cellStyle, color: "#666" }}>Issue Date</td>
+                <td style={{ ...cellStyle, fontWeight: "600" }}>{new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" })}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style={{ flex: 1 }}>
+          <table style={{ width: "100%", fontSize: "10px", borderCollapse: "collapse", border: "1px solid #ccc" }}>
+            <tbody>
+              <tr>
+                <td style={{ ...cellStyle, color: "#666", width: "40%" }}>Surname</td>
+                <td style={{ ...cellStyle, fontWeight: "600" }}>{surname.toUpperCase()}</td>
+              </tr>
+              <tr>
+                <td style={{ ...cellStyle, color: "#666" }}>First Name</td>
+                <td style={{ ...cellStyle, fontWeight: "600" }}>{firstName.toUpperCase()}</td>
+              </tr>
+              <tr>
+                <td style={{ ...cellStyle, color: "#666" }}>Middle Name</td>
+                <td style={{ ...cellStyle, fontWeight: "600" }}>{middleName.toUpperCase() || "—"}</td>
+              </tr>
+              <tr>
+                <td style={{ ...cellStyle, color: "#666" }}>Gender</td>
+                <td style={{ ...cellStyle, fontWeight: "600", textTransform: "capitalize" }}>{data.gender?.charAt(0).toUpperCase() || "—"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-/* ─── Regular Slip (₦500) ─── */
-const NinRegularSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
-  <div className="print-container" style={{
-    width: "100%", maxWidth: "440px", margin: "0 auto",
-    background: "white", border: "1px solid #ddd",
-    borderRadius: "8px", padding: "20px", fontFamily: "'Segoe UI', sans-serif",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-  }}>
-    <div style={{ textAlign: "center", borderBottom: "1px solid #eee", paddingBottom: "10px", marginBottom: "14px" }}>
-      <div style={{ fontSize: "14px", fontWeight: "bold", color: "#333" }}>NIN VERIFICATION</div>
-      <div style={{ fontSize: "9px", color: "#999", marginTop: "2px" }}>National Identity Management Commission</div>
-    </div>
-    <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
-      {photoSrc ? (
-        <img src={photoSrc} alt="NIN Photo" style={{ width: "80px", height: "100px", objectFit: "cover", border: "1px solid #ddd", borderRadius: "4px" }} />
-      ) : (
-        <div style={{ width: "80px", height: "100px", background: "#f5f5f5", border: "1px solid #ddd", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "9px", color: "#bbb" }}>No Photo</div>
-      )}
-      <div style={{ flex: 1, fontSize: "11px", lineHeight: "1.8" }}>
-        <div><strong>{data.full_name || "N/A"}</strong></div>
-        <div style={{ color: "#666" }}>NIN: <strong>{data.nin || "N/A"}</strong></div>
-        <div style={{ color: "#666" }}>Gender: <span style={{ textTransform: "capitalize" }}>{data.gender || "N/A"}</span></div>
-        <div style={{ color: "#666" }}>DOB: {data.date_of_birth || "N/A"}</div>
-        {data.phone && <div style={{ color: "#666" }}>Phone: {data.phone}</div>}
-        {(data.state_of_origin || data.state) && <div style={{ color: "#666" }}>State: {data.state_of_origin || data.state}</div>}
+        {/* Photo + NIMC badge */}
+        <div style={{ flexShrink: 0, textAlign: "center", width: "80px" }}>
+          <div style={{ fontSize: "8px", color: "#0a6b35", fontWeight: "bold", marginBottom: "4px" }}>NIMC</div>
+          {photoSrc ? (
+            <img src={photoSrc} alt="Photo" style={{ width: "75px", height: "95px", objectFit: "cover", borderRadius: "4px", border: "1px solid #ccc" }} />
+          ) : (
+            <div style={{ width: "75px", height: "95px", background: "#f0ece0", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #ccc" }}>
+              <div style={{ fontSize: "8px", color: "#999" }}>Photo</div>
+            </div>
+          )}
+          {data.address && (
+            <div style={{ marginTop: "4px", fontSize: "7px", color: "#666", textAlign: "left" }}>
+              <div style={{ fontWeight: "bold" }}>Address:</div>
+              <div>{data.address}</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Note */}
+      <div style={{ padding: "0 16px 8px", fontSize: "7px", color: "#888" }}>
+        <strong>Note:</strong> This transaction slip does not confer the right to the <strong>General Multipurpose Card</strong> (For any enquiry please contact)
+      </div>
+
+      {/* Footer */}
+      <div style={{ background: "#f5f0e0", borderTop: "1px solid #e0d8c0", padding: "6px 16px", display: "flex", justifyContent: "space-between", fontSize: "7px", color: "#888" }}>
+        <span>helpdesk@nimc.gov.ng</span>
+        <span>www.nimc.gov.ng</span>
+        <span>Powered by THE EAGLES VTU</span>
       </div>
     </div>
-    <div style={{ marginTop: "12px", borderTop: "1px solid #eee", paddingTop: "6px", textAlign: "center", fontSize: "8px", color: "#bbb" }}>
-      Powered by THE EAGLES VTU
-    </div>
-  </div>
-);
+  );
+};
+
+const cellStyle: React.CSSProperties = {
+  padding: "4px 6px",
+  borderBottom: "1px solid #e0d8c0",
+  verticalAlign: "top",
+};
 /* ─── Info Field Component ─── */
 const InfoField = ({ label, value, fullWidth }: { label: string; value?: string | null; fullWidth?: boolean }) => {
   if (!value) return null;
