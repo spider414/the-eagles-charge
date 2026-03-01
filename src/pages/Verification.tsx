@@ -72,12 +72,12 @@ const services: ServiceConfig[] = [
 ];
 
 const otherServices = [
-  { title: "Print NIN Slip", icon: Printer, color: "bg-indigo-500", badge: null },
-  { title: "Print BVN Slip", icon: Printer, color: "bg-violet-500", badge: null },
-  { title: "TIN Registration", icon: FileText, color: "bg-orange-500", badge: null },
-  { title: "CAC Registration", icon: Building2, color: "bg-amber-600", badge: null },
-  { title: "SCUML Registration", icon: FileText, color: "bg-rose-500", badge: "NEW" },
-  { title: "IPE Clearance", icon: ShieldCheck, color: "bg-red-600", badge: null },
+  { title: "Print NIN Slip", icon: Printer, color: "bg-indigo-500", badge: null, route: null },
+  { title: "Print BVN Slip", icon: Printer, color: "bg-violet-500", badge: null, route: "/bvn-print" },
+  { title: "TIN Registration", icon: FileText, color: "bg-orange-500", badge: null, route: null },
+  { title: "CAC Registration", icon: Building2, color: "bg-amber-600", badge: null, route: null },
+  { title: "SCUML Registration", icon: FileText, color: "bg-rose-500", badge: "NEW", route: null },
+  { title: "IPE Clearance", icon: ShieldCheck, color: "bg-red-600", badge: null, route: null },
 ];
 
 const Verification = () => {
@@ -409,8 +409,8 @@ const Verification = () => {
               {otherServices.map((service) => (
                 <Card
                   key={service.title}
-                  className="relative hover:shadow-card transition-all cursor-pointer opacity-70"
-                  onClick={() => toast({ title: "Coming Soon", description: `${service.title} will be available soon!` })}
+                  className={`relative hover:shadow-card transition-all cursor-pointer ${service.route ? "" : "opacity-70"}`}
+                  onClick={() => service.route ? navigate(service.route) : toast({ title: "Coming Soon", description: `${service.title} will be available soon!` })}
                 >
                   {service.badge && (
                     <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 gradient-gold text-secondary-foreground border-0">{service.badge}</Badge>
@@ -420,7 +420,7 @@ const Verification = () => {
                       <service.icon className="h-6 w-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold leading-tight">{service.title}</span>
-                    <Badge variant="outline" className="text-[10px] text-muted-foreground">Soon</Badge>
+                    <Badge variant="outline" className={`text-[10px] ${service.route ? "border-primary/30 text-primary" : "text-muted-foreground"}`}>{service.route ? "Active" : "Soon"}</Badge>
                   </CardContent>
                 </Card>
               ))}
