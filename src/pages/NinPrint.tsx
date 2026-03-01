@@ -122,6 +122,17 @@ const NinPrint = () => {
       return;
     }
 
+    // Client-side rate limit: 60 seconds per NIN
+    const cleanNin = ninNumber.replace(/\D/g, "");
+    const lastTime = lastLookupRef.current[cleanNin];
+    if (lastTime) {
+      const elapsed = Math.floor((Date.now() - lastTime) / 1000);
+      if (elapsed < 60) {
+        toast({ title: "Please Wait", description: `You recently looked up this NIN. Try again in ${60 - elapsed} seconds.`, variant: "destructive" });
+        return;
+      }
+    }
+
     // Check wallet balance
     const walletBalance = profile?.wallet_balance || 0;
     if (walletBalance < price) {
