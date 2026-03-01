@@ -64,9 +64,9 @@ const sampleData: NinData = {
 };
 
 const slipOptions: { value: SlipType; label: string; price: number; icon: typeof Star }[] = [
-  { value: "premium", label: "Premium Slip", price: 700, icon: Award },
-  { value: "standard", label: "Standard Slip", price: 600, icon: Star },
-  { value: "regular", label: "Regular Slip", price: 500, icon: FileText },
+  { value: "premium", label: "Premium Slip", price: 450, icon: Award },
+  { value: "standard", label: "Standard Slip", price: 400, icon: Star },
+  { value: "regular", label: "Regular Slip", price: 350, icon: FileText },
 ];
 
 const getSlipHtml = (content: string, title: string) => `
