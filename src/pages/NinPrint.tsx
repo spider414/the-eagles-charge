@@ -63,9 +63,9 @@ const sampleData: NinData = {
 };
 
 const slipOptions: { value: SlipType; label: string; price: number; icon: typeof Star }[] = [
-  { value: "premium", label: "Premium Slip", price: 450, icon: Award },
-  { value: "standard", label: "Standard Slip", price: 400, icon: Star },
-  { value: "regular", label: "Regular Slip", price: 350, icon: FileText },
+  { value: "premium", label: "Premium Slip", price: 700, icon: Award },
+  { value: "standard", label: "Standard Slip", price: 600, icon: Star },
+  { value: "regular", label: "Regular Slip", price: 500, icon: FileText },
 ];
 
 const getSlipHtml = (content: string, title: string) => `
@@ -120,10 +120,29 @@ const NinPrint = () => {
       return;
     }
 
+    // Check wallet balance
+    const walletBalance = profile?.wallet_balance || 0;
+    if (walletBalance < price) {
+      toast({ title: "Insufficient Balance", description: `You need ₦${price} but have ₦${walletBalance.toLocaleString()}. Please top up your wallet.`, variant: "destructive" });
+      return;
+    }
+
     setIsVerifying(true);
     setResult(null);
 
     try {
+      // Debit wallet
+      const { data: debitResult, error: debitError } = await supabase.rpc("debit_wallet", {
+        p_profile_id: profile!.id,
+        p_amount: price,
+      });
+      if (debitError) throw debitError;
+      if (!debitResult?.[0]?.success) {
+        toast({ title: "Insufficient Balance", description: "Failed to debit wallet.", variant: "destructive" });
+        setIsVerifying(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("verify-nin", {
         body: { nin: ninNumber },
       });
@@ -131,12 +150,32 @@ const NinPrint = () => {
 
       if (data?.success) {
         setResult(data.data);
+        await supabase.from("transactions").insert({
+          user_id: user!.id,
+          transaction_type: "verification" as any,
+          amount: price,
+          status: "completed",
+          data_plan: `nin-print-${slipType}`,
+          api_response: data.data,
+          phone_number: ninNumber,
+        });
         toast({ title: "Verified!", description: "NIN verification successful. You can now print." });
       } else {
-        toast({ title: "Failed", description: data?.error || "NIN verification failed", variant: "destructive" });
+        await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price });
+        await supabase.from("transactions").insert({
+          user_id: user!.id,
+          transaction_type: "verification" as any,
+          amount: price,
+          status: "failed",
+          data_plan: `nin-print-${slipType}`,
+          api_response: { error: data?.error },
+          phone_number: ninNumber,
+        });
+        toast({ title: "Failed", description: data?.error || "NIN verification failed. Wallet refunded.", variant: "destructive" });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Something went wrong", variant: "destructive" });
+      try { await supabase.rpc("credit_wallet", { p_profile_id: profile!.id, p_amount: price }); } catch {}
+      toast({ title: "Error", description: err.message || "Something went wrong. Wallet refunded.", variant: "destructive" });
     } finally {
       setIsVerifying(false);
     }
@@ -157,16 +196,12 @@ const NinPrint = () => {
     if (!pdfWindow) return;
     pdfWindow.document.write(getSlipHtml(printRef.current.innerHTML, `NIN ${selectedSlip?.label || "Slip"}`));
     pdfWindow.document.close();
-    setTimeout(() => {
-      pdfWindow.print();
-    }, 500);
+    setTimeout(() => pdfWindow.print(), 500);
     toast({ title: "Download PDF", description: "Select 'Save as PDF' in the print dialog to download." });
   };
 
   const photoSrc = result?.photo
-    ? result.photo.startsWith("data:")
-      ? result.photo
-      : `data:image/jpeg;base64,${result.photo}`
+    ? result.photo.startsWith("data:") ? result.photo : `data:image/jpeg;base64,${result.photo}`
     : null;
 
   if (isLoading) {
@@ -182,7 +217,6 @@ const NinPrint = () => {
   return (
     <PageTransition>
       <div className="min-h-screen bg-background">
-        {/* Header */}
         <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
           <div className="container flex h-16 items-center justify-between">
             <div className="flex items-center gap-3">
@@ -204,20 +238,18 @@ const NinPrint = () => {
         </header>
 
         <main className="container py-6 pb-8 space-y-6 max-w-lg mx-auto">
-          {/* Title */}
           <div className="text-center space-y-1">
             <h1 className="text-2xl font-bold text-foreground">NIN Verification</h1>
             <p className="text-sm text-muted-foreground">Choose the type of NIN slip you need for your verification</p>
           </div>
 
-          {/* Slip Type Selection */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base flex items-center gap-2">
                 <FileText className="h-4 w-4 text-primary" />
                 Select Slip Type
               </CardTitle>
-              <p className="text-xs text-muted-foreground">Choose the type of NIN slip you need for your verification</p>
+              <p className="text-xs text-muted-foreground">Choose the type of NIN slip you need</p>
             </CardHeader>
             <CardContent>
               <Select value={slipType} onValueChange={(v) => setSlipType(v as SlipType)}>
@@ -237,7 +269,6 @@ const NinPrint = () => {
             </CardContent>
           </Card>
 
-          {/* Sample Preview (before verification) */}
           {!result && (
             <div className="space-y-2">
               <p className="text-xs text-muted-foreground text-center font-medium">
@@ -272,7 +303,6 @@ const NinPrint = () => {
             </div>
           )}
 
-          {/* NIN Input */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">Enter NIN Details</CardTitle>
@@ -280,31 +310,16 @@ const NinPrint = () => {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="nin">National Identity Number (NIN)</Label>
-                <Input
-                  id="nin"
-                  type="text"
-                  placeholder="Enter 11-digit NIN"
-                  value={ninNumber}
-                  onChange={(e) => setNinNumber(e.target.value.replace(/\D/g, ""))}
-                  maxLength={11}
-                />
+                <Input id="nin" type="text" placeholder="Enter 11-digit NIN" value={ninNumber} onChange={(e) => setNinNumber(e.target.value.replace(/\D/g, ""))} maxLength={11} />
               </div>
 
               <div className="bg-muted/50 rounded-lg p-3 text-xs text-muted-foreground flex items-start gap-2">
                 <ShieldCheck className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                <p>
-                  <strong>Privacy Notice:</strong> Your NIN information is encrypted and securely processed.
-                  We never store your personal data after verification.
-                </p>
+                <p><strong>Privacy Notice:</strong> Your NIN information is encrypted and securely processed. We never store your personal data after verification.</p>
               </div>
 
               <div className="flex items-start gap-2">
-                <Checkbox
-                  id="consent"
-                  checked={consent}
-                  onCheckedChange={(checked) => setConsent(checked === true)}
-                  className="mt-0.5"
-                />
+                <Checkbox id="consent" checked={consent} onCheckedChange={(checked) => setConsent(checked === true)} className="mt-0.5" />
                 <Label htmlFor="consent" className="text-xs text-muted-foreground leading-relaxed cursor-pointer">
                   I confirm that I have obtained proper consent from the NIN owner for this verification.
                 </Label>
@@ -320,7 +335,6 @@ const NinPrint = () => {
             </CardContent>
           </Card>
 
-          {/* Result & Print/Download */}
           {result && (
             <div className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-2 text-primary font-semibold">
@@ -340,12 +354,10 @@ const NinPrint = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <Button className="w-full" onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print
+                  <Printer className="h-4 w-4 mr-2" />Print
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleDownloadPdf}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Save as PDF
+                  <Download className="h-4 w-4 mr-2" />Save as PDF
                 </Button>
               </div>
             </div>
@@ -356,7 +368,7 @@ const NinPrint = () => {
   );
 };
 
-/* ─── Premium Slip (₦450) - Full color ID card style ─── */
+/* ─── Premium Slip (₦700) ─── */
 const NinPremiumSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
   <div className="print-container" style={{
     width: "100%", maxWidth: "420px", margin: "0 auto",
@@ -397,7 +409,7 @@ const NinPremiumSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | 
   </div>
 );
 
-/* ─── Standard Slip (₦400) ─── */
+/* ─── Standard Slip (₦600) ─── */
 const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
   <div className="print-container" style={{
     width: "100%", maxWidth: "480px", margin: "0 auto",
@@ -423,15 +435,9 @@ const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string |
         <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
           <tbody>
             {([
-              ["Full Name", data.full_name],
-              ["NIN", data.nin],
-              ["Gender", data.gender],
-              ["Date of Birth", data.date_of_birth],
-              ["Phone", data.phone],
-              ["Email", data.email],
-              ["State of Origin", data.state_of_origin || data.state],
-              ["Nationality", data.nationality],
-              ["Address", data.address],
+              ["Full Name", data.full_name], ["NIN", data.nin], ["Gender", data.gender],
+              ["Date of Birth", data.date_of_birth], ["Phone", data.phone], ["Email", data.email],
+              ["State of Origin", data.state_of_origin || data.state], ["Nationality", data.nationality], ["Address", data.address],
             ] as [string, string | undefined][]).filter(([, val]) => val).map(([label, value]) => (
               <tr key={label}>
                 <td style={{ padding: "3px 8px 3px 0", color: "#666", whiteSpace: "nowrap", verticalAlign: "top", fontSize: "11px" }}>{label}:</td>
@@ -448,7 +454,7 @@ const NinStandardSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string |
   </div>
 );
 
-/* ─── Regular Slip (₦350) ─── */
+/* ─── Regular Slip (₦500) ─── */
 const NinRegularSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | null }) => (
   <div className="print-container" style={{
     width: "100%", maxWidth: "440px", margin: "0 auto",
