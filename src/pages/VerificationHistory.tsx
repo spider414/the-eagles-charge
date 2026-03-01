@@ -296,7 +296,7 @@ const VerificationHistory = () => {
             ) : (
               <div className="space-y-2">
                 {paginated.map((tx) => (
-                  <Card key={tx.id} className="hover:shadow-card transition-all cursor-pointer" onClick={() => handleReprint(tx)}>
+                  <Card key={tx.id} className="hover:shadow-card transition-all cursor-pointer" onClick={() => navigate(`/transaction/${tx.id}`)}>
                     <CardContent className="p-3 flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${

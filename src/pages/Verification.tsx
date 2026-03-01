@@ -63,6 +63,15 @@ interface ServiceConfig {
   edgeFunction: string;
 }
 
+const serviceLabels: Record<string, string> = {
+  "nin-verification": "NIN Search",
+  "nin-phone": "NIN Phone Search",
+  "nin-tracking": "NIN Tracking",
+  "nin-demography": "NIN Demography",
+  "bvn-verification": "BVN Verification",
+  "bvn-phone": "BVN Phone Search",
+};
+
 const services: ServiceConfig[] = [
   { id: "nin-verification", title: "NIN Verification", description: "Verify NIN by number", icon: ShieldCheck, color: "bg-primary", price: "₦300", priceNum: 300, status: "active", category: "nin", edgeFunction: "verify-nin" },
   { id: "nin-phone", title: "NIN With Phone", description: "Search NIN by phone number", icon: Phone, color: "bg-emerald-500", price: "₦500", priceNum: 500, status: "active", category: "nin", edgeFunction: "verify-nin-phone" },
@@ -178,6 +187,8 @@ const Verification = () => {
     setResult(null);
 
     try {
+      const balanceBefore = profile?.wallet_balance || 0;
+
       // Debit wallet first
       const { data: debitResult, error: debitError } = await supabase.rpc("debit_wallet", {
         p_profile_id: profile!.id,
@@ -185,6 +196,7 @@ const Verification = () => {
       });
       if (debitError) throw debitError;
       const debitSuccess = debitResult?.[0]?.success;
+      const balanceAfter = debitResult?.[0]?.new_balance ?? (balanceBefore - service.priceNum);
       if (!debitSuccess) {
         toast({ title: "Insufficient Balance", description: "Failed to debit wallet. Please top up.", variant: "destructive" });
         setIsVerifying(false);
@@ -197,7 +209,7 @@ const Verification = () => {
 
       if (data?.success) {
         setResult(data.data);
-        // Save transaction
+        // Save transaction with balance tracking
         await supabase.from("transactions").insert({
           user_id: user!.id,
           transaction_type: "verification" as any,
@@ -206,7 +218,10 @@ const Verification = () => {
           data_plan: service.id,
           api_response: data.data,
           phone_number: ninNumber || bvnNumber || phoneNumber || trackingId,
-        });
+          balance_before: balanceBefore,
+          balance_after: balanceAfter,
+          description: `Payment for ${serviceLabels[service.id] || service.title}`,
+        } as any);
         toast({ title: "Success!", description: "Verification completed successfully" });
       } else {
         // Refund on failure
@@ -220,7 +235,10 @@ const Verification = () => {
           data_plan: service.id,
           api_response: { error: data?.error },
           phone_number: ninNumber || bvnNumber || phoneNumber || trackingId,
-        });
+          balance_before: balanceBefore,
+          balance_after: balanceBefore,
+          description: `Failed: ${serviceLabels[service.id] || service.title} (Refunded)`,
+        } as any);
         toast({ title: "Failed", description: data?.error || "Verification failed. Wallet refunded.", variant: "destructive" });
       }
     } catch (err: any) {
