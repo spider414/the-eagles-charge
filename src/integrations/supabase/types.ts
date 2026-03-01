@@ -246,11 +246,14 @@ export type Database = {
         Row: {
           amount: number
           api_response: Json | null
+          balance_after: number | null
+          balance_before: number | null
           cable_plan: string | null
           cable_provider: Database["public"]["Enums"]["cable_provider"] | null
           cable_smartcard: string | null
           created_at: string
           data_plan: string | null
+          description: string | null
           electricity_provider:
             | Database["public"]["Enums"]["electricity_provider"]
             | null
@@ -270,11 +273,14 @@ export type Database = {
         Insert: {
           amount: number
           api_response?: Json | null
+          balance_after?: number | null
+          balance_before?: number | null
           cable_plan?: string | null
           cable_provider?: Database["public"]["Enums"]["cable_provider"] | null
           cable_smartcard?: string | null
           created_at?: string
           data_plan?: string | null
+          description?: string | null
           electricity_provider?:
             | Database["public"]["Enums"]["electricity_provider"]
             | null
@@ -294,11 +300,14 @@ export type Database = {
         Update: {
           amount?: number
           api_response?: Json | null
+          balance_after?: number | null
+          balance_before?: number | null
           cable_plan?: string | null
           cable_provider?: Database["public"]["Enums"]["cable_provider"] | null
           cable_smartcard?: string | null
           created_at?: string
           data_plan?: string | null
+          description?: string | null
           electricity_provider?:
             | Database["public"]["Enums"]["electricity_provider"]
             | null
