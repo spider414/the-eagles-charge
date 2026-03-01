@@ -29,6 +29,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import DeleteAccount from "./pages/DeleteAccount";
 import Verification from "./pages/Verification";
+import BvnPrint from "./pages/BvnPrint";
 import NotFound from "./pages/NotFound";
 
 const App = () => {
@@ -66,6 +67,7 @@ const App = () => {
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/verification" element={<Verification />} />
+                  <Route path="/bvn-print" element={<BvnPrint />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </SessionLockProvider>
