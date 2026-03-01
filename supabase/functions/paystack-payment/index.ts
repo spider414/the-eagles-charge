@@ -631,6 +631,8 @@ Deno.serve(async (req) => {
             transaction_id: transaction.id,
             reference: reference,
             new_balance: newBalance,
+            balance_before: walletBalance,
+            balance_after: newBalance,
             token: vtuToken,
             data: vtuResult?.data ?? vtuResult?.details,
           }),
