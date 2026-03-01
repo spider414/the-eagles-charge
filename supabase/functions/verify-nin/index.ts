@@ -52,7 +52,11 @@ serve(async (req) => {
     console.log("CheckMyNINBVN raw response:", JSON.stringify(data).substring(0, 1000));
 
     if ((data.status === "success" || data.success) && (data.data || data.result)) {
-      const d = data.data || data.result;
+      // Handle nested response: API may return { data: { data: { ...fields } } }
+      let d = data.data || data.result;
+      if (d && typeof d === "object" && d.data && typeof d.data === "object" && (d.data.firstname || d.data.surname || d.data.nin)) {
+        d = d.data;
+      }
       console.log("NIN data keys:", Object.keys(d));
       
       // Map flexibly - different API versions use different field names
