@@ -336,13 +336,123 @@ const NinPrint = () => {
           </Card>
 
           {result && (
-            <div className="space-y-4 animate-fade-in">
-              <div className="flex items-center gap-2 text-primary font-semibold">
-                <CheckCircle2 className="h-5 w-5" />
-                NIN Verified Successfully
-              </div>
+            <div className="space-y-5 animate-fade-in">
+              {/* Download Options */}
+              <Card className="text-center">
+                <CardContent className="p-6 space-y-3">
+                  <div className="flex items-center justify-center gap-2 text-lg font-bold text-foreground">
+                    <Download className="h-5 w-5" />
+                    Download Options
+                  </div>
+                  <p className="text-sm text-muted-foreground">Generate and download your verification slip in PDF format for official use.</p>
+                  <div className="flex gap-3 justify-center">
+                    <Button onClick={handleDownloadPdf} className="gap-2">
+                      <FileText className="h-4 w-4" />Generate PDF Slip
+                    </Button>
+                    <Button variant="outline" onClick={() => navigate("/verification")}>
+                      <ArrowLeft className="h-4 w-4 mr-1" />Back to Dashboard
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
 
-              <div ref={printRef}>
+              {/* Request Information Bar */}
+              <Card className="overflow-hidden">
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3">
+                  <div className="flex items-center gap-2 text-white text-xs font-semibold mb-1">
+                    <FileText className="h-3.5 w-3.5" />
+                    Request Information
+                  </div>
+                  <div className="flex flex-wrap gap-x-5 gap-y-1 text-white text-[11px]">
+                    <span>📅 Date: {new Date().toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                    <span>💰 Amount: ₦{price.toFixed(2)}</span>
+                    <span>⚙️ Service: NIN Print</span>
+                    <span>📄 Slip Type: {selectedSlip?.label || "Regular"}</span>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Verification Details */}
+              <Card>
+                <CardHeader className="pb-0">
+                  <div className="bg-gradient-to-r from-indigo-600 to-purple-600 -mx-6 -mt-6 px-5 py-3 rounded-t-lg">
+                    <CardTitle className="text-sm text-white flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Verification Details
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-6 space-y-6">
+                  {/* Photograph */}
+                  {photoSrc && (
+                    <div className="text-center space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground flex items-center justify-center gap-1">📷 Photograph</p>
+                      <img
+                        src={photoSrc}
+                        alt="NIN Photo"
+                        className="mx-auto w-32 h-40 object-cover rounded-lg border-2 border-border shadow-sm"
+                      />
+                    </div>
+                  )}
+
+                  {/* Personal Information */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                      👤 Personal Information
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <InfoField label="FIRST NAME" value={result.first_name || result.full_name?.split(" ")[0]} />
+                      <InfoField label="LAST NAME" value={result.last_name || result.full_name?.split(" ").slice(-1)[0]} />
+                      <InfoField label="GENDER" value={result.gender} />
+                      <InfoField label="DATE OF BIRTH" value={result.date_of_birth} />
+                      {result.middle_name && <InfoField label="MIDDLE NAME" value={result.middle_name} />}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Contact Information */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                      📞 Contact Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {result.phone && <InfoField label="PHONE NUMBER" value={result.phone} />}
+                      {result.email && <InfoField label="EMAIL" value={result.email} />}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Address Information */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                      📍 Address Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {result.address && <InfoField label="RESIDENTIAL ADDRESS" value={result.address} fullWidth />}
+                      {result.nationality && <InfoField label="COUNTRY OF BIRTH" value={result.nationality} />}
+                      {result.state_of_residence && <InfoField label="STATE OF RESIDENCE" value={result.state_of_residence} />}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Identity Information */}
+                  <div className="space-y-3">
+                    <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+                      🪪 Identity Information
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <InfoField label="NIN" value={result.nin} />
+                      {result.state_of_origin && <InfoField label="STATE OF ORIGIN" value={result.state_of_origin} />}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Hidden print container with formatted slip */}
+              <div ref={printRef} className="hidden">
                 {slipType === "premium" ? (
                   <NinPremiumSlip data={result} photoSrc={photoSrc} />
                 ) : slipType === "standard" ? (
@@ -352,9 +462,10 @@ const NinPrint = () => {
                 )}
               </div>
 
+              {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <Button className="w-full" onClick={handlePrint}>
-                  <Printer className="h-4 w-4 mr-2" />Print
+                  <Printer className="h-4 w-4 mr-2" />Print Slip
                 </Button>
                 <Button variant="outline" className="w-full" onClick={handleDownloadPdf}>
                   <Download className="h-4 w-4 mr-2" />Save as PDF
