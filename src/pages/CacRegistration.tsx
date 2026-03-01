@@ -37,9 +37,9 @@ import PageTransition from "@/components/PageTransition";
 type RegType = "business-name" | "limited-company" | "incorporated-trustee";
 
 const regOptions: { value: RegType; label: string; price: number; description: string }[] = [
-  { value: "business-name", label: "Business Name (BN)", price: 15000, description: "For sole proprietors and partnerships" },
-  { value: "limited-company", label: "Limited Company (LTD)", price: 25000, description: "For private/public limited companies" },
-  { value: "incorporated-trustee", label: "Incorporated Trustee (IT)", price: 20000, description: "For NGOs, churches, clubs, associations" },
+  { value: "business-name", label: "Business Name (BN)", price: 40000, description: "For sole proprietors and partnerships" },
+  { value: "limited-company", label: "Limited Company (LTD)", price: 75000, description: "For private/public limited companies" },
+  { value: "incorporated-trustee", label: "Incorporated Trustee (IT)", price: 80000, description: "For NGOs, churches, clubs, associations" },
 ];
 
 interface CacRequest {
