@@ -32,6 +32,7 @@ import Verification from "./pages/Verification";
 import BvnPrint from "./pages/BvnPrint";
 import NinPrint from "./pages/NinPrint";
 import VerificationHistory from "./pages/VerificationHistory";
+import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 
 const App = () => {
