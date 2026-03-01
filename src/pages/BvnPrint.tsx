@@ -85,6 +85,7 @@ const BvnPrint = () => {
   const [consent, setConsent] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [result, setResult] = useState<BvnData | null>(null);
+  const lastLookupRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!isLoading && !user) navigate("/auth");
@@ -104,6 +105,17 @@ const BvnPrint = () => {
     if (!consent) {
       toast({ title: "Consent Required", description: "Please confirm you have obtained proper consent", variant: "destructive" });
       return;
+    }
+
+    // Client-side rate limit: 60 seconds per BVN
+    const cleanBvn = bvnNumber.replace(/\D/g, "");
+    const lastTime = lastLookupRef.current[cleanBvn];
+    if (lastTime) {
+      const elapsed = Math.floor((Date.now() - lastTime) / 1000);
+      if (elapsed < 60) {
+        toast({ title: "Please Wait", description: `You recently looked up this BVN. Try again in ${60 - elapsed} seconds.`, variant: "destructive" });
+        return;
+      }
     }
 
     const walletBalance = profile?.wallet_balance || 0;
@@ -133,6 +145,9 @@ const BvnPrint = () => {
         setIsVerifying(false);
         return;
       }
+
+      // Record lookup timestamp for rate limiting
+      lastLookupRef.current[cleanBvn] = Date.now();
 
       const { data, error } = await supabase.functions.invoke("verify-bvn", {
         body: { bvn: bvnNumber },

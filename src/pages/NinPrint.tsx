@@ -99,6 +99,7 @@ const NinPrint = () => {
   const [consent, setConsent] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [result, setResult] = useState<NinData | null>(null);
+  const lastLookupRef = useRef<Record<string, number>>({});
 
   useEffect(() => {
     if (!isLoading && !user) navigate("/auth");
@@ -119,6 +120,17 @@ const NinPrint = () => {
     if (!consent) {
       toast({ title: "Consent Required", description: "Please confirm you have obtained proper consent", variant: "destructive" });
       return;
+    }
+
+    // Client-side rate limit: 60 seconds per NIN
+    const cleanNin = ninNumber.replace(/\D/g, "");
+    const lastTime = lastLookupRef.current[cleanNin];
+    if (lastTime) {
+      const elapsed = Math.floor((Date.now() - lastTime) / 1000);
+      if (elapsed < 60) {
+        toast({ title: "Please Wait", description: `You recently looked up this NIN. Try again in ${60 - elapsed} seconds.`, variant: "destructive" });
+        return;
+      }
     }
 
     // Check wallet balance
@@ -149,6 +161,9 @@ const NinPrint = () => {
         setIsVerifying(false);
         return;
       }
+
+      // Record lookup timestamp for rate limiting
+      lastLookupRef.current[cleanNin] = Date.now();
 
       const { data, error } = await supabase.functions.invoke("verify-nin", {
         body: { nin: ninNumber },
