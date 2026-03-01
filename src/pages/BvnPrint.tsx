@@ -107,6 +107,17 @@ const BvnPrint = () => {
       return;
     }
 
+    // Client-side rate limit: 60 seconds per BVN
+    const cleanBvn = bvnNumber.replace(/\D/g, "");
+    const lastTime = lastLookupRef.current[cleanBvn];
+    if (lastTime) {
+      const elapsed = Math.floor((Date.now() - lastTime) / 1000);
+      if (elapsed < 60) {
+        toast({ title: "Please Wait", description: `You recently looked up this BVN. Try again in ${60 - elapsed} seconds.`, variant: "destructive" });
+        return;
+      }
+    }
+
     const walletBalance = profile?.wallet_balance || 0;
     if (walletBalance < price) {
       toast({ title: "Insufficient Balance", description: `You need ₦${price} but have ₦${walletBalance.toLocaleString()}. Please top up your wallet.`, variant: "destructive" });
