@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -597,5 +598,17 @@ const NinRegularSlip = ({ data, photoSrc }: { data: NinData; photoSrc: string | 
     </div>
   </div>
 );
+/* ─── Info Field Component ─── */
+const InfoField = ({ label, value, fullWidth }: { label: string; value?: string | null; fullWidth?: boolean }) => {
+  if (!value) return null;
+  return (
+    <div className={`${fullWidth ? "col-span-2" : ""}`}>
+      <div className="border-l-2 border-primary/30 pl-3">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
+        <p className="text-sm font-semibold text-foreground mt-0.5">{value}</p>
+      </div>
+    </div>
+  );
+};
 
 export default NinPrint;
