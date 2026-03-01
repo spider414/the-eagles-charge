@@ -169,6 +169,7 @@ const NinPrint = () => {
           balance_after: paymentData.balance_after,
           description: `Payment for NIN Print (${selectedSlip?.label || slipType})`,
         });
+        await refreshProfile();
         toast({ title: "Verified!", description: "NIN verification successful. You can now print." });
       } else {
         // Refund via edge function
