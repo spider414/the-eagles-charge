@@ -9,10 +9,10 @@ import {
   CheckCircle2,
   ShieldCheck,
   FileText,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,6 +45,37 @@ interface BvnData {
   nationality?: string;
   photo?: string | null;
 }
+
+const sampleData: BvnData = {
+  full_name: "JOHN DOE SMITH",
+  bvn: "12345678901",
+  gender: "Male",
+  date_of_birth: "01-01-1990",
+  phone: "08012345678",
+  email: "john@example.com",
+  state_of_origin: "Lagos",
+  state_of_residence: "Abuja",
+  nationality: "Nigerian",
+};
+
+const getSlipHtml = (content: string, title: string) => `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>${title}</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
+      .print-container { background: white; }
+      @media print {
+        body { background: white; }
+        .print-container { box-shadow: none !important; }
+      }
+    </style>
+  </head>
+  <body>${content}</body>
+  </html>
+`;
 
 const BvnPrint = () => {
   const navigate = useNavigate();
@@ -104,28 +135,19 @@ const BvnPrint = () => {
     if (!printRef.current) return;
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
-
-    const content = printRef.current.innerHTML;
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>BVN ${slipType === "bvn-card" ? "Card" : "Slip"}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
-          .print-container { background: white; }
-          @media print {
-            body { background: white; }
-            .print-container { box-shadow: none !important; }
-          }
-        </style>
-      </head>
-      <body>${content}</body>
-      </html>
-    `);
+    printWindow.document.write(getSlipHtml(printRef.current.innerHTML, `BVN ${slipType === "bvn-card" ? "Card" : "Slip"}`));
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 500);
+  };
+
+  const handleDownloadPdf = () => {
+    if (!printRef.current) return;
+    const pdfWindow = window.open("", "_blank");
+    if (!pdfWindow) return;
+    pdfWindow.document.write(getSlipHtml(printRef.current.innerHTML, `BVN ${slipType === "bvn-card" ? "Card" : "Slip"}`));
+    pdfWindow.document.close();
+    setTimeout(() => pdfWindow.print(), 500);
+    toast({ title: "Download PDF", description: "Select 'Save as PDF' in the print dialog to download." });
   };
 
   const photoSrc = result?.photo
@@ -205,14 +227,37 @@ const BvnPrint = () => {
             </CardContent>
           </Card>
 
-          {/* Preview Area (before verification) */}
+          {/* Sample Preview (before verification) */}
           {!result && (
-            <Card className="border-dashed border-2 border-muted-foreground/20">
-              <CardContent className="p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
-                <Printer className="h-10 w-10 mb-3 opacity-30" />
-                <p className="text-sm">Preview will appear here when you verify a BVN</p>
-              </CardContent>
-            </Card>
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground text-center font-medium">
+                {slipType ? `Preview: ${slipType === "bvn-card" ? "BVN Card" : "BVN Slip"} format` : "Select a slip type to see preview"}
+              </p>
+              {slipType ? (
+                <div className="relative">
+                  <div className="opacity-70 pointer-events-none">
+                    {slipType === "bvn-card" ? (
+                      <BvnCardPreview data={sampleData} photoSrc={null} />
+                    ) : (
+                      <BvnSlipPreview data={sampleData} photoSrc={null} />
+                    )}
+                  </div>
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px] rounded-xl">
+                    <div className="bg-background border border-border rounded-lg px-4 py-2 shadow-lg text-center">
+                      <p className="text-xs font-semibold text-foreground">Sample Preview</p>
+                      <p className="text-[10px] text-muted-foreground">Verify BVN to see actual data</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Card className="border-dashed border-2 border-muted-foreground/20">
+                  <CardContent className="p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
+                    <Printer className="h-10 w-10 mb-3 opacity-30" />
+                    <p className="text-sm">Preview will appear here when you select a slip type</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           )}
 
           {/* BVN Input */}
@@ -263,7 +308,7 @@ const BvnPrint = () => {
             </CardContent>
           </Card>
 
-          {/* Result & Print Preview */}
+          {/* Result & Print/Download */}
           {result && (
             <div className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-2 text-primary font-semibold">
@@ -271,7 +316,6 @@ const BvnPrint = () => {
                 BVN Verified Successfully
               </div>
 
-              {/* Printable Content */}
               <div ref={printRef}>
                 {slipType === "bvn-card" ? (
                   <BvnCardPreview data={result} photoSrc={photoSrc} />
@@ -280,10 +324,16 @@ const BvnPrint = () => {
                 )}
               </div>
 
-              <Button className="w-full" onClick={handlePrint}>
-                <Printer className="h-4 w-4 mr-2" />
-                Print {slipType === "bvn-card" ? "BVN Card" : "BVN Slip"}
-              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button className="w-full" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleDownloadPdf}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Save as PDF
+                </Button>
+              </div>
             </div>
           )}
         </main>
@@ -300,26 +350,16 @@ const BvnCardPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | 
     borderRadius: "16px", padding: "24px", color: "white", fontFamily: "'Segoe UI', sans-serif",
     boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
   }}>
-    {/* Header */}
     <div style={{ textAlign: "center", marginBottom: "16px", borderBottom: "1px solid rgba(255,255,255,0.2)", paddingBottom: "12px" }}>
       <div style={{ fontSize: "10px", letterSpacing: "2px", opacity: 0.8 }}>FEDERAL REPUBLIC OF NIGERIA</div>
       <div style={{ fontSize: "16px", fontWeight: "bold", marginTop: "4px" }}>BANK VERIFICATION NUMBER</div>
       <div style={{ fontSize: "9px", opacity: 0.7, marginTop: "2px" }}>Central Bank of Nigeria</div>
     </div>
-
-    {/* Photo + Info */}
     <div style={{ display: "flex", gap: "16px", alignItems: "flex-start" }}>
       {photoSrc ? (
-        <img src={photoSrc} alt="BVN Photo" style={{
-          width: "90px", height: "110px", objectFit: "cover",
-          borderRadius: "8px", border: "2px solid rgba(255,255,255,0.3)",
-        }} />
+        <img src={photoSrc} alt="BVN Photo" style={{ width: "90px", height: "110px", objectFit: "cover", borderRadius: "8px", border: "2px solid rgba(255,255,255,0.3)" }} />
       ) : (
-        <div style={{
-          width: "90px", height: "110px", background: "rgba(255,255,255,0.1)",
-          borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "10px", opacity: 0.5,
-        }}>No Photo</div>
+        <div style={{ width: "90px", height: "110px", background: "rgba(255,255,255,0.1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", opacity: 0.5 }}>No Photo</div>
       )}
       <div style={{ flex: 1, fontSize: "11px", lineHeight: "1.6" }}>
         <div><span style={{ opacity: 0.7 }}>Name:</span> <strong>{data.full_name || "N/A"}</strong></div>
@@ -329,8 +369,6 @@ const BvnCardPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | 
         <div><span style={{ opacity: 0.7 }}>Phone:</span> <strong>{data.phone || "N/A"}</strong></div>
       </div>
     </div>
-
-    {/* Footer */}
     <div style={{ marginTop: "16px", borderTop: "1px solid rgba(255,255,255,0.2)", paddingTop: "10px", fontSize: "10px" }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <div><span style={{ opacity: 0.7 }}>State:</span> {data.state_of_origin || "N/A"}</div>
@@ -348,37 +386,23 @@ const BvnSlipPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | 
     borderRadius: "8px", padding: "24px", fontFamily: "'Segoe UI', sans-serif",
     boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
   }}>
-    {/* Header */}
     <div style={{ textAlign: "center", borderBottom: "2px solid #1a5c2e", paddingBottom: "12px", marginBottom: "16px" }}>
       <div style={{ fontSize: "11px", letterSpacing: "2px", color: "#666" }}>FEDERAL REPUBLIC OF NIGERIA</div>
       <div style={{ fontSize: "18px", fontWeight: "bold", color: "#1a5c2e", marginTop: "4px" }}>BVN VERIFICATION SLIP</div>
       <div style={{ fontSize: "10px", color: "#999", marginTop: "2px" }}>Central Bank of Nigeria - Bank Verification Number</div>
     </div>
-
-    {/* Content */}
     <div style={{ display: "flex", gap: "20px" }}>
-      {/* Photo */}
       <div style={{ flexShrink: 0 }}>
         {photoSrc ? (
-          <img src={photoSrc} alt="BVN Photo" style={{
-            width: "100px", height: "120px", objectFit: "cover",
-            border: "2px solid #1a5c2e", borderRadius: "4px",
-          }} />
+          <img src={photoSrc} alt="BVN Photo" style={{ width: "100px", height: "120px", objectFit: "cover", border: "2px solid #1a5c2e", borderRadius: "4px" }} />
         ) : (
-          <div style={{
-            width: "100px", height: "120px", background: "#f0f0f0",
-            border: "2px solid #ccc", borderRadius: "4px",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "10px", color: "#999",
-          }}>No Photo</div>
+          <div style={{ width: "100px", height: "120px", background: "#f0f0f0", border: "2px solid #ccc", borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", color: "#999" }}>No Photo</div>
         )}
       </div>
-
-      {/* Details */}
       <div style={{ flex: 1 }}>
         <table style={{ width: "100%", fontSize: "12px", borderCollapse: "collapse" }}>
           <tbody>
-            {[
+            {([
               ["Full Name", data.full_name],
               ["BVN", data.bvn],
               ["Gender", data.gender],
@@ -388,18 +412,16 @@ const BvnSlipPreview = ({ data, photoSrc }: { data: BvnData; photoSrc: string | 
               ["State of Origin", data.state_of_origin],
               ["State of Residence", data.state_of_residence],
               ["Nationality", data.nationality],
-            ].filter(([, val]) => val).map(([label, value]) => (
-              <tr key={label as string}>
+            ] as [string, string | undefined][]).filter(([, val]) => val).map(([label, value]) => (
+              <tr key={label}>
                 <td style={{ padding: "4px 8px 4px 0", color: "#666", whiteSpace: "nowrap", verticalAlign: "top" }}>{label}:</td>
-                <td style={{ padding: "4px 0", fontWeight: "600", textTransform: label === "Gender" ? "capitalize" : "none" }}>{value as string}</td>
+                <td style={{ padding: "4px 0", fontWeight: "600", textTransform: label === "Gender" ? "capitalize" : "none" }}>{value}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
     </div>
-
-    {/* Footer */}
     <div style={{ marginTop: "16px", borderTop: "1px solid #ddd", paddingTop: "10px", textAlign: "center", fontSize: "9px", color: "#999" }}>
       <p>This slip is generated for verification purposes only.</p>
       <p style={{ marginTop: "2px" }}>Powered by THE EAGLES VTU</p>
