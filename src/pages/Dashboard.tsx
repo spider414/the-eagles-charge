@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Fingerprint } from "lucide-react";
+import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Fingerprint, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,6 +9,7 @@ import AdvertBanner from "@/components/AdvertBanner";
 import RecentTransactions from "@/components/RecentTransactions";
 import PageTransition from "@/components/PageTransition";
 import PullToRefresh from "@/components/PullToRefresh";
+import NotificationCenter from "@/components/NotificationCenter";
 
 interface DVADetails {
   account_number: string;
@@ -99,7 +100,8 @@ const Dashboard = () => {
             </span>
           </Link>
 
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1">
+            <NotificationCenter />
             <Link to="/history" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <History className="h-4 w-4" />
               History
