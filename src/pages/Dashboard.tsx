@@ -100,7 +100,8 @@ const Dashboard = () => {
             </span>
           </Link>
 
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-1">
+            <NotificationCenter />
             <Link to="/history" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <History className="h-4 w-4" />
               History
