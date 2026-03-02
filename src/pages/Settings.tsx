@@ -38,6 +38,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
+import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -537,7 +538,10 @@ const Settings = () => {
               <CardDescription>Choose which transactions trigger alerts</CardDescription>
             </CardHeader>
             <CardContent>
-              {notificationTypes.map((item, index) => renderSettingItem(item, index))}
+              <PushNotificationToggle />
+              <div className="border-t border-border mt-2 pt-2">
+                {notificationTypes.map((item, index) => renderSettingItem(item, index))}
+              </div>
             </CardContent>
           </Card>
         )}
