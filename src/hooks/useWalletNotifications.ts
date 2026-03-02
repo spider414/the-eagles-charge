@@ -2,23 +2,30 @@ import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 /**
- * Hook that listens for real-time wallet credits and shows notifications
- * when funds are added via bank transfer or other methods
+ * Hook that listens for real-time wallet credits and transaction updates,
+ * shows in-app notifications, and auto-subscribes to push notifications.
  */
 export const useWalletNotifications = () => {
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const previousBalanceRef = useRef<number | null>(null);
+  const { isSupported, isSubscribed, subscribe } = usePushNotifications();
+
+  // Auto-subscribe to push on first load if permission granted
+  useEffect(() => {
+    if (user && isSupported && !isSubscribed && Notification.permission === "granted") {
+      subscribe();
+    }
+  }, [user, isSupported, isSubscribed, subscribe]);
 
   useEffect(() => {
     if (!user || !profile) return;
 
-    // Store initial balance
     previousBalanceRef.current = profile.wallet_balance ?? 0;
 
-    // Subscribe to profile changes for wallet balance updates
     const profileChannel = supabase
       .channel(`wallet-${user.id}`)
       .on(
@@ -35,24 +42,17 @@ export const useWalletNotifications = () => {
 
           if (newBalance > oldBalance) {
             const creditAmount = newBalance - oldBalance;
-            
-            // Show success notification
+
             toast({
               title: "💰 Wallet Credited!",
               description: `₦${creditAmount.toLocaleString()} has been added to your wallet. New balance: ₦${newBalance.toLocaleString()}`,
               duration: 8000,
             });
 
-            // Play notification sound if available
             try {
-              if ("vibrate" in navigator) {
-                navigator.vibrate([200, 100, 200]);
-              }
-            } catch (e) {
-              // Vibration not supported
-            }
+              if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
+            } catch {}
 
-            // Refresh profile to update UI
             await refreshProfile();
           }
 
@@ -61,7 +61,6 @@ export const useWalletNotifications = () => {
       )
       .subscribe();
 
-    // Subscribe to new completed transactions
     const transactionChannel = supabase
       .channel(`transactions-${user.id}`)
       .on(
@@ -74,8 +73,7 @@ export const useWalletNotifications = () => {
         },
         (payload) => {
           const transaction = payload.new as any;
-          
-          // Notify for completed wallet top-ups via bank transfer
+
           if (
             transaction.transaction_type === "wallet_topup" &&
             transaction.status === "completed"
@@ -83,6 +81,32 @@ export const useWalletNotifications = () => {
             toast({
               title: "✅ Transfer Received",
               description: `Bank transfer of ₦${transaction.amount?.toLocaleString()} has been credited to your wallet.`,
+              duration: 6000,
+            });
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "transactions",
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const tx = payload.new as any;
+          const oldTx = payload.old as any;
+
+          // Notify when a transaction status changes to completed or failed
+          if (oldTx.status !== tx.status && (tx.status === "completed" || tx.status === "failed")) {
+            const emoji = tx.status === "completed" ? "✅" : "❌";
+            const desc = tx.description || tx.transaction_type;
+            toast({
+              title: `${emoji} ${desc}`,
+              description: tx.status === "completed"
+                ? `Your ${desc} of ₦${tx.amount?.toLocaleString()} was successful.`
+                : `Your ${desc} of ₦${tx.amount?.toLocaleString()} failed. Check your history for details.`,
               duration: 6000,
             });
           }
