@@ -9,9 +9,9 @@ import { formatDistanceToNow } from "date-fns";
 
 const typeIcons: Record<string, React.ReactNode> = {
   transaction: <ShoppingCart className="h-4 w-4 text-primary" />,
-  wallet: <Wallet className="h-4 w-4 text-emerald-600" />,
-  registration: <FileText className="h-4 w-4 text-blue-600" />,
-  promotion: <Megaphone className="h-4 w-4 text-amber-600" />,
+  wallet: <Wallet className="h-4 w-4 text-primary" />,
+  registration: <FileText className="h-4 w-4 text-primary" />,
+  promotion: <Megaphone className="h-4 w-4 text-accent-foreground" />,
   general: <Bell className="h-4 w-4 text-muted-foreground" />,
 };
 

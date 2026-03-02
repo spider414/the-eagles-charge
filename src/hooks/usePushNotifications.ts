@@ -20,7 +20,7 @@ export const usePushNotifications = () => {
   const checkExistingSubscription = async () => {
     try {
       const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
+      const sub = await (reg as any).pushManager?.getSubscription();
       setIsSubscribed(!!sub);
     } catch {
       setIsSubscribed(false);
@@ -45,7 +45,7 @@ export const usePushNotifications = () => {
         return false;
       }
 
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await navigator.serviceWorker.ready as any;
 
       // Convert VAPID key
       const padding = "=".repeat((4 - (vapidData.publicKey.length % 4)) % 4);
@@ -83,8 +83,8 @@ export const usePushNotifications = () => {
 
   const unsubscribe = useCallback(async () => {
     try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
+      const reg = await navigator.serviceWorker.ready as any;
+      const sub = await reg.pushManager?.getSubscription();
       if (sub) {
         const json = sub.toJSON();
         await sub.unsubscribe();
