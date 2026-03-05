@@ -81,14 +81,6 @@ const services: ServiceConfig[] = [
   { id: "bvn-phone", title: "BVN With Phone", description: "Search BVN by phone number", icon: Phone, color: "bg-sky-500", price: "₦400", priceNum: 400, status: "active", category: "bvn", edgeFunction: "verify-bvn-phone" },
 ];
 
-const otherServices = [
-  { title: "Print NIN Slip", icon: Printer, color: "bg-indigo-500", badge: null, route: "/nin-print" },
-  { title: "Print BVN Slip", icon: Printer, color: "bg-violet-500", badge: null, route: "/bvn-print" },
-  { title: "TIN Registration", icon: FileText, color: "bg-orange-500", badge: null, route: "/tin-registration" },
-  { title: "CAC Registration", icon: Building2, color: "bg-amber-600", badge: null, route: "/cac-registration" },
-  { title: "SCUML Registration", icon: FileText, color: "bg-rose-500", badge: "NEW", route: "/scuml-registration" },
-  { title: "IPE Clearance", icon: ShieldCheck, color: "bg-red-600", badge: null, route: "/ipe-clearance" },
-];
 
 const Verification = () => {
   const navigate = useNavigate();
@@ -471,33 +463,6 @@ const Verification = () => {
             </div>
           </div>
 
-          {/* Other Services */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-bold">Other Services</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {otherServices.map((service) => (
-                <Card
-                  key={service.title}
-                  className={`relative hover:shadow-card transition-all cursor-pointer ${service.route ? "" : "opacity-70"}`}
-                  onClick={() => service.route ? navigate(service.route) : toast({ title: "Coming Soon", description: `${service.title} will be available soon!` })}
-                >
-                  {service.badge && (
-                    <Badge className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 gradient-gold text-secondary-foreground border-0">{service.badge}</Badge>
-                  )}
-                  <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-                    <div className={`w-12 h-12 rounded-2xl ${service.color} flex items-center justify-center`}>
-                      <service.icon className="h-6 w-6 text-white" />
-                    </div>
-                    <span className="text-xs font-semibold leading-tight">{service.title}</span>
-                    <Badge variant="outline" className={`text-[10px] ${service.route ? "border-primary/30 text-primary" : "text-muted-foreground"}`}>{service.route ? "Active" : "Soon"}</Badge>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
         </main>
       </div>
     </PageTransition>

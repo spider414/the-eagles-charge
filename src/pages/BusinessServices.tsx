@@ -1,8 +1,38 @@
-import { ArrowLeft, Building2, FileText, Shield, Award, ArrowRight, Clock, CheckCircle2, Fingerprint } from "lucide-react";
+import { ArrowLeft, Building2, FileText, Shield, Award, ArrowRight, Clock, CheckCircle2, Fingerprint, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
 
 const services = [
+  {
+    title: "NIN/BVN Verification",
+    description: "Verify your National Identification Number or Bank Verification Number instantly.",
+    icon: Fingerprint,
+    path: "/verification",
+    prices: ["NIN: ₦300", "BVN: ₦500"],
+    processing: "Instant",
+    color: "from-teal-500/20 to-teal-600/10",
+    iconBg: "bg-teal-500/15 text-teal-600",
+  },
+  {
+    title: "Print NIN Slip",
+    description: "Generate and print your official NIN slip with full details.",
+    icon: Printer,
+    path: "/nin-print",
+    prices: ["From ₦350"],
+    processing: "Instant",
+    color: "from-indigo-500/20 to-indigo-600/10",
+    iconBg: "bg-indigo-500/15 text-indigo-600",
+  },
+  {
+    title: "Print BVN Slip",
+    description: "Generate and print your official BVN slip with full details.",
+    icon: Printer,
+    path: "/bvn-print",
+    prices: ["From ₦350"],
+    processing: "Instant",
+    color: "from-violet-500/20 to-violet-600/10",
+    iconBg: "bg-violet-500/15 text-violet-600",
+  },
   {
     title: "CAC Registration",
     description: "Register your Business Name, Limited Company, or NGO with the Corporate Affairs Commission.",
@@ -42,16 +72,6 @@ const services = [
     processing: "5–7 working days",
     color: "from-purple-500/20 to-purple-600/10",
     iconBg: "bg-purple-500/15 text-purple-600",
-  },
-  {
-    title: "NIN/BVN Verification",
-    description: "Verify your National Identification Number or Bank Verification Number instantly.",
-    icon: Fingerprint,
-    path: "/verification",
-    prices: ["From ₦100"],
-    processing: "Instant",
-    color: "from-teal-500/20 to-teal-600/10",
-    iconBg: "bg-teal-500/15 text-teal-600",
   },
 ];
 
