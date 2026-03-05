@@ -279,14 +279,14 @@ const Dashboard = () => {
               </Card>
             </Link>
 
-            {/* NIN/BVN Verification */}
-            <Link to="/verification">
+            {/* Business Services */}
+            <Link to="/business-services">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
                 <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-teal-600 flex items-center justify-center mb-3">
-                    <Fingerprint className="h-7 w-7 text-white" />
+                  <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center mb-3">
+                    <Building2 className="h-7 w-7 text-accent-foreground" />
                   </div>
-                  <span className="text-sm font-semibold">NIN/BVN</span>
+                  <span className="text-sm font-semibold">Business</span>
                 </CardContent>
               </Card>
             </Link>
