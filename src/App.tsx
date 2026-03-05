@@ -83,6 +83,7 @@ const App = () => {
                   <Route path="/cac-registration" element={<CacRegistration />} />
                   <Route path="/scuml-registration" element={<ScumlRegistration />} />
                   <Route path="/ipe-clearance" element={<IpeClearance />} />
+                  <Route path="/business-services" element={<BusinessServices />} />
                   <Route path="/admin/tin" element={<AdminTin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="*" element={<NotFound />} />
