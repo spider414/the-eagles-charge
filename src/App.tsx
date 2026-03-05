@@ -36,6 +36,7 @@ import TinRegistration from "./pages/TinRegistration";
 import CacRegistration from "./pages/CacRegistration";
 import ScumlRegistration from "./pages/ScumlRegistration";
 import IpeClearance from "./pages/IpeClearance";
+import BusinessServices from "./pages/BusinessServices";
 import AdminTin from "./pages/AdminTin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
