@@ -1,4 +1,4 @@
-import { ArrowLeft, Building2, FileText, Shield, Award, ArrowRight, Clock, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Building2, FileText, Shield, Award, ArrowRight, Clock, CheckCircle2, Fingerprint } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -42,6 +42,16 @@ const services = [
     processing: "5–7 working days",
     color: "from-purple-500/20 to-purple-600/10",
     iconBg: "bg-purple-500/15 text-purple-600",
+  },
+  {
+    title: "NIN/BVN Verification",
+    description: "Verify your National Identification Number or Bank Verification Number instantly.",
+    icon: Fingerprint,
+    path: "/verification",
+    prices: ["From ₦100"],
+    processing: "Instant",
+    color: "from-teal-500/20 to-teal-600/10",
+    iconBg: "bg-teal-500/15 text-teal-600",
   },
 ];
 
