@@ -36,6 +36,7 @@ import TinRegistration from "./pages/TinRegistration";
 import CacRegistration from "./pages/CacRegistration";
 import ScumlRegistration from "./pages/ScumlRegistration";
 import IpeClearance from "./pages/IpeClearance";
+import BusinessServices from "./pages/BusinessServices";
 import AdminTin from "./pages/AdminTin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
@@ -82,6 +83,7 @@ const App = () => {
                   <Route path="/cac-registration" element={<CacRegistration />} />
                   <Route path="/scuml-registration" element={<ScumlRegistration />} />
                   <Route path="/ipe-clearance" element={<IpeClearance />} />
+                  <Route path="/business-services" element={<BusinessServices />} />
                   <Route path="/admin/tin" element={<AdminTin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="*" element={<NotFound />} />
