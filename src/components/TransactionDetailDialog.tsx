@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -96,7 +96,7 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const TransactionDetailDialog = React.forwardRef<HTMLDivElement, TransactionDetailDialogProps>(({ transaction, open, onOpenChange }, ref) => {
+const TransactionDetailDialog = ({ transaction, open, onOpenChange }: TransactionDetailDialogProps) => {
   const [copied, setCopied] = useState(false);
 
   if (!transaction) return null;
@@ -218,7 +218,6 @@ Thank you for using Eagles VTU!
       </DialogContent>
     </Dialog>
   );
-});
-TransactionDetailDialog.displayName = "TransactionDetailDialog";
+};
 
 export default TransactionDetailDialog;
