@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Phone, Wifi, Zap, Tv, Globe, Wallet, Download, Share2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
-import { toast } from "@/hooks/use-toast";
 
 interface Transaction {
   id: string;
