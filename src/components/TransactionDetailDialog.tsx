@@ -218,6 +218,7 @@ Thank you for using Eagles VTU!
       </DialogContent>
     </Dialog>
   );
-};
+});
+TransactionDetailDialog.displayName = "TransactionDetailDialog";
 
 export default TransactionDetailDialog;
