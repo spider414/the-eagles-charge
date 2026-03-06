@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Gift, Building2, Briefcase, Sparkles } from "lucide-react";
+import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield, Fingerprint } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface Advert {
   icon: typeof Gift;
@@ -17,15 +18,15 @@ const adverts: Advert[] = [
   },
   {
     icon: Building2,
-    text: "🏢 Coming Soon: Company & Business Registration",
+    text: "🏢 CAC Business Registration – BN, LTD & NGO available now!",
     color: "text-blue-400",
-    href: "/coming-soon",
+    href: "/business-services",
   },
   {
     icon: Briefcase,
-    text: "📋 CAC Registration services launching soon!",
+    text: "📋 TIN Registration – Individual ₦800, Corporate ₦1,200",
     color: "text-emerald-400",
-    href: "/coming-soon",
+    href: "/tin-registration",
   },
   {
     icon: Sparkles,
@@ -33,30 +34,68 @@ const adverts: Advert[] = [
     color: "text-yellow-400",
     href: "/airtime",
   },
+  {
+    icon: Fingerprint,
+    text: "🔐 NIN & BVN Verification – Fast & reliable from ₦300",
+    color: "text-teal-400",
+    href: "/verification",
+  },
+  {
+    icon: Wifi,
+    text: "📶 Buy cheap data bundles for all networks!",
+    color: "text-green-400",
+    href: "/data",
+  },
+  {
+    icon: Zap,
+    text: "💡 Pay electricity bills instantly – All DisCos supported",
+    color: "text-amber-400",
+    href: "/bills/electricity",
+  },
+  {
+    icon: Tv,
+    text: "📺 Cable TV subscriptions – DStv, GOtv, Startimes",
+    color: "text-pink-400",
+    href: "/bills/cable",
+  },
+  {
+    icon: Shield,
+    text: "🛡️ SCUML Registration – Stay compliant for ₦15,000",
+    color: "text-indigo-400",
+    href: "/scuml-registration",
+  },
 ];
 
 const AdvertBanner = () => {
   const navigate = useNavigate();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
 
-  const handleClick = (href: string) => {
-    navigate(href);
-  };
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIsVisible(false);
+      setTimeout(() => {
+        setCurrentIndex((prev) => (prev + 1) % adverts.length);
+        setIsVisible(true);
+      }, 400);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentAd = adverts[currentIndex];
 
   return (
     <div className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 mb-6">
-      <div className="flex animate-marquee whitespace-nowrap">
-        {/* Double the content for seamless loop */}
-        {[...adverts, ...adverts].map((ad, index) => (
-          <button
-            key={index}
-            onClick={() => handleClick(ad.href)}
-            className="flex items-center gap-2 mx-8 hover:opacity-80 transition-opacity cursor-pointer"
-          >
-            <ad.icon className={`h-4 w-4 ${ad.color} shrink-0`} />
-            <span className="text-sm font-medium text-foreground">{ad.text}</span>
-          </button>
-        ))}
-      </div>
+      <button
+        onClick={() => navigate(currentAd.href)}
+        className={`flex items-center gap-2 w-full justify-center hover:opacity-80 transition-all duration-400 cursor-pointer px-4 ${
+          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+        }`}
+      >
+        <currentAd.icon className={`h-4 w-4 ${currentAd.color} shrink-0`} />
+        <span className="text-sm font-medium text-foreground">{currentAd.text}</span>
+      </button>
     </div>
   );
 };
