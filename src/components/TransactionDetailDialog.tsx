@@ -1,9 +1,10 @@
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Wifi, Zap, Tv, Globe, Wallet, Download, Share2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 import { toast } from "@/hooks/use-toast";
 
 interface Transaction {
