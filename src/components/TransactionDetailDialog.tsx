@@ -1,9 +1,9 @@
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Phone, Wifi, Zap, Tv, Globe, Wallet, Download, Share2, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
-import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
 interface Transaction {
@@ -96,7 +96,7 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const TransactionDetailDialog = ({ transaction, open, onOpenChange }: TransactionDetailDialogProps) => {
+const TransactionDetailDialog = React.forwardRef<HTMLDivElement, TransactionDetailDialogProps>(({ transaction, open, onOpenChange }, ref) => {
   const [copied, setCopied] = useState(false);
 
   if (!transaction) return null;
@@ -218,6 +218,7 @@ Thank you for using Eagles VTU!
       </DialogContent>
     </Dialog>
   );
-};
+});
+TransactionDetailDialog.displayName = "TransactionDetailDialog";
 
 export default TransactionDetailDialog;
