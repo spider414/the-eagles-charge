@@ -96,7 +96,7 @@ const getStatusBadge = (status: string) => {
   }
 };
 
-const TransactionDetailDialog = ({ transaction, open, onOpenChange }: TransactionDetailDialogProps) => {
+const TransactionDetailDialog = React.forwardRef<HTMLDivElement, TransactionDetailDialogProps>(({ transaction, open, onOpenChange }, ref) => {
   const [copied, setCopied] = useState(false);
 
   if (!transaction) return null;
