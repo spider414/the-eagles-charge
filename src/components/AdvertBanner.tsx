@@ -77,8 +77,8 @@ const AdvertBanner = () => {
       setTimeout(() => {
         setCurrentIndex((prev) => (prev + 1) % adverts.length);
         setIsVisible(true);
-      }, 400);
-    }, 4000);
+      }, 500);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -89,8 +89,10 @@ const AdvertBanner = () => {
     <div className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 mb-6">
       <button
         onClick={() => navigate(currentAd.href)}
-        className={`flex items-center gap-2 w-full justify-center hover:opacity-80 transition-all duration-400 cursor-pointer px-4 ${
-          isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+        className={`flex items-center gap-2 w-full justify-center hover:opacity-80 cursor-pointer px-4 transition-all duration-500 ease-in-out ${
+          isVisible
+            ? "opacity-100 translate-x-0"
+            : "opacity-0 -translate-x-full"
         }`}
       >
         <currentAd.icon className={`h-4 w-4 ${currentAd.color} shrink-0`} />
