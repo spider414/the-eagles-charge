@@ -70,6 +70,27 @@ const AdvertBanner = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const goTo = (index: number) => {
+    setIsVisible(false);
+    setTimeout(() => {
+      setCurrentIndex(index);
+      setIsVisible(true);
+    }, 300);
+  };
+
+  const handleSwipe = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        goTo((currentIndex + 1) % adverts.length);
+      } else {
+        goTo((currentIndex - 1 + adverts.length) % adverts.length);
+      }
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
