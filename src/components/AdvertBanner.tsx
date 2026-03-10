@@ -127,13 +127,7 @@ const AdvertBanner = () => {
         {adverts.map((_, index) => (
           <button
             key={index}
-            onClick={() => {
-              setIsVisible(false);
-              setTimeout(() => {
-                setCurrentIndex(index);
-                setIsVisible(true);
-              }, 300);
-            }}
+            onClick={() => goTo(index)}
             className={`rounded-full transition-all duration-300 ${
               index === currentIndex
                 ? "w-4 h-1.5 bg-primary"
