@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield, Fingerprint } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Advert {
   icon: typeof Gift;
