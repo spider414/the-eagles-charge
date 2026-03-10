@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield, Fingerprint } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface Advert {
   icon: typeof Gift;
@@ -70,6 +70,27 @@ const AdvertBanner = () => {
   const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
+  const touchStartX = useRef(0);
+  const touchEndX = useRef(0);
+
+  const goTo = (index: number) => {
+    setIsVisible(false);
+    setTimeout(() => {
+      setCurrentIndex(index);
+      setIsVisible(true);
+    }, 300);
+  };
+
+  const handleSwipe = () => {
+    const diff = touchStartX.current - touchEndX.current;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        goTo((currentIndex + 1) % adverts.length);
+      } else {
+        goTo((currentIndex - 1 + adverts.length) % adverts.length);
+      }
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -86,7 +107,11 @@ const AdvertBanner = () => {
   const currentAd = adverts[currentIndex];
 
   return (
-    <div className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 pb-4 mb-6">
+    <div
+      className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 pb-4 mb-6"
+      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => { touchEndX.current = e.changedTouches[0].clientX; handleSwipe(); }}
+    >
       <button
         onClick={() => navigate(currentAd.href)}
         className={`flex items-center gap-2 w-full justify-center hover:opacity-80 cursor-pointer px-4 transition-all duration-500 ease-in-out ${
@@ -102,13 +127,7 @@ const AdvertBanner = () => {
         {adverts.map((_, index) => (
           <button
             key={index}
-            onClick={() => {
-              setIsVisible(false);
-              setTimeout(() => {
-                setCurrentIndex(index);
-                setIsVisible(true);
-              }, 300);
-            }}
+            onClick={() => goTo(index)}
             className={`rounded-full transition-all duration-300 ${
               index === currentIndex
                 ? "w-4 h-1.5 bg-primary"
