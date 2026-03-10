@@ -86,7 +86,7 @@ const AdvertBanner = () => {
   const currentAd = adverts[currentIndex];
 
   return (
-    <div className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 mb-6">
+    <div className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 pb-4 mb-6">
       <button
         onClick={() => navigate(currentAd.href)}
         className={`flex items-center gap-2 w-full justify-center hover:opacity-80 cursor-pointer px-4 transition-all duration-500 ease-in-out ${
@@ -98,6 +98,25 @@ const AdvertBanner = () => {
         <currentAd.icon className={`h-4 w-4 ${currentAd.color} shrink-0`} />
         <span className="text-sm font-medium text-foreground">{currentAd.text}</span>
       </button>
+      <div className="flex items-center justify-center gap-1.5 mt-2">
+        {adverts.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => {
+              setIsVisible(false);
+              setTimeout(() => {
+                setCurrentIndex(index);
+                setIsVisible(true);
+              }, 300);
+            }}
+            className={`rounded-full transition-all duration-300 ${
+              index === currentIndex
+                ? "w-4 h-1.5 bg-primary"
+                : "w-1.5 h-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50"
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 };
