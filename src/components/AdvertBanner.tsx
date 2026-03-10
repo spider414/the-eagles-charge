@@ -107,7 +107,11 @@ const AdvertBanner = () => {
   const currentAd = adverts[currentIndex];
 
   return (
-    <div className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 pb-4 mb-6">
+    <div
+      className="w-full overflow-hidden bg-gradient-to-r from-primary/10 via-secondary/10 to-primary/10 rounded-xl py-3 pb-4 mb-6"
+      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={(e) => { touchEndX.current = e.changedTouches[0].clientX; handleSwipe(); }}
+    >
       <button
         onClick={() => navigate(currentAd.href)}
         className={`flex items-center gap-2 w-full justify-center hover:opacity-80 cursor-pointer px-4 transition-all duration-500 ease-in-out ${
