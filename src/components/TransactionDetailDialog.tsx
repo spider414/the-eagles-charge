@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Wifi, Zap, Tv, Globe, Wallet, Download, Share2, Copy, Check } from "lucide-react";
+import { Phone, Wifi, Zap, Tv, Globe, Wallet, Download, Share2, Copy, Check, Bird } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "@/hooks/use-toast";
 
@@ -14,6 +14,17 @@ interface Transaction {
   created_at: string;
   phone_number?: string;
   network?: string;
+  data_plan?: string;
+  description?: string;
+  meter_number?: string;
+  cable_smartcard?: string;
+  cable_provider?: string;
+  cable_plan?: string;
+  electricity_provider?: string;
+  token?: string;
+  balance_before?: number | null;
+  balance_after?: number | null;
+  paystack_reference?: string;
 }
 
 interface TransactionDetailDialogProps {
@@ -74,6 +85,8 @@ const formatTransactionType = (type: string) => {
       return "Internet";
     case "wallet_topup":
       return "Wallet Top-up";
+    case "verification":
+      return "Verification";
     default:
       return type;
   }
@@ -96,13 +109,20 @@ const getStatusBadge = (status: string) => {
   }
 };
 
+const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+  <div className="flex justify-between items-center">
+    <span className="text-muted-foreground text-sm">{label}</span>
+    <span className="font-medium text-sm text-right max-w-[60%] break-all">{value}</span>
+  </div>
+);
+
 const TransactionDetailDialog = ({ transaction, open, onOpenChange }: TransactionDetailDialogProps) => {
   const [copied, setCopied] = useState(false);
 
   if (!transaction) return null;
 
   const receiptText = `
-Eagles VTU Receipt
+Eagle Recharge Receipt
 -------------------
 Transaction: ${formatTransactionType(transaction.transaction_type)}
 Amount: ₦${transaction.amount.toLocaleString()}
@@ -110,9 +130,14 @@ Status: ${transaction.status}
 Date: ${format(new Date(transaction.created_at), "PPpp")}
 ${transaction.phone_number ? `Phone: ${transaction.phone_number}` : ""}
 ${transaction.network ? `Network: ${transaction.network.toUpperCase()}` : ""}
+${transaction.data_plan ? `Plan: ${transaction.data_plan}` : ""}
+${transaction.description ? `Description: ${transaction.description}` : ""}
+${transaction.meter_number ? `Meter: ${transaction.meter_number}` : ""}
+${transaction.cable_smartcard ? `Smartcard: ${transaction.cable_smartcard}` : ""}
+${transaction.token ? `Token: ${transaction.token}` : ""}
 Reference: ${transaction.id}
 -------------------
-Thank you for using Eagles VTU!
+Thank you for using Eagle Recharge!
   `.trim();
 
   const handleCopy = async () => {
@@ -154,7 +179,7 @@ Thank you for using Eagles VTU!
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <div className={`w-10 h-10 rounded-xl ${getTransactionColor(transaction.transaction_type)} flex items-center justify-center text-white`}>
@@ -165,39 +190,67 @@ Thank you for using Eagles VTU!
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Type</span>
-              <span className="font-medium">{formatTransactionType(transaction.transaction_type)}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Amount</span>
-              <span className="font-bold text-lg">₦{transaction.amount.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Status</span>
-              {getStatusBadge(transaction.status)}
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Date</span>
-              <span className="text-sm">{format(new Date(transaction.created_at), "PPp")}</span>
-            </div>
-            {transaction.phone_number && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-sm">Phone</span>
-                <span className="font-mono text-sm">{transaction.phone_number}</span>
+          {/* Receipt card with watermark */}
+          <div className="relative bg-muted/50 rounded-lg p-4 space-y-3 overflow-hidden">
+            {/* Watermark */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+              <div className="flex flex-col items-center gap-1 opacity-[0.06] rotate-[-20deg]">
+                <Bird className="h-20 w-20" />
+                <span className="text-2xl font-black tracking-widest uppercase">Eagle Recharge</span>
               </div>
+            </div>
+
+            <DetailRow label="Type" value={formatTransactionType(transaction.transaction_type)} />
+            <DetailRow
+              label="Amount"
+              value={<span className="font-bold text-lg">₦{transaction.amount.toLocaleString()}</span>}
+            />
+            <DetailRow label="Status" value={getStatusBadge(transaction.status)} />
+            <DetailRow label="Date" value={format(new Date(transaction.created_at), "PPp")} />
+
+            {transaction.description && (
+              <DetailRow label="Description" value={transaction.description} />
+            )}
+            {transaction.phone_number && (
+              <DetailRow label="Phone" value={<span className="font-mono">{transaction.phone_number}</span>} />
             )}
             {transaction.network && (
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground text-sm">Network</span>
-                <span className="uppercase font-medium text-sm">{transaction.network}</span>
-              </div>
+              <DetailRow label="Network" value={<span className="uppercase">{transaction.network}</span>} />
             )}
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-sm">Reference</span>
-              <span className="font-mono text-xs">{transaction.id.slice(0, 8)}...</span>
-            </div>
+            {transaction.data_plan && (
+              <DetailRow label="Plan" value={transaction.data_plan} />
+            )}
+            {transaction.meter_number && (
+              <DetailRow label="Meter No." value={<span className="font-mono">{transaction.meter_number}</span>} />
+            )}
+            {transaction.electricity_provider && (
+              <DetailRow label="Provider" value={<span className="uppercase">{transaction.electricity_provider}</span>} />
+            )}
+            {transaction.cable_smartcard && (
+              <DetailRow label="Smartcard" value={<span className="font-mono">{transaction.cable_smartcard}</span>} />
+            )}
+            {transaction.cable_provider && (
+              <DetailRow label="Cable Provider" value={<span className="uppercase">{transaction.cable_provider}</span>} />
+            )}
+            {transaction.cable_plan && (
+              <DetailRow label="Cable Plan" value={transaction.cable_plan} />
+            )}
+            {transaction.token && (
+              <DetailRow label="Token" value={<span className="font-mono text-primary font-bold">{transaction.token}</span>} />
+            )}
+            {transaction.balance_before != null && (
+              <DetailRow label="Balance Before" value={`₦${transaction.balance_before.toLocaleString()}`} />
+            )}
+            {transaction.balance_after != null && (
+              <DetailRow label="Balance After" value={`₦${transaction.balance_after.toLocaleString()}`} />
+            )}
+            {transaction.paystack_reference && (
+              <DetailRow label="Payment Ref" value={<span className="font-mono text-xs">{transaction.paystack_reference}</span>} />
+            )}
+            <DetailRow
+              label="Reference"
+              value={<span className="font-mono text-xs">{transaction.id.slice(0, 8)}...</span>}
+            />
           </div>
 
           <div className="flex gap-2">
