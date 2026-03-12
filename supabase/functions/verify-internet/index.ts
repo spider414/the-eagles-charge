@@ -14,6 +14,9 @@ interface VerifyRequest {
 const VTPASS_INTERNET_IDS: Record<string, string> = {
   smile: "smile-direct",
   spectranet: "spectranet",
+  ipnx: "ipnx",
+  swift: "swift-4g",
+  ntel: "ntel",
 };
 
 serve(async (req) => {

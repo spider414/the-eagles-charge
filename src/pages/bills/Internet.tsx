@@ -27,6 +27,9 @@ interface InternetPlan {
 const internetProviders = [
   { id: "smile", name: "Smile" },
   { id: "spectranet", name: "Spectranet" },
+  { id: "ipnx", name: "iPNX" },
+  { id: "swift", name: "Swift 4G" },
+  { id: "ntel", name: "ntel" },
 ];
 
 const plansByProvider: Record<string, InternetPlan[]> = {
@@ -41,6 +44,24 @@ const plansByProvider: Record<string, InternetPlan[]> = {
     { id: "spectranet-2", name: "Spectranet 15GB", price: 5000, data: "15GB", validity: "30 Days" },
     { id: "spectranet-3", name: "Spectranet 30GB", price: 8000, data: "30GB", validity: "30 Days" },
     { id: "spectranet-4", name: "Spectranet Unlimited", price: 15000, data: "Unlimited", validity: "30 Days" },
+  ],
+  ipnx: [
+    { id: "ipnx-1", name: "iPNX Bronze 15Mbps", price: 12000, data: "Unlimited", validity: "30 Days" },
+    { id: "ipnx-2", name: "iPNX Silver 25Mbps", price: 18000, data: "Unlimited", validity: "30 Days" },
+    { id: "ipnx-3", name: "iPNX Gold 50Mbps", price: 25000, data: "Unlimited", validity: "30 Days" },
+    { id: "ipnx-4", name: "iPNX Platinum 100Mbps", price: 45000, data: "Unlimited", validity: "30 Days" },
+  ],
+  swift: [
+    { id: "swift-1", name: "Swift 7GB", price: 3000, data: "7GB", validity: "30 Days" },
+    { id: "swift-2", name: "Swift 15GB", price: 5500, data: "15GB", validity: "30 Days" },
+    { id: "swift-3", name: "Swift 30GB", price: 9000, data: "30GB", validity: "30 Days" },
+    { id: "swift-4", name: "Swift Unlimited", price: 16000, data: "Unlimited", validity: "30 Days" },
+  ],
+  ntel: [
+    { id: "ntel-1", name: "ntel 5GB", price: 2500, data: "5GB", validity: "30 Days" },
+    { id: "ntel-2", name: "ntel 10GB", price: 4500, data: "10GB", validity: "30 Days" },
+    { id: "ntel-3", name: "ntel 20GB", price: 7000, data: "20GB", validity: "30 Days" },
+    { id: "ntel-4", name: "ntel Unlimited", price: 12000, data: "Unlimited", validity: "30 Days" },
   ],
 };
 
@@ -219,7 +240,7 @@ const Internet = () => {
               Internet Subscription
             </CardTitle>
             <CardDescription>
-              Subscribe to Smile, Spectranet, and other ISPs
+              Subscribe to Smile, Spectranet, iPNX, Swift 4G, ntel & more
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -244,13 +265,13 @@ const Internet = () => {
               {/* Account Number */}
               <div className="space-y-3">
                 <Label htmlFor="account">
-                  {provider === "smile" ? "Email / Account ID" : "Account / Device Number"}
+                  {provider === "smile" ? "Email / Account ID" : provider === "ipnx" ? "Customer ID" : "Account / Device Number"}
                 </Label>
                 <div className="relative">
                   <Input
                     id="account"
                     type="text"
-                    placeholder={provider === "smile" ? "Enter Smile email or account ID" : "Enter account number"}
+                    placeholder={provider === "smile" ? "Enter Smile email or account ID" : provider === "ipnx" ? "Enter iPNX customer ID" : "Enter account number"}
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
                     className={`h-12 pr-10 ${
