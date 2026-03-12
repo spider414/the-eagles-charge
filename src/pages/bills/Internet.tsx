@@ -27,6 +27,9 @@ interface InternetPlan {
 const internetProviders = [
   { id: "smile", name: "Smile" },
   { id: "spectranet", name: "Spectranet" },
+  { id: "ipnx", name: "iPNX" },
+  { id: "swift", name: "Swift 4G" },
+  { id: "ntel", name: "ntel" },
 ];
 
 const plansByProvider: Record<string, InternetPlan[]> = {
