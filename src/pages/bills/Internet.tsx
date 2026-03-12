@@ -265,7 +265,7 @@ const Internet = () => {
               {/* Account Number */}
               <div className="space-y-3">
                 <Label htmlFor="account">
-                  {provider === "smile" ? "Email / Account ID" : "Account / Device Number"}
+                  {provider === "smile" ? "Email / Account ID" : provider === "ipnx" ? "Customer ID" : "Account / Device Number"}
                 </Label>
                 <div className="relative">
                   <Input
