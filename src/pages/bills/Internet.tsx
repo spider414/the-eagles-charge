@@ -240,7 +240,7 @@ const Internet = () => {
               Internet Subscription
             </CardTitle>
             <CardDescription>
-              Subscribe to Smile, Spectranet, and other ISPs
+              Subscribe to Smile, Spectranet, iPNX, Swift 4G, ntel & more
             </CardDescription>
           </CardHeader>
           <CardContent>
