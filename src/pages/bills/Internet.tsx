@@ -271,7 +271,7 @@ const Internet = () => {
                   <Input
                     id="account"
                     type="text"
-                    placeholder={provider === "smile" ? "Enter Smile email or account ID" : "Enter account number"}
+                    placeholder={provider === "smile" ? "Enter Smile email or account ID" : provider === "ipnx" ? "Enter iPNX customer ID" : "Enter account number"}
                     value={accountNumber}
                     onChange={(e) => setAccountNumber(e.target.value)}
                     className={`h-12 pr-10 ${
