@@ -95,24 +95,24 @@ const formatTransactionType = (type: string) => {
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "completed":
-      return <Badge className="bg-green-500/20 text-green-600">Completed</Badge>;
+      return <Badge className="bg-green-500/20 text-green-600 border-0">Completed</Badge>;
     case "pending":
-      return <Badge className="bg-yellow-500/20 text-yellow-600">Pending</Badge>;
+      return <Badge className="bg-yellow-500/20 text-yellow-600 border-0">Pending</Badge>;
     case "processing":
-      return <Badge className="bg-blue-500/20 text-blue-600">Processing</Badge>;
+      return <Badge className="bg-blue-500/20 text-blue-600 border-0">Processing</Badge>;
     case "failed":
-      return <Badge className="bg-red-500/20 text-red-600">Failed</Badge>;
+      return <Badge className="bg-red-500/20 text-red-600 border-0">Failed</Badge>;
     case "refunded":
-      return <Badge className="bg-purple-500/20 text-purple-600">Refunded</Badge>;
+      return <Badge className="bg-purple-500/20 text-purple-600 border-0">Refunded</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
 };
 
 const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <div className="flex justify-between items-center">
-    <span className="text-muted-foreground text-sm">{label}</span>
-    <span className="font-medium text-sm text-right max-w-[60%] break-all">{value}</span>
+  <div className="flex justify-between items-start gap-2 py-1.5 border-b border-border/30 last:border-0">
+    <span className="text-muted-foreground text-xs shrink-0">{label}</span>
+    <span className="font-medium text-xs text-right break-all">{value}</span>
   </div>
 );
 
@@ -179,91 +179,93 @@ Thank you for using Eagle Recharge!
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className={`w-10 h-10 rounded-xl ${getTransactionColor(transaction.transaction_type)} flex items-center justify-center text-white`}>
+      <DialogContent className="max-w-[92vw] sm:max-w-sm p-4 gap-3">
+        <DialogHeader className="pb-0">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <div className={`w-8 h-8 rounded-lg ${getTransactionColor(transaction.transaction_type)} flex items-center justify-center text-white shrink-0`}>
               {getTransactionIcon(transaction.transaction_type)}
             </div>
             Transaction Details
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Receipt card with watermark */}
-          <div className="relative bg-muted/50 rounded-lg p-4 space-y-3 overflow-hidden">
+          <div className="relative bg-muted/50 rounded-lg p-3 overflow-hidden">
             {/* Watermark */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-              <div className="flex flex-col items-center gap-1 opacity-[0.06] rotate-[-20deg]">
-                <Bird className="h-20 w-20" />
-                <span className="text-2xl font-black tracking-widest uppercase">Eagle Recharge</span>
+              <div className="flex flex-col items-center gap-0.5 opacity-[0.05] rotate-[-20deg]">
+                <Bird className="h-14 w-14" />
+                <span className="text-lg font-black tracking-widest uppercase whitespace-nowrap">Eagle Recharge</span>
               </div>
             </div>
 
-            <DetailRow label="Type" value={formatTransactionType(transaction.transaction_type)} />
-            <DetailRow
-              label="Amount"
-              value={<span className="font-bold text-lg">₦{transaction.amount.toLocaleString()}</span>}
-            />
-            <DetailRow label="Status" value={getStatusBadge(transaction.status)} />
-            <DetailRow label="Date" value={format(new Date(transaction.created_at), "PPp")} />
+            <div className="relative z-10">
+              <DetailRow label="Type" value={formatTransactionType(transaction.transaction_type)} />
+              <DetailRow
+                label="Amount"
+                value={<span className="font-bold text-sm text-primary">₦{transaction.amount.toLocaleString()}</span>}
+              />
+              <DetailRow label="Status" value={getStatusBadge(transaction.status)} />
+              <DetailRow label="Date" value={format(new Date(transaction.created_at), "PPp")} />
 
-            {transaction.description && (
-              <DetailRow label="Description" value={transaction.description} />
-            )}
-            {transaction.phone_number && (
-              <DetailRow label="Phone" value={<span className="font-mono">{transaction.phone_number}</span>} />
-            )}
-            {transaction.network && (
-              <DetailRow label="Network" value={<span className="uppercase">{transaction.network}</span>} />
-            )}
-            {transaction.data_plan && (
-              <DetailRow label="Plan" value={transaction.data_plan} />
-            )}
-            {transaction.meter_number && (
-              <DetailRow label="Meter No." value={<span className="font-mono">{transaction.meter_number}</span>} />
-            )}
-            {transaction.electricity_provider && (
-              <DetailRow label="Provider" value={<span className="uppercase">{transaction.electricity_provider}</span>} />
-            )}
-            {transaction.cable_smartcard && (
-              <DetailRow label="Smartcard" value={<span className="font-mono">{transaction.cable_smartcard}</span>} />
-            )}
-            {transaction.cable_provider && (
-              <DetailRow label="Cable Provider" value={<span className="uppercase">{transaction.cable_provider}</span>} />
-            )}
-            {transaction.cable_plan && (
-              <DetailRow label="Cable Plan" value={transaction.cable_plan} />
-            )}
-            {transaction.token && (
-              <DetailRow label="Token" value={<span className="font-mono text-primary font-bold">{transaction.token}</span>} />
-            )}
-            {transaction.balance_before != null && (
-              <DetailRow label="Balance Before" value={`₦${transaction.balance_before.toLocaleString()}`} />
-            )}
-            {transaction.balance_after != null && (
-              <DetailRow label="Balance After" value={`₦${transaction.balance_after.toLocaleString()}`} />
-            )}
-            {transaction.paystack_reference && (
-              <DetailRow label="Payment Ref" value={<span className="font-mono text-xs">{transaction.paystack_reference}</span>} />
-            )}
-            <DetailRow
-              label="Reference"
-              value={<span className="font-mono text-xs">{transaction.id.slice(0, 8)}...</span>}
-            />
+              {transaction.description && (
+                <DetailRow label="Description" value={transaction.description} />
+              )}
+              {transaction.phone_number && (
+                <DetailRow label="Phone" value={<span className="font-mono">{transaction.phone_number}</span>} />
+              )}
+              {transaction.network && (
+                <DetailRow label="Network" value={<span className="uppercase">{transaction.network}</span>} />
+              )}
+              {transaction.data_plan && (
+                <DetailRow label="Plan" value={transaction.data_plan} />
+              )}
+              {transaction.meter_number && (
+                <DetailRow label="Meter No." value={<span className="font-mono">{transaction.meter_number}</span>} />
+              )}
+              {transaction.electricity_provider && (
+                <DetailRow label="Provider" value={<span className="uppercase">{transaction.electricity_provider}</span>} />
+              )}
+              {transaction.cable_smartcard && (
+                <DetailRow label="Smartcard" value={<span className="font-mono">{transaction.cable_smartcard}</span>} />
+              )}
+              {transaction.cable_provider && (
+                <DetailRow label="Cable Provider" value={<span className="uppercase">{transaction.cable_provider}</span>} />
+              )}
+              {transaction.cable_plan && (
+                <DetailRow label="Cable Plan" value={transaction.cable_plan} />
+              )}
+              {transaction.token && (
+                <DetailRow label="Token" value={<span className="font-mono text-primary font-bold">{transaction.token}</span>} />
+              )}
+              {transaction.balance_before != null && (
+                <DetailRow label="Bal. Before" value={`₦${transaction.balance_before.toLocaleString()}`} />
+              )}
+              {transaction.balance_after != null && (
+                <DetailRow label="Bal. After" value={`₦${transaction.balance_after.toLocaleString()}`} />
+              )}
+              {transaction.paystack_reference && (
+                <DetailRow label="Payment Ref" value={<span className="font-mono text-[10px]">{transaction.paystack_reference}</span>} />
+              )}
+              <DetailRow
+                label="Reference"
+                value={<span className="font-mono text-[10px]">{transaction.id.slice(0, 8)}...</span>}
+              />
+            </div>
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={handleCopy}>
-              {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+            <Button variant="outline" size="sm" className="flex-1 h-9 text-xs" onClick={handleCopy}>
+              {copied ? <Check className="h-3.5 w-3.5 mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
               Copy
             </Button>
-            <Button variant="outline" className="flex-1" onClick={handleShare}>
-              <Share2 className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" className="flex-1 h-9 text-xs" onClick={handleShare}>
+              <Share2 className="h-3.5 w-3.5 mr-1" />
               Share
             </Button>
-            <Button variant="outline" className="flex-1" onClick={handleDownload}>
-              <Download className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" className="flex-1 h-9 text-xs" onClick={handleDownload}>
+              <Download className="h-3.5 w-3.5 mr-1" />
               Download
             </Button>
           </div>

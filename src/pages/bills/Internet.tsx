@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bird, ArrowLeft, Globe, Check, Mail, AlertCircle, Loader2, User, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,18 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { usePaystack } from "@/hooks/usePaystack";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useInternetVerification } from "@/hooks/useInternetVerification";
+import { useInternetPlans, InternetPlan } from "@/hooks/useInternetPlans";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
-
-interface InternetPlan {
-  id: string;
-  name: string;
-  price: number;
-  data: string;
-  validity: string;
-}
 
 const internetProviders = [
   { id: "smile", name: "Smile" },
@@ -32,39 +25,6 @@ const internetProviders = [
   { id: "ntel", name: "ntel" },
 ];
 
-const plansByProvider: Record<string, InternetPlan[]> = {
-  smile: [
-    { id: "smile-1", name: "Smile 1.5GB", price: 1000, data: "1.5GB", validity: "30 Days" },
-    { id: "smile-2", name: "Smile 3GB", price: 1500, data: "3GB", validity: "30 Days" },
-    { id: "smile-3", name: "Smile 6.5GB", price: 2500, data: "6.5GB", validity: "30 Days" },
-    { id: "smile-4", name: "Smile 10GB", price: 3500, data: "10GB", validity: "30 Days" },
-  ],
-  spectranet: [
-    { id: "spectranet-1", name: "Spectranet 7GB", price: 3000, data: "7GB", validity: "30 Days" },
-    { id: "spectranet-2", name: "Spectranet 15GB", price: 5000, data: "15GB", validity: "30 Days" },
-    { id: "spectranet-3", name: "Spectranet 30GB", price: 8000, data: "30GB", validity: "30 Days" },
-    { id: "spectranet-4", name: "Spectranet Unlimited", price: 15000, data: "Unlimited", validity: "30 Days" },
-  ],
-  ipnx: [
-    { id: "ipnx-1", name: "iPNX Bronze 15Mbps", price: 12000, data: "Unlimited", validity: "30 Days" },
-    { id: "ipnx-2", name: "iPNX Silver 25Mbps", price: 18000, data: "Unlimited", validity: "30 Days" },
-    { id: "ipnx-3", name: "iPNX Gold 50Mbps", price: 25000, data: "Unlimited", validity: "30 Days" },
-    { id: "ipnx-4", name: "iPNX Platinum 100Mbps", price: 45000, data: "Unlimited", validity: "30 Days" },
-  ],
-  swift: [
-    { id: "swift-1", name: "Swift 7GB", price: 3000, data: "7GB", validity: "30 Days" },
-    { id: "swift-2", name: "Swift 15GB", price: 5500, data: "15GB", validity: "30 Days" },
-    { id: "swift-3", name: "Swift 30GB", price: 9000, data: "30GB", validity: "30 Days" },
-    { id: "swift-4", name: "Swift Unlimited", price: 16000, data: "Unlimited", validity: "30 Days" },
-  ],
-  ntel: [
-    { id: "ntel-1", name: "ntel 5GB", price: 2500, data: "5GB", validity: "30 Days" },
-    { id: "ntel-2", name: "ntel 10GB", price: 4500, data: "10GB", validity: "30 Days" },
-    { id: "ntel-3", name: "ntel 20GB", price: 7000, data: "20GB", validity: "30 Days" },
-    { id: "ntel-4", name: "ntel Unlimited", price: 12000, data: "Unlimited", validity: "30 Days" },
-  ],
-};
-
 const Internet = () => {
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
@@ -72,6 +32,7 @@ const Internet = () => {
   const { initializePayment, isLoading: paystackLoading } = usePaystack();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
   const { isVerifying, customerInfo, verificationError, verifyAccount, resetVerification } = useInternetVerification();
+  const { plans: currentPlans, isLoading: plansLoading, fetchPlans } = useInternetPlans();
 
   const isLoading = paystackLoading || walletLoading;
 
@@ -108,10 +69,13 @@ const Internet = () => {
     }
   }, [accountNumber, provider]);
 
-  // Reset plan when provider changes
+  // Fetch plans when provider changes
   useEffect(() => {
     setSelectedPlan(null);
-  }, [provider]);
+    if (provider) {
+      fetchPlans(provider);
+    }
+  }, [provider, fetchPlans]);
 
   // Pre-fill payment email from profile if valid
   useEffect(() => {
@@ -208,8 +172,6 @@ const Internet = () => {
       });
     }
   };
-
-  const currentPlans = provider ? plansByProvider[provider] || [] : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -322,32 +284,46 @@ const Internet = () => {
               {/* Plan Selection */}
               {provider && (
                 <div className="space-y-3">
-                  <Label>Select Plan</Label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {currentPlans.map((plan) => (
-                      <button
-                        key={plan.id}
-                        type="button"
-                        onClick={() => setSelectedPlan(plan)}
-                        className={`relative p-4 rounded-xl border-2 text-left transition-all ${
-                          selectedPlan?.id === plan.id
-                            ? "border-primary bg-accent shadow-card"
-                            : "border-border hover:border-primary/50 hover:bg-muted/50"
-                        }`}
-                      >
-                        {selectedPlan?.id === plan.id && (
-                          <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
-                        )}
-                        <div className="text-sm font-medium text-foreground">{plan.name}</div>
-                        <div className="text-lg font-bold text-primary">
-                          ₦{plan.price.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {plan.data} • {plan.validity}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  <Label className="flex items-center gap-2">
+                    Select Plan
+                    {plansLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+                  </Label>
+                  {plansLoading ? (
+                    <div className="flex items-center justify-center py-8 text-muted-foreground">
+                      <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                      Loading plans...
+                    </div>
+                  ) : currentPlans.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {currentPlans.map((plan) => (
+                        <button
+                          key={plan.id}
+                          type="button"
+                          onClick={() => setSelectedPlan(plan)}
+                          className={`relative p-4 rounded-xl border-2 text-left transition-all ${
+                            selectedPlan?.id === plan.id
+                              ? "border-primary bg-accent shadow-card"
+                              : "border-border hover:border-primary/50 hover:bg-muted/50"
+                          }`}
+                        >
+                          {selectedPlan?.id === plan.id && (
+                            <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
+                          )}
+                          <div className="text-sm font-medium text-foreground">{plan.name}</div>
+                          <div className="text-lg font-bold text-primary">
+                            ₦{plan.price.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {plan.data} • {plan.validity}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-muted-foreground text-sm">
+                      No plans available for this provider
+                    </div>
+                  )}
                 </div>
               )}
 
