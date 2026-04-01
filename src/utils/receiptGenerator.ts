@@ -97,10 +97,10 @@ export const generateReceiptPDF = async (transaction: Transaction) => {
   pdf.text("Eagle Recharge", w / 2, y + 16, { align: "center" });
   pdf.setFontSize(7);
   pdf.setTextColor(180, 180, 180);
-  pdf.text("Transaction Receipt", w / 2, y + 12, { align: "center" });
+  pdf.text("Transaction Receipt", w / 2, y + 20, { align: "center" });
 
   // Dashed line
-  y = 32;
+  y = 36;
   pdf.setDrawColor(200, 200, 200);
   pdf.setLineDashPattern([1, 1], 0);
   pdf.line(6, y, w - 6, y);
