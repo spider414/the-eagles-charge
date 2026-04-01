@@ -73,12 +73,6 @@ const App = () => {
                   <Route path="/bvn-print" element={<BvnPrint />} />
                   <Route path="/nin-print" element={<NinPrint />} />
                   <Route path="/verification-history" element={<VerificationHistory />} />
-                  <Route path="/tin-registration" element={<TinRegistration />} />
-                  <Route path="/cac-registration" element={<CacRegistration />} />
-                  <Route path="/scuml-registration" element={<ScumlRegistration />} />
-                  <Route path="/ipe-clearance" element={<IpeClearance />} />
-                  <Route path="/business-services" element={<BusinessServices />} />
-                  <Route path="/admin/tin" element={<AdminTin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
