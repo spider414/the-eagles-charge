@@ -1,6 +1,22 @@
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format } from "date-fns";
+import eagleLogo from "@/assets/eagle-logo-receipt.png";
+
+const loadImageAsDataURL = (src: string): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      canvas.getContext("2d")!.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = reject;
+    img.src = src;
+  });
 
 interface Transaction {
   id: string;
@@ -46,14 +62,14 @@ const statusColor = (status: string): [number, number, number] => {
   }
 };
 
-export const generateReceiptPDF = (transaction: Transaction) => {
+export const generateReceiptPDF = async (transaction: Transaction) => {
   const pdf = new jsPDF({ unit: "mm", format: [80, 160] });
   const w = 80;
   let y = 8;
 
   // Header background
   pdf.setFillColor(30, 30, 30);
-  pdf.rect(0, 0, w, 28, "F");
+  pdf.rect(0, 0, w, 32, "F");
 
   // Watermark
   pdf.setTextColor(255, 255, 255);
@@ -66,17 +82,25 @@ export const generateReceiptPDF = (transaction: Transaction) => {
   pdf.text("RECHARGE", w / 2, 62, { align: "center", angle: -20 });
   pdf.restoreGraphicsState();
 
-  // Brand
+  // Logo
+  try {
+    const logoDataURL = await loadImageAsDataURL(eagleLogo);
+    pdf.addImage(logoDataURL, "PNG", (w - 12) / 2, y, 12, 12);
+  } catch {
+    // fallback: no logo
+  }
+
+  // Brand text below logo
   pdf.setTextColor(255, 200, 50);
-  pdf.setFontSize(14);
+  pdf.setFontSize(10);
   pdf.setFont("helvetica", "bold");
-  pdf.text("Eagle Recharge", w / 2, y + 6, { align: "center" });
+  pdf.text("Eagle Recharge", w / 2, y + 16, { align: "center" });
   pdf.setFontSize(7);
   pdf.setTextColor(180, 180, 180);
-  pdf.text("Transaction Receipt", w / 2, y + 12, { align: "center" });
+  pdf.text("Transaction Receipt", w / 2, y + 20, { align: "center" });
 
   // Dashed line
-  y = 32;
+  y = 36;
   pdf.setDrawColor(200, 200, 200);
   pdf.setLineDashPattern([1, 1], 0);
   pdf.line(6, y, w - 6, y);
