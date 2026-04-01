@@ -32,12 +32,6 @@ import Verification from "./pages/Verification";
 import BvnPrint from "./pages/BvnPrint";
 import NinPrint from "./pages/NinPrint";
 import VerificationHistory from "./pages/VerificationHistory";
-import TinRegistration from "./pages/TinRegistration";
-import CacRegistration from "./pages/CacRegistration";
-import ScumlRegistration from "./pages/ScumlRegistration";
-import IpeClearance from "./pages/IpeClearance";
-import BusinessServices from "./pages/BusinessServices";
-import AdminTin from "./pages/AdminTin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 
