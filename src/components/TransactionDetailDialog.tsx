@@ -118,9 +118,9 @@ const TransactionDetailDialog = ({ transaction, open, onOpenChange }: Transactio
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     try {
-      generateReceiptPDF(transaction);
+      await generateReceiptPDF(transaction);
       toast({ title: "Downloaded!", description: "PDF receipt saved to your device" });
     } catch {
       toast({ title: "Error", description: "Failed to generate PDF", variant: "destructive" });
