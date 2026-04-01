@@ -16,7 +16,7 @@ import Data from "./pages/Data";
 import History from "./pages/History";
 import Referrals from "./pages/Referrals";
 import ComingSoon from "./pages/ComingSoon";
-import BusinessRegistration from "./pages/BusinessRegistration";
+
 import Electricity from "./pages/bills/Electricity";
 import CableTV from "./pages/bills/CableTV";
 import Internet from "./pages/bills/Internet";
