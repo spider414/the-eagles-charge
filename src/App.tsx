@@ -16,7 +16,7 @@ import Data from "./pages/Data";
 import History from "./pages/History";
 import Referrals from "./pages/Referrals";
 import ComingSoon from "./pages/ComingSoon";
-import BusinessRegistration from "./pages/BusinessRegistration";
+
 import Electricity from "./pages/bills/Electricity";
 import CableTV from "./pages/bills/CableTV";
 import Internet from "./pages/bills/Internet";
@@ -32,12 +32,6 @@ import Verification from "./pages/Verification";
 import BvnPrint from "./pages/BvnPrint";
 import NinPrint from "./pages/NinPrint";
 import VerificationHistory from "./pages/VerificationHistory";
-import TinRegistration from "./pages/TinRegistration";
-import CacRegistration from "./pages/CacRegistration";
-import ScumlRegistration from "./pages/ScumlRegistration";
-import IpeClearance from "./pages/IpeClearance";
-import BusinessServices from "./pages/BusinessServices";
-import AdminTin from "./pages/AdminTin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 
@@ -63,7 +57,7 @@ const App = () => {
                   <Route path="/history" element={<History />} />
                   <Route path="/referrals" element={<Referrals />} />
                   <Route path="/coming-soon" element={<ComingSoon />} />
-                  <Route path="/business-registration" element={<BusinessRegistration />} />
+                  
                   <Route path="/bills/electricity" element={<Electricity />} />
                   <Route path="/bills/cable" element={<CableTV />} />
                   <Route path="/bills/internet" element={<Internet />} />
@@ -79,12 +73,6 @@ const App = () => {
                   <Route path="/bvn-print" element={<BvnPrint />} />
                   <Route path="/nin-print" element={<NinPrint />} />
                   <Route path="/verification-history" element={<VerificationHistory />} />
-                  <Route path="/tin-registration" element={<TinRegistration />} />
-                  <Route path="/cac-registration" element={<CacRegistration />} />
-                  <Route path="/scuml-registration" element={<ScumlRegistration />} />
-                  <Route path="/ipe-clearance" element={<IpeClearance />} />
-                  <Route path="/business-services" element={<BusinessServices />} />
-                  <Route path="/admin/tin" element={<AdminTin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
