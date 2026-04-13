@@ -28,6 +28,7 @@ import Support from "./pages/Support";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import DeleteAccount from "./pages/DeleteAccount";
+import ExamPin from "./pages/ExamPin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 
@@ -65,6 +66,7 @@ const App = () => {
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
+                  <Route path="/exam-pin" element={<ExamPin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

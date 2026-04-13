@@ -463,6 +463,7 @@ export type Database = {
         | "internet"
         | "wallet_topup"
         | "verification"
+        | "exam_pin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -621,6 +622,7 @@ export const Constants = {
         "internet",
         "wallet_topup",
         "verification",
+        "exam_pin",
       ],
     },
   },

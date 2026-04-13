@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface WalletPaymentMetadata {
-  transaction_type: "airtime" | "data" | "electricity" | "cable_tv" | "internet";
+  transaction_type: "airtime" | "data" | "electricity" | "cable_tv" | "internet" | "exam_pin";
   phone_number?: string;
   network?: string;
   data_plan?: string;
@@ -16,6 +16,9 @@ interface WalletPaymentMetadata {
   cable_plan?: string;
   internet_plan?: string;
   account_number?: string;
+  exam_product_id?: number;
+  exam_quantity?: number;
+  exam_name?: string;
 }
 
 interface WalletPaymentParams {

@@ -45,7 +45,18 @@ interface DataPlansRequest {
   network: string;
 }
 
-type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | DataPlansRequest;
+interface ExamPinProductsRequest {
+  action: "exam_pin_products";
+}
+
+interface ExamPinPurchaseRequest {
+  action: "exam_pin";
+  product_id: number;
+  quantity: number;
+  transaction_id: string;
+}
+
+type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | DataPlansRequest | ExamPinProductsRequest | ExamPinPurchaseRequest;
 
 // CheapDataHub API Configuration - Using new Bearer auth
 const VTU_CONFIG = {
@@ -196,6 +207,30 @@ async function callVtuApiPost(endpoint: string, body: Record<string, string | nu
   try {
     const data = JSON.parse(responseText);
     return data;
+  } catch {
+    throw new Error(`Failed to parse VTU API response: ${responseText.substring(0, 100)}`);
+  }
+}
+
+// GET method for CheapDataHub API with Bearer auth
+async function callVtuApiGet(endpoint: string) {
+  const url = `${VTU_CONFIG.baseUrl}${endpoint}`;
+  console.log(`VTU API GET: ${url}`);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json",
+      "Authorization": `Bearer ${VTU_CONFIG.apiKey}`,
+    },
+  });
+
+  const responseText = await response.text();
+  console.log(`VTU API Response Status: ${response.status}`);
+  console.log(`VTU API Response: ${responseText.substring(0, 500)}`);
+
+  try {
+    return JSON.parse(responseText);
   } catch {
     throw new Error(`Failed to parse VTU API response: ${responseText.substring(0, 100)}`);
   }
@@ -497,6 +532,81 @@ Deno.serve(async (req) => {
           JSON.stringify({ 
             success: false, 
             error: error instanceof Error ? error.message : "Cable TV subscription failed" 
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Fetch Exam PIN Products
+    if (body.action === "exam_pin_products") {
+      try {
+        const result = await callVtuApiGet("/exam-pin/products/");
+        return new Response(
+          JSON.stringify({ success: true, data: result.data || result }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({ success: false, error: error instanceof Error ? error.message : "Failed to fetch exam products" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
+    // Purchase Exam PIN
+    if (body.action === "exam_pin") {
+      const { product_id, quantity, transaction_id } = body;
+
+      if (!product_id || ![1, 2, 5].includes(quantity)) {
+        throw new Error("Invalid product_id or quantity (must be 1, 2, or 5)");
+      }
+
+      console.log(`Processing exam pin: product_id=${product_id} quantity=${quantity}`);
+
+      try {
+        const result = await callVtuApiPost("/exam-pin/purchase/", {
+          product_id,
+          quantity,
+        });
+
+        const isSuccess = result.status === "success" || result.status === "true" || result.success === true;
+
+        await supabase
+          .from("transactions")
+          .update({
+            api_response: result,
+            status: isSuccess ? "completed" : "failed",
+          })
+          .eq("id", transaction_id);
+
+        if (isSuccess) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "Exam PIN purchased successfully!",
+              data: result.data || result,
+            }),
+            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          throw new Error(result.message || result.error || "Exam PIN purchase failed");
+        }
+      } catch (error) {
+        console.error("Exam PIN purchase error:", error);
+
+        await supabase
+          .from("transactions")
+          .update({
+            status: "failed",
+            api_response: { error: error instanceof Error ? error.message : "Unknown error" },
+          })
+          .eq("id", transaction_id);
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : "Exam PIN purchase failed",
           }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );

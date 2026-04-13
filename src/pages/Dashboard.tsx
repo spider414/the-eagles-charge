@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Bell } from "lucide-react";
+import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Bell, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -275,6 +275,18 @@ const Dashboard = () => {
                     <Globe className="h-7 w-7 text-white" />
                   </div>
                   <span className="text-sm font-semibold">Internet</span>
+                </CardContent>
+              </Card>
+            </Link>
+
+            {/* Exam PINs */}
+            <Link to="/exam-pin">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-orange-500 flex items-center justify-center mb-3">
+                    <BookOpen className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Exam PINs</span>
                 </CardContent>
               </Card>
             </Link>
