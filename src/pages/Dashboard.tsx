@@ -279,6 +279,18 @@ const Dashboard = () => {
               </Card>
             </Link>
 
+            {/* Exam PINs */}
+            <Link to="/exam-pin">
+              <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
+                <CardContent className="p-6 flex flex-col items-center text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-orange-500 flex items-center justify-center mb-3">
+                    <BookOpen className="h-7 w-7 text-white" />
+                  </div>
+                  <span className="text-sm font-semibold">Exam PINs</span>
+                </CardContent>
+              </Card>
+            </Link>
+
             {/* Wallet Top-up */}
             <Link to="/wallet/topup">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
