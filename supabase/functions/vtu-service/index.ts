@@ -212,6 +212,30 @@ async function callVtuApiPost(endpoint: string, body: Record<string, string | nu
   }
 }
 
+// GET method for CheapDataHub API with Bearer auth
+async function callVtuApiGet(endpoint: string) {
+  const url = `${VTU_CONFIG.baseUrl}${endpoint}`;
+  console.log(`VTU API GET: ${url}`);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Accept": "application/json",
+      "Authorization": `Bearer ${VTU_CONFIG.apiKey}`,
+    },
+  });
+
+  const responseText = await response.text();
+  console.log(`VTU API Response Status: ${response.status}`);
+  console.log(`VTU API Response: ${responseText.substring(0, 500)}`);
+
+  try {
+    return JSON.parse(responseText);
+  } catch {
+    throw new Error(`Failed to parse VTU API response: ${responseText.substring(0, 100)}`);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
