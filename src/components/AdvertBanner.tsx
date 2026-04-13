@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield, Fingerprint } from "lucide-react";
+import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface Advert {
@@ -35,10 +35,10 @@ const adverts: Advert[] = [
     href: "/airtime",
   },
   {
-    icon: Fingerprint,
-    text: "🔐 NIN & BVN Verification – Fast & reliable from ₦300",
+    icon: Sparkles,
+    text: "🎁 Refer friends and earn bonus rewards!",
     color: "text-teal-400",
-    href: "/verification",
+    href: "/referrals",
   },
   {
     icon: Wifi,

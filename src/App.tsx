@@ -28,10 +28,6 @@ import Support from "./pages/Support";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import DeleteAccount from "./pages/DeleteAccount";
-import Verification from "./pages/Verification";
-import BvnPrint from "./pages/BvnPrint";
-import NinPrint from "./pages/NinPrint";
-import VerificationHistory from "./pages/VerificationHistory";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 
@@ -69,10 +65,6 @@ const App = () => {
                   <Route path="/terms" element={<Terms />} />
                   <Route path="/privacy" element={<Privacy />} />
                   <Route path="/delete-account" element={<DeleteAccount />} />
-                  <Route path="/verification" element={<Verification />} />
-                  <Route path="/bvn-print" element={<BvnPrint />} />
-                  <Route path="/nin-print" element={<NinPrint />} />
-                  <Route path="/verification-history" element={<VerificationHistory />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
