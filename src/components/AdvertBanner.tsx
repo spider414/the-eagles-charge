@@ -35,10 +35,10 @@ const adverts: Advert[] = [
     href: "/airtime",
   },
   {
-    icon: Fingerprint,
-    text: "🔐 NIN & BVN Verification – Fast & reliable from ₦300",
+    icon: Sparkles,
+    text: "🎁 Refer friends and earn bonus rewards!",
     color: "text-teal-400",
-    href: "/verification",
+    href: "/referrals",
   },
   {
     icon: Wifi,
