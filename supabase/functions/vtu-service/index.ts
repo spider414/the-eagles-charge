@@ -45,7 +45,18 @@ interface DataPlansRequest {
   network: string;
 }
 
-type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | DataPlansRequest;
+interface ExamPinProductsRequest {
+  action: "exam_pin_products";
+}
+
+interface ExamPinPurchaseRequest {
+  action: "exam_pin";
+  product_id: number;
+  quantity: number;
+  transaction_id: string;
+}
+
+type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | DataPlansRequest | ExamPinProductsRequest | ExamPinPurchaseRequest;
 
 // CheapDataHub API Configuration - Using new Bearer auth
 const VTU_CONFIG = {
