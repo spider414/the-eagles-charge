@@ -563,10 +563,20 @@ Deno.serve(async (req) => {
           
           vtuResult = await cheapDataHubPost("/cable/purchase/", {
             iuc_number: metadata.cable_smartcard,
-            cable_name: metadata.cable_provider.toUpperCase(), // DSTV, GOTV, STARTIMES
+            cable_name: metadata.cable_provider.toUpperCase(),
             cable_plan: metadata.cable_plan,
           });
           console.log("CheapDataHub Cable TV Response:", JSON.stringify(vtuResult));
+
+        } else if (metadata.transaction_type === "exam_pin" && metadata.exam_product_id) {
+          const qty = metadata.exam_quantity || 1;
+          console.log(`Processing exam PIN via CheapDataHub: product_id=${metadata.exam_product_id} quantity=${qty}`);
+          
+          vtuResult = await cheapDataHubPost("/exam-pin/purchase/", {
+            product_id: metadata.exam_product_id,
+            quantity: qty,
+          });
+          console.log("CheapDataHub Exam PIN Response:", JSON.stringify(vtuResult));
         }
 
         // Check VTU result and update transaction accordingly
