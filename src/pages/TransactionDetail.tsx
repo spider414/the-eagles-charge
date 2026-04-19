@@ -288,6 +288,18 @@ Thank you for using Eagles VTU!
   const moneyIn = isMoneyIn(transaction);
   const isVerification = transaction.transaction_type === "verification";
   const hasSlipData = isVerification && transaction.status === "completed" && transaction.api_response;
+  const isExamPin = transaction.transaction_type === "exam_pin";
+  const examPins = isExamPin ? extractExamPins(transaction.api_response) : [];
+
+  const handleCopyPin = async (pin: string) => {
+    await navigator.clipboard.writeText(pin);
+    toast({ title: "PIN Copied!", description: "Exam PIN copied to clipboard" });
+  };
+
+  const handleCopyAllPins = async () => {
+    await navigator.clipboard.writeText(examPins.join("\n"));
+    toast({ title: "All PINs Copied!", description: `${examPins.length} pin(s) copied to clipboard` });
+  };
 
   return (
     <PageTransition>
