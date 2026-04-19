@@ -56,7 +56,11 @@ interface ExamPinPurchaseRequest {
   transaction_id: string;
 }
 
-type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | DataPlansRequest | ExamPinProductsRequest | ExamPinPurchaseRequest;
+interface ProviderWalletBalanceRequest {
+  action: "provider_wallet_balance";
+}
+
+type RequestBody = AirtimeRequest | DataRequest | ElectricityRequest | CableTVRequest | DataPlansRequest | ExamPinProductsRequest | ExamPinPurchaseRequest | ProviderWalletBalanceRequest;
 
 // CheapDataHub API Configuration - Using new Bearer auth
 const VTU_CONFIG = {
