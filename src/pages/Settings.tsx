@@ -514,6 +514,9 @@ const Settings = () => {
 
       <main className="container py-6 max-w-lg mx-auto space-y-4">
 
+        {/* Admin: Provider wallet balance (renders nothing for non-admins) */}
+        <AdminProviderBalance />
+
         {/* App Settings */}
         <Card>
           <CardHeader className="pb-2">
