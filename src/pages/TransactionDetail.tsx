@@ -110,25 +110,43 @@ const getServiceName = (tx: TransactionData): string => {
   }
 };
 
+// Normalise a single pin string. CheapDataHub returns "serial<=>pin".
+const normalisePinString = (raw: string): string => {
+  const value = String(raw).trim();
+  // Split on common delimiters used by CheapDataHub / other providers
+  const parts = value.split(/<=>|\|\||::|\s*\|\s*/).map((p) => p.trim()).filter(Boolean);
+  if (parts.length === 2) return `Serial: ${parts[0]}  •  PIN: ${parts[1]}`;
+  return value;
+};
+
 // Extract exam pins from transaction api_response
 const extractExamPins = (apiResponse: any): string[] => {
   if (!apiResponse) return [];
   const pins: string[] = [];
   const data = apiResponse.data || apiResponse;
-  const candidates = [data?.pins, data?.pin_list, data?.codes, apiResponse?.pins, apiResponse?.pin_list];
+  // CheapDataHub returns pins under data.delivery.pins
+  const candidates = [
+    data?.delivery?.pins,
+    data?.pins,
+    data?.pin_list,
+    data?.codes,
+    apiResponse?.delivery?.pins,
+    apiResponse?.pins,
+    apiResponse?.pin_list,
+  ];
   for (const c of candidates) {
     if (Array.isArray(c)) {
       c.forEach((item: any) => {
-        if (typeof item === "string") pins.push(item);
-        else if (item?.serial && item?.pin) pins.push(`${item.serial} / ${item.pin}`);
-        else if (item?.pin) pins.push(String(item.pin));
-        else if (item?.code) pins.push(String(item.code));
+        if (typeof item === "string") pins.push(normalisePinString(item));
+        else if (item?.serial && item?.pin) pins.push(`Serial: ${item.serial}  •  PIN: ${item.pin}`);
+        else if (item?.pin) pins.push(normalisePinString(String(item.pin)));
+        else if (item?.code) pins.push(normalisePinString(String(item.code)));
       });
       if (pins.length) return pins;
     }
   }
-  if (data?.pin) pins.push(String(data.pin));
-  if (!pins.length && apiResponse?.pin) pins.push(String(apiResponse.pin));
+  if (data?.pin) pins.push(normalisePinString(String(data.pin)));
+  if (!pins.length && apiResponse?.pin) pins.push(normalisePinString(String(apiResponse.pin)));
   return pins;
 };
 

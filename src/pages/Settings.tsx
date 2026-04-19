@@ -39,6 +39,7 @@ import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
+import AdminProviderBalance from "@/components/AdminProviderBalance";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -512,6 +513,9 @@ const Settings = () => {
       </header>
 
       <main className="container py-6 max-w-lg mx-auto space-y-4">
+
+        {/* Admin: Provider wallet balance (renders nothing for non-admins) */}
+        <AdminProviderBalance />
 
         {/* App Settings */}
         <Card>
