@@ -89,6 +89,7 @@ const getServiceCategory = (tx: TransactionData): string => {
     case "cable_tv": return "Cable TV";
     case "internet": return "Internet";
     case "wallet_topup": return "Wallet";
+    case "exam_pin": return "Exam PIN";
     default: return "Other";
   }
 };
@@ -104,8 +105,31 @@ const getServiceName = (tx: TransactionData): string => {
     case "cable_tv": return `Cable TV${tx.cable_provider ? ` - ${tx.cable_provider.toUpperCase()}` : ""}`;
     case "internet": return "Internet Subscription";
     case "wallet_topup": return "Wallet Top-up";
+    case "exam_pin": return "Exam PIN Purchase";
     default: return tx.transaction_type;
   }
+};
+
+// Extract exam pins from transaction api_response
+const extractExamPins = (apiResponse: any): string[] => {
+  if (!apiResponse) return [];
+  const pins: string[] = [];
+  const data = apiResponse.data || apiResponse;
+  const candidates = [data?.pins, data?.pin_list, data?.codes, apiResponse?.pins, apiResponse?.pin_list];
+  for (const c of candidates) {
+    if (Array.isArray(c)) {
+      c.forEach((item: any) => {
+        if (typeof item === "string") pins.push(item);
+        else if (item?.serial && item?.pin) pins.push(`${item.serial} / ${item.pin}`);
+        else if (item?.pin) pins.push(String(item.pin));
+        else if (item?.code) pins.push(String(item.code));
+      });
+      if (pins.length) return pins;
+    }
+  }
+  if (data?.pin) pins.push(String(data.pin));
+  if (!pins.length && apiResponse?.pin) pins.push(String(apiResponse.pin));
+  return pins;
 };
 
 const getTransactionIcon = (type: string) => {
