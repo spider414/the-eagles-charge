@@ -39,6 +39,7 @@ import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
+import AdminProviderBalance from "@/components/AdminProviderBalance";
 
 interface SettingItem {
   icon: React.ElementType;
