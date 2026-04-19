@@ -27,6 +27,8 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownLeft,
+  GraduationCap,
+  KeyRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,6 +89,7 @@ const getServiceCategory = (tx: TransactionData): string => {
     case "cable_tv": return "Cable TV";
     case "internet": return "Internet";
     case "wallet_topup": return "Wallet";
+    case "exam_pin": return "Exam PIN";
     default: return "Other";
   }
 };
@@ -102,8 +105,31 @@ const getServiceName = (tx: TransactionData): string => {
     case "cable_tv": return `Cable TV${tx.cable_provider ? ` - ${tx.cable_provider.toUpperCase()}` : ""}`;
     case "internet": return "Internet Subscription";
     case "wallet_topup": return "Wallet Top-up";
+    case "exam_pin": return "Exam PIN Purchase";
     default: return tx.transaction_type;
   }
+};
+
+// Extract exam pins from transaction api_response
+const extractExamPins = (apiResponse: any): string[] => {
+  if (!apiResponse) return [];
+  const pins: string[] = [];
+  const data = apiResponse.data || apiResponse;
+  const candidates = [data?.pins, data?.pin_list, data?.codes, apiResponse?.pins, apiResponse?.pin_list];
+  for (const c of candidates) {
+    if (Array.isArray(c)) {
+      c.forEach((item: any) => {
+        if (typeof item === "string") pins.push(item);
+        else if (item?.serial && item?.pin) pins.push(`${item.serial} / ${item.pin}`);
+        else if (item?.pin) pins.push(String(item.pin));
+        else if (item?.code) pins.push(String(item.code));
+      });
+      if (pins.length) return pins;
+    }
+  }
+  if (data?.pin) pins.push(String(data.pin));
+  if (!pins.length && apiResponse?.pin) pins.push(String(apiResponse.pin));
+  return pins;
 };
 
 const getTransactionIcon = (type: string) => {
@@ -115,6 +141,7 @@ const getTransactionIcon = (type: string) => {
     case "internet": return Globe;
     case "wallet_topup": return Wallet;
     case "verification": return ShieldCheck;
+    case "exam_pin": return GraduationCap;
     default: return Receipt;
   }
 };
@@ -128,6 +155,7 @@ const getIconColor = (type: string) => {
     case "internet": return "bg-violet-500 text-white";
     case "wallet_topup": return "bg-green-500 text-white";
     case "verification": return "bg-primary text-primary-foreground";
+    case "exam_pin": return "bg-orange-500 text-white";
     default: return "bg-muted text-muted-foreground";
   }
 };
@@ -260,6 +288,18 @@ Thank you for using Eagles VTU!
   const moneyIn = isMoneyIn(transaction);
   const isVerification = transaction.transaction_type === "verification";
   const hasSlipData = isVerification && transaction.status === "completed" && transaction.api_response;
+  const isExamPin = transaction.transaction_type === "exam_pin";
+  const examPins = isExamPin ? extractExamPins(transaction.api_response) : [];
+
+  const handleCopyPin = async (pin: string) => {
+    await navigator.clipboard.writeText(pin);
+    toast({ title: "PIN Copied!", description: "Exam PIN copied to clipboard" });
+  };
+
+  const handleCopyAllPins = async () => {
+    await navigator.clipboard.writeText(examPins.join("\n"));
+    toast({ title: "All PINs Copied!", description: `${examPins.length} pin(s) copied to clipboard` });
+  };
 
   return (
     <PageTransition>
@@ -453,6 +493,50 @@ Thank you for using Eagles VTU!
                   </div>
                 )}
               </CardContent>
+            </Card>
+          )}
+
+          {/* Exam PINs (only for exam_pin transactions) */}
+          {isExamPin && (
+            <Card className="border-orange-500/30">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-orange-500" />
+                    Purchased Exam PINs
+                  </CardTitle>
+                  {examPins.length > 1 && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyAllPins}>
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy All
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {examPins.length > 0
+                    ? "Tap any PIN to copy it to your clipboard."
+                    : transaction.status === "completed"
+                      ? "PIN data not available. Contact support if you didn't receive your PINs."
+                      : "PINs will appear here once your purchase is completed."}
+                </p>
+              </CardHeader>
+              {examPins.length > 0 && (
+                <CardContent className="space-y-2">
+                  {examPins.map((pin, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleCopyPin(pin)}
+                      className="w-full flex items-center justify-between gap-2 bg-muted/50 hover:bg-muted rounded-lg p-3 border border-border/50 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <KeyRound className="h-4 w-4 text-orange-500 shrink-0" />
+                        <code className="text-sm font-mono break-all text-foreground">{pin}</code>
+                      </div>
+                      <Copy className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </button>
+                  ))}
+                </CardContent>
+              )}
             </Card>
           )}
 

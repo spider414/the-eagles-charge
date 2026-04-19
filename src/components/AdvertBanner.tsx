@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield } from "lucide-react";
+import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield, GraduationCap } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface Advert {
@@ -57,6 +57,12 @@ const adverts: Advert[] = [
     text: "📺 Cable TV subscriptions – DStv, GOtv, Startimes",
     color: "text-pink-400",
     href: "/bills/cable",
+  },
+  {
+    icon: GraduationCap,
+    text: "🎓 Buy WAEC, NECO & NABTEB exam PINs instantly!",
+    color: "text-orange-400",
+    href: "/exam-pin",
   },
   {
     icon: Shield,
