@@ -617,6 +617,56 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Provider wallet balance (admin only)
+    if (body.action === "provider_wallet_balance") {
+      const userId = (claimsData.claims as any).sub as string | undefined;
+      if (!userId) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Use service-role client to safely check admin role bypassing RLS
+      const adminClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      const { data: isAdminData, error: roleError } = await adminClient.rpc("has_role", {
+        _user_id: userId,
+        _role: "admin",
+      });
+
+      if (roleError || !isAdminData) {
+        return new Response(
+          JSON.stringify({ success: false, error: "Admin access required" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      try {
+        const result = await callVtuApiGet("/wallet/balance/");
+        const balance = Number(result?.data?.balance ?? result?.balance ?? 0);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            balance,
+            message: result?.message || "Wallet balance fetched",
+            raw: result,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (error) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to fetch wallet balance",
+          }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     throw new Error("Invalid action");
   } catch (error) {
     console.error("VTU service error:", error);
