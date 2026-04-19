@@ -496,6 +496,50 @@ Thank you for using Eagles VTU!
             </Card>
           )}
 
+          {/* Exam PINs (only for exam_pin transactions) */}
+          {isExamPin && (
+            <Card className="border-orange-500/30">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-orange-500" />
+                    Purchased Exam PINs
+                  </CardTitle>
+                  {examPins.length > 1 && (
+                    <Button variant="outline" size="sm" className="h-7 text-xs" onClick={handleCopyAllPins}>
+                      <Copy className="h-3 w-3 mr-1" />
+                      Copy All
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {examPins.length > 0
+                    ? "Tap any PIN to copy it to your clipboard."
+                    : transaction.status === "completed"
+                      ? "PIN data not available. Contact support if you didn't receive your PINs."
+                      : "PINs will appear here once your purchase is completed."}
+                </p>
+              </CardHeader>
+              {examPins.length > 0 && (
+                <CardContent className="space-y-2">
+                  {examPins.map((pin, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleCopyPin(pin)}
+                      className="w-full flex items-center justify-between gap-2 bg-muted/50 hover:bg-muted rounded-lg p-3 border border-border/50 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <KeyRound className="h-4 w-4 text-orange-500 shrink-0" />
+                        <code className="text-sm font-mono break-all text-foreground">{pin}</code>
+                      </div>
+                      <Copy className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </button>
+                  ))}
+                </CardContent>
+              )}
+            </Card>
+          )}
+
           {/* Current Wallet Balance */}
           <Card className="bg-muted/30">
             <CardContent className="p-5">
