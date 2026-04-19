@@ -117,6 +117,7 @@ const getTransactionIcon = (type: string) => {
     case "internet": return Globe;
     case "wallet_topup": return Wallet;
     case "verification": return ShieldCheck;
+    case "exam_pin": return GraduationCap;
     default: return Receipt;
   }
 };
@@ -130,6 +131,7 @@ const getIconColor = (type: string) => {
     case "internet": return "bg-violet-500 text-white";
     case "wallet_topup": return "bg-green-500 text-white";
     case "verification": return "bg-primary text-primary-foreground";
+    case "exam_pin": return "bg-orange-500 text-white";
     default: return "bg-muted text-muted-foreground";
   }
 };
