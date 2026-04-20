@@ -122,7 +122,7 @@ const AdminProviderBalance = () => {
         )}
 
         <Button
-          onClick={fetchBalance}
+          onClick={() => fetchBalance(false)}
           disabled={loading}
           variant="outline"
           size="sm"
