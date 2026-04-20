@@ -43,7 +43,7 @@ const AdminProviderBalance = () => {
     };
   }, [user]);
 
-  const fetchBalance = async () => {
+  const fetchBalance = async (silent = false) => {
     setLoading(true);
     setError(null);
     try {
@@ -57,15 +57,26 @@ const AdminProviderBalance = () => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       setError(msg);
-      toast({
-        title: "Could not fetch balance",
-        description: msg,
-        variant: "destructive",
-      });
+      if (!silent) {
+        toast({
+          title: "Could not fetch balance",
+          description: msg,
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Auto-refresh every 60s while admin widget is mounted
+  useEffect(() => {
+    if (isAdmin !== true) return;
+    fetchBalance(true);
+    const interval = setInterval(() => fetchBalance(true), 60_000);
+    return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin]);
 
   if (isAdmin !== true) return null;
 
@@ -111,7 +122,7 @@ const AdminProviderBalance = () => {
         )}
 
         <Button
-          onClick={fetchBalance}
+          onClick={() => fetchBalance(false)}
           disabled={loading}
           variant="outline"
           size="sm"
