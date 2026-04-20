@@ -647,6 +647,43 @@ Deno.serve(async (req) => {
       try {
         const result = await callVtuApiGet("/wallet/balance/");
         const balance = Number(result?.data?.balance ?? result?.balance ?? 0);
+
+        // Low-balance alert: notify all admins via send-notification (30-min cooldown)
+        try {
+          if (balance < 5000) {
+            const cooldownMs = 30 * 60 * 1000;
+            const sinceIso = new Date(Date.now() - cooldownMs).toISOString();
+            const { data: recent } = await adminClient
+              .from("notifications")
+              .select("id")
+              .eq("type", "admin_low_balance")
+              .gte("created_at", sinceIso)
+              .limit(1);
+
+            if (!recent || recent.length === 0) {
+              const { data: admins } = await adminClient
+                .from("user_roles")
+                .select("user_id")
+                .eq("role", "admin");
+              const adminIds = (admins || []).map((a: any) => a.user_id).filter(Boolean);
+              if (adminIds.length > 0) {
+                await adminClient.functions.invoke("send-notification", {
+                  body: {
+                    action: "send",
+                    user_ids: adminIds,
+                    title: "⚠️ Low CheapDataHub balance",
+                    body: `Reseller wallet is ₦${balance.toLocaleString()}. Top up to avoid failed transactions.`,
+                    type: "admin_low_balance",
+                    data: { balance },
+                  },
+                });
+              }
+            }
+          }
+        } catch (notifyErr) {
+          console.error("Low-balance notify error:", notifyErr);
+        }
+
         return new Response(
           JSON.stringify({
             success: true,
