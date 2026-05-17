@@ -121,9 +121,20 @@ const Auth = () => {
     setIsLoading(false);
 
     if (error || data?.error) {
+      let description = data?.error || "Failed to send OTP. Please try again.";
+      // FunctionsHttpError: response body isn't on `data`, parse it from error context
+      const ctx = (error as any)?.context;
+      if (ctx && typeof ctx.json === "function") {
+        try {
+          const body = await ctx.json();
+          if (body?.error) description = body.error;
+        } catch {
+          // ignore parse errors
+        }
+      }
       toast({
         title: "Error",
-        description: data?.error || "Failed to send OTP. Please try again.",
+        description,
         variant: "destructive",
       });
       return false;
