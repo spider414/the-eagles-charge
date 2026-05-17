@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
+import { ToastAction } from "@/components/ui/toast";
 
 const phoneSchema = z.string()
   .min(10, "Phone number must be at least 10 digits")
@@ -115,23 +116,74 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    const { data, error } = await supabase.functions.invoke("send-otp", {
-      body: { phone_number: phone, purpose },
-    });
+    let data: any = null;
+    let error: any = null;
+    try {
+      const res = await supabase.functions.invoke("send-otp", {
+        body: { phone_number: phone, purpose },
+      });
+      data = res.data;
+      error = res.error;
+    } catch (networkErr) {
+      setIsLoading(false);
+      toast({
+        title: "Network Error",
+        description: "Unable to reach our servers. Check your internet connection and try again.",
+        variant: "destructive",
+      });
+      return false;
+    }
     setIsLoading(false);
 
     if (error || data?.error) {
       let description = data?.error || "Failed to send OTP. Please try again.";
-      // FunctionsHttpError: response body isn't on `data`, parse it from error context
+      let status: number | undefined;
       const ctx = (error as any)?.context;
-      if (ctx && typeof ctx.json === "function") {
-        try {
-          const body = await ctx.json();
-          if (body?.error) description = body.error;
-        } catch {
-          // ignore parse errors
+      if (ctx) {
+        status = ctx.status;
+        if (typeof ctx.json === "function") {
+          try {
+            const body = await ctx.json();
+            if (body?.error) description = body.error;
+          } catch {
+            // ignore parse errors
+          }
         }
       }
+
+      // Already registered → offer a quick path to the login screen
+      if (purpose === "signup" && /already registered/i.test(description)) {
+        toast({
+          title: "Phone Already Registered",
+          description: "This phone number already has an account. Please log in instead.",
+          variant: "destructive",
+          action: (
+            <ToastAction altText="Go to login" onClick={() => { resetState(); setStep("login"); }}>
+              Go to Login
+            </ToastAction>
+          ),
+        });
+        return false;
+      }
+
+      if (status === 429) {
+        toast({
+          title: "Too Many Requests",
+          description,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      if (status && status >= 500) {
+        toast({
+          title: "Server Error",
+          description: "Something went wrong on our end. Please try again in a moment.",
+          variant: "destructive",
+        });
+        return false;
+      }
+
       toast({
         title: "Error",
         description,
