@@ -402,32 +402,58 @@ const Auth = () => {
     }
 
     setIsLoading(true);
-    
-    // Use server-side endpoint to prevent account enumeration
-    // This endpoint returns generic responses to prevent revealing account existence
-    const { data, error } = await supabase.functions.invoke("get-security-question", {
-      body: { phone_number: forgotPhone },
-    });
-    
+
+    let data: any = null;
+    let error: any = null;
+    try {
+      const res = await supabase.functions.invoke("get-security-question", {
+        body: { phone_number: forgotPhone },
+      });
+      data = res.data;
+      error = res.error;
+    } catch {
+      setIsLoading(false);
+      toast({
+        title: "Network Error",
+        description: "Unable to reach our servers. Check your internet connection and try again.",
+        variant: "destructive",
+      });
+      return;
+    }
     setIsLoading(false);
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Unable to check account. Please try again.",
-        variant: "destructive",
-      });
+      const ctx = (error as any)?.context;
+      const status: number | undefined = ctx?.status;
+      let description = "Unable to check account. Please try again.";
+      if (ctx && typeof ctx.json === "function") {
+        try {
+          const body = await ctx.json();
+          if (body?.error) description = body.error;
+        } catch { /* ignore */ }
+      }
+      if (status === 429) {
+        toast({ title: "Too Many Requests", description, variant: "destructive" });
+      } else if (status && status >= 500) {
+        toast({
+          title: "Server Error",
+          description: "Something went wrong on our end. Please try again in a moment.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Error", description, variant: "destructive" });
+      }
       return;
     }
 
     if (data?.has_security_question && data?.security_question) {
       setForgotSecurityQuestion(data.security_question);
+      setForgotSecurityAnswer("");
       setStep("forgot-security");
     } else {
-      // Generic message that doesn't reveal if account exists
       toast({
-        title: "Use OTP Verification",
-        description: "Please use OTP verification to reset your password.",
+        title: "Security Question Not Available",
+        description: "No security question is set for this account. Please use OTP verification instead.",
         variant: "destructive",
       });
     }
@@ -510,10 +536,19 @@ const Auth = () => {
   };
 
   const handleSecurityReset = async () => {
-    if (!forgotSecurityAnswer) {
+    const trimmed = forgotSecurityAnswer.trim();
+    if (!trimmed) {
       toast({
         title: "Answer Required",
         description: "Please enter your security answer.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (trimmed.length < 2) {
+      toast({
+        title: "Answer Too Short",
+        description: "Your answer must be at least 2 characters.",
         variant: "destructive",
       });
       return;
@@ -982,9 +1017,19 @@ const Auth = () => {
                   variant="outline" 
                   onClick={handleCheckSecurityQuestion} 
                   className="w-full" 
-                  disabled={isLoading}
+                  disabled={isLoading || !forgotPhone.trim()}
                 >
-                  {isLoading ? "Checking..." : "Use Security Question"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Checking account...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="mr-2 h-4 w-4" />
+                      Use Security Question
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -1059,8 +1104,32 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <Button onClick={handleSecurityReset} className="w-full" disabled={isLoading}>
-                  {isLoading ? "Verifying..." : "Continue"}
+                <Button
+                  onClick={handleSecurityReset}
+                  className="w-full"
+                  disabled={isLoading || forgotSecurityAnswer.trim().length < 2}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => {
+                    setForgotSecurityAnswer("");
+                    setStep("forgot-phone");
+                  }}
+                >
+                  Use OTP Instead
                 </Button>
               </div>
             </CardContent>
