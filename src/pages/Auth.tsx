@@ -1017,9 +1017,19 @@ const Auth = () => {
                   variant="outline" 
                   onClick={handleCheckSecurityQuestion} 
                   className="w-full" 
-                  disabled={isLoading}
+                  disabled={isLoading || !forgotPhone.trim()}
                 >
-                  {isLoading ? "Checking..." : "Use Security Question"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Checking account...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="mr-2 h-4 w-4" />
+                      Use Security Question
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -1094,8 +1104,32 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <Button onClick={handleSecurityReset} className="w-full" disabled={isLoading}>
-                  {isLoading ? "Verifying..." : "Continue"}
+                <Button
+                  onClick={handleSecurityReset}
+                  className="w-full"
+                  disabled={isLoading || forgotSecurityAnswer.trim().length < 2}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Verifying...
+                    </>
+                  ) : (
+                    "Continue"
+                  )}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  disabled={isLoading}
+                  onClick={() => {
+                    setForgotSecurityAnswer("");
+                    setStep("forgot-phone");
+                  }}
+                >
+                  Use OTP Instead
                 </Button>
               </div>
             </CardContent>
