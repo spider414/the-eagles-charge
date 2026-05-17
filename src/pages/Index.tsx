@@ -72,7 +72,6 @@ const Index = () => {
       </main>
 
       <Footer />
-      <PWAInstallPrompt />
     </div>
   );
 };
