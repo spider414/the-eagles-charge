@@ -577,12 +577,15 @@ Deno.serve(async (req) => {
           console.log("CheapDataHub Electricity Response:", JSON.stringify(vtuResult));
           
         } else if (metadata.transaction_type === "cable_tv" && metadata.cable_smartcard && metadata.cable_provider && metadata.cable_plan) {
-          console.log(`Processing cable TV via CheapDataHub: ${metadata.cable_provider} ${metadata.cable_plan} for ${metadata.cable_smartcard}`);
+          const planId = parseInt(metadata.cable_plan, 10);
+          if (isNaN(planId)) {
+            throw new Error(`Invalid cable plan ID: ${metadata.cable_plan}`);
+          }
+          console.log(`Processing cable TV via CheapDataHub: plan_id=${planId} for ${metadata.cable_smartcard}`);
           
           vtuResult = await cheapDataHubPost("/cable/purchase/", {
-            iuc_number: metadata.cable_smartcard,
-            cable_name: metadata.cable_provider.toUpperCase(),
-            cable_plan: metadata.cable_plan,
+            plan_id: planId,
+            cardnumber: metadata.cable_smartcard,
           });
           console.log("CheapDataHub Cable TV Response:", JSON.stringify(vtuResult));
 
