@@ -97,7 +97,7 @@ const CABLE_PROVIDER_IDS: Record<string, number> = {
   startimes: 3,
 };
 
-// Hardcoded data plans with bundle IDs
+// Hardcoded data plans with bundle IDs (synced with CheapDataHub official plan IDs)
 const DATA_PLANS: Record<string, Array<{
   id: string;
   bundle_id: number;
@@ -108,62 +108,63 @@ const DATA_PLANS: Record<string, Array<{
 }>> = {
   mtn: [
     { id: "43", bundle_id: 43, name: "110MB - 1 Day", size: "110MB", price: 99, validity: "1 Day" },
-    { id: "44", bundle_id: 44, name: "500MB - 30 Days", size: "500MB", price: 385, validity: "30 Days" },
-    { id: "45", bundle_id: 45, name: "1GB - 7 Days", size: "1GB", price: 455, validity: "7 Days" },
-    { id: "46", bundle_id: 46, name: "1GB - 30 Days", size: "1GB", price: 560, validity: "30 Days" },
-    { id: "47", bundle_id: 47, name: "2GB - 7 Days", size: "2GB", price: 930, validity: "7 Days" },
+    { id: "74", bundle_id: 74, name: "230MB - 1 Day", size: "230MB", price: 200, validity: "1 Day" },
+    { id: "76", bundle_id: 76, name: "500MB SME - 2 Days", size: "500MB", price: 250, validity: "2 Days" },
+    { id: "78", bundle_id: 78, name: "1GB SME - 1 Day", size: "1GB", price: 280, validity: "1 Day" },
+    { id: "44", bundle_id: 44, name: "500MB SME - 30 Days", size: "500MB", price: 350, validity: "30 Days" },
+    { id: "77", bundle_id: 77, name: "1GB SME - 2 Days", size: "1GB", price: 399, validity: "2 Days" },
+    { id: "45", bundle_id: 45, name: "1GB SME - 7 Days", size: "1GB", price: 450, validity: "7 Days" },
+    { id: "46", bundle_id: 46, name: "1GB SME - 30 Days", size: "1GB", price: 570, validity: "30 Days" },
+    { id: "79", bundle_id: 79, name: "2.5GB SME - 1 Day", size: "2.5GB", price: 600, validity: "1 Day" },
+    { id: "71", bundle_id: 71, name: "2GB Gifting - 7 Days", size: "2GB", price: 900, validity: "7 Days" },
     { id: "27", bundle_id: 27, name: "2.5GB - 2 Days", size: "2.5GB", price: 900, validity: "2 Days" },
+    { id: "47", bundle_id: 47, name: "2GB SME - 7 Days", size: "2GB", price: 930, validity: "7 Days" },
     { id: "60", bundle_id: 60, name: "3.5GB - 1 Day", size: "3.5GB", price: 980, validity: "1 Day" },
-    { id: "48", bundle_id: 48, name: "2GB - 30 Days", size: "2GB", price: 1150, validity: "30 Days" },
+    { id: "48", bundle_id: 48, name: "2GB SME - 30 Days", size: "2GB", price: 1150, validity: "30 Days" },
     { id: "61", bundle_id: 61, name: "4GB - 2 Days", size: "4GB", price: 1175, validity: "2 Days" },
-    { id: "49", bundle_id: 49, name: "3GB - 30 Days", size: "3GB", price: 1370, validity: "30 Days" },
-    { id: "50", bundle_id: 50, name: "5GB - 30 Days", size: "5GB", price: 2050, validity: "30 Days" },
-    { id: "53", bundle_id: 53, name: "6GB - 7 Days", size: "6GB", price: 2495, validity: "7 Days" },
-    { id: "55", bundle_id: 55, name: "11GB - 7 Days", size: "11GB", price: 3430, validity: "7 Days" },
-    { id: "33", bundle_id: 33, name: "7GB - 30 Days", size: "7GB", price: 3499, validity: "30 Days" },
-    { id: "57", bundle_id: 57, name: "36GB - 30 Days", size: "36GB", price: 10800, validity: "30 Days" },
-    { id: "51", bundle_id: 51, name: "75GB - 30 Days", size: "75GB", price: 17990, validity: "30 Days" },
-    { id: "56", bundle_id: 56, name: "165GB - 30 Days", size: "165GB", price: 34300, validity: "30 Days" },
+    { id: "80", bundle_id: 80, name: "5GB Corporate Gifting - 14 Days", size: "5GB", price: 1299, validity: "14 Days" },
+    { id: "49", bundle_id: 49, name: "3GB SME - 30 Days", size: "3GB", price: 1370, validity: "30 Days" },
+    { id: "50", bundle_id: 50, name: "5GB SME - 30 Days", size: "5GB", price: 2050, validity: "30 Days" },
+    { id: "53", bundle_id: 53, name: "6GB Gifting - 7 Days", size: "6GB", price: 2495, validity: "7 Days" },
+    { id: "55", bundle_id: 55, name: "11GB Gifting - 7 Days", size: "11GB", price: 3430, validity: "7 Days" },
+    { id: "33", bundle_id: 33, name: "7GB Gifting - 30 Days", size: "7GB", price: 3499, validity: "30 Days" },
+    { id: "67", bundle_id: 67, name: "10GB Gifting - 30 Days", size: "10GB", price: 4470, validity: "30 Days" },
+    { id: "57", bundle_id: 57, name: "36GB Gifting - 30 Days", size: "36GB", price: 10800, validity: "30 Days" },
+    { id: "51", bundle_id: 51, name: "75GB SME - 30 Days", size: "75GB", price: 17990, validity: "30 Days" },
   ],
   glo: [
-    { id: "42", bundle_id: 42, name: "200MB - 1 Day", size: "200MB", price: 89, validity: "1 Day" },
-    { id: "35", bundle_id: 35, name: "500MB - 30 Days", size: "500MB", price: 225, validity: "30 Days" },
-    { id: "36", bundle_id: 36, name: "1GB - 30 Days", size: "1GB", price: 425, validity: "30 Days" },
-    { id: "41", bundle_id: 41, name: "1GB - 14 Days", size: "1GB", price: 485, validity: "14 Days" },
-    { id: "40", bundle_id: 40, name: "2GB - 30 Days", size: "2GB", price: 840, validity: "30 Days" },
-    { id: "37", bundle_id: 37, name: "3GB - 30 Days", size: "3GB", price: 1290, validity: "30 Days" },
-    { id: "54", bundle_id: 54, name: "5GB - 7 Days", size: "5GB", price: 1690, validity: "7 Days" },
-    { id: "38", bundle_id: 38, name: "5GB - 30 Days", size: "5GB", price: 2190, validity: "30 Days" },
-    { id: "39", bundle_id: 39, name: "10GB - 30 Days", size: "10GB", price: 4390, validity: "30 Days" },
-    { id: "59", bundle_id: 59, name: "20.5GB - 30 Days", size: "20.5GB", price: 5300, validity: "30 Days" },
-    { id: "58", bundle_id: 58, name: "107GB - 30 Days", size: "107GB", price: 19300, validity: "30 Days" },
+    { id: "42", bundle_id: 42, name: "200MB Corporate Gifting - 1 Day", size: "200MB", price: 92, validity: "1 Day" },
+    { id: "35", bundle_id: 35, name: "500MB Corporate Gifting - 30 Days", size: "500MB", price: 225, validity: "30 Days" },
+    { id: "68", bundle_id: 68, name: "1GB Corporate Gifting - 3 Days", size: "1GB", price: 300, validity: "3 Days" },
+    { id: "36", bundle_id: 36, name: "1GB Corporate Gifting - 30 Days", size: "1GB", price: 425, validity: "30 Days" },
+    { id: "41", bundle_id: 41, name: "1GB Gifting - 14 Days", size: "1GB", price: 485, validity: "14 Days" },
+    { id: "40", bundle_id: 40, name: "2GB Corporate Gifting - 30 Days", size: "2GB", price: 850, validity: "30 Days" },
+    { id: "37", bundle_id: 37, name: "3GB Corporate Gifting - 30 Days", size: "3GB", price: 1300, validity: "30 Days" },
+    { id: "54", bundle_id: 54, name: "5GB Corporate Gifting - 7 Days", size: "5GB", price: 1699, validity: "7 Days" },
+    { id: "38", bundle_id: 38, name: "5GB Corporate Gifting - 30 Days", size: "5GB", price: 2250, validity: "30 Days" },
+    { id: "39", bundle_id: 39, name: "10GB Corporate Gifting - 30 Days", size: "10GB", price: 4390, validity: "30 Days" },
+    { id: "59", bundle_id: 59, name: "20.5GB Gifting - 30 Days", size: "20.5GB", price: 5300, validity: "30 Days" },
+    { id: "58", bundle_id: 58, name: "107GB Gifting - 30 Days", size: "107GB", price: 19300, validity: "30 Days" },
   ],
   airtel: [
-    { id: "13", bundle_id: 13, name: "500MB - 7 Days", size: "500MB", price: 490, validity: "7 Days" },
-    { id: "14", bundle_id: 14, name: "1.5GB - 2 Days", size: "1.5GB", price: 599, validity: "2 Days" },
-    { id: "15", bundle_id: 15, name: "1GB - 7 Days", size: "1GB", price: 785, validity: "7 Days" },
-    { id: "17", bundle_id: 17, name: "2GB - 30 Days", size: "2GB", price: 1470, validity: "30 Days" },
-    { id: "52", bundle_id: 52, name: "5GB - 7 Days", size: "5GB", price: 1570, validity: "7 Days" },
-    { id: "18", bundle_id: 18, name: "3GB - 30 Days", size: "3GB", price: 1960, validity: "30 Days" },
-    { id: "22", bundle_id: 22, name: "6GB - 7 Days", size: "6GB", price: 2455, validity: "7 Days" },
-    { id: "19", bundle_id: 19, name: "4GB - 30 Days", size: "4GB", price: 2570, validity: "30 Days" },
-    { id: "20", bundle_id: 20, name: "8GB - 30 Days", size: "8GB", price: 2999, validity: "30 Days" },
-    { id: "21", bundle_id: 21, name: "10GB - 30 Days", size: "10GB", price: 4070, validity: "30 Days" },
+    { id: "70", bundle_id: 70, name: "1GB Social Bundle Gifting - 3 Days", size: "1GB", price: 295, validity: "3 Days" },
+    { id: "13", bundle_id: 13, name: "500MB Gifting - 7 Days", size: "500MB", price: 490, validity: "7 Days" },
+    { id: "69", bundle_id: 69, name: "1.5GB Gifting - 1 Day", size: "1.5GB", price: 500, validity: "1 Day" },
+    { id: "66", bundle_id: 66, name: "1.5GB Gifting - 2 Days", size: "1.5GB", price: 599, validity: "2 Days" },
+    { id: "15", bundle_id: 15, name: "1GB Gifting - 7 Days", size: "1GB", price: 785, validity: "7 Days" },
+    { id: "17", bundle_id: 17, name: "2GB Gifting - 30 Days", size: "2GB", price: 1470, validity: "30 Days" },
+    { id: "52", bundle_id: 52, name: "5GB Gifting - 7 Days", size: "5GB", price: 1570, validity: "7 Days" },
+    { id: "18", bundle_id: 18, name: "3GB Gifting - 30 Days", size: "3GB", price: 1960, validity: "30 Days" },
+    { id: "22", bundle_id: 22, name: "6GB SME - 7 Days", size: "6GB", price: 2455, validity: "7 Days" },
+    { id: "19", bundle_id: 19, name: "4GB Gifting - 30 Days", size: "4GB", price: 2570, validity: "30 Days" },
+    { id: "20", bundle_id: 20, name: "8GB Gifting - 30 Days", size: "8GB", price: 2999, validity: "30 Days" },
+    { id: "21", bundle_id: 21, name: "10GB Gifting - 30 Days", size: "10GB", price: 4070, validity: "30 Days" },
   ],
-  "9mobile": [
-    // 9mobile plans - using estimated bundle IDs based on pattern
-    { id: "70", bundle_id: 70, name: "500MB - 30 Days", size: "500MB", price: 450, validity: "30 Days" },
-    { id: "71", bundle_id: 71, name: "1GB - 30 Days", size: "1GB", price: 800, validity: "30 Days" },
-    { id: "72", bundle_id: 72, name: "1.5GB - 30 Days", size: "1.5GB", price: 1000, validity: "30 Days" },
-    { id: "73", bundle_id: 73, name: "2GB - 30 Days", size: "2GB", price: 1200, validity: "30 Days" },
-    { id: "74", bundle_id: 74, name: "3GB - 30 Days", size: "3GB", price: 1500, validity: "30 Days" },
-    { id: "75", bundle_id: 75, name: "4.5GB - 30 Days", size: "4.5GB", price: 2000, validity: "30 Days" },
-    { id: "76", bundle_id: 76, name: "11GB - 30 Days", size: "11GB", price: 4000, validity: "30 Days" },
-    { id: "77", bundle_id: 77, name: "15GB - 30 Days", size: "15GB", price: 5000, validity: "30 Days" },
-  ],
+  // 9mobile plans are currently unavailable on CheapDataHub - check official plan IDs page for updates
+  "9mobile": [],
 };
 
-// Cable TV plans with bundle IDs
+// Cable TV plans with bundle IDs (synced with CheapDataHub official plan IDs)
 const CABLE_PLANS: Record<string, Array<{
   id: string;
   bundle_id: number;
@@ -172,12 +173,33 @@ const CABLE_PLANS: Record<string, Array<{
 }>> = {
   dstv: [
     { id: "3", bundle_id: 3, name: "DStv Padi", price: 4400 },
+    { id: "6", bundle_id: 6, name: "DStv Yanga", price: 6000 },
+    { id: "7", bundle_id: 7, name: "DStv Confam", price: 11000 },
+    { id: "8", bundle_id: 8, name: "DStv Compact", price: 19000 },
+    { id: "9", bundle_id: 9, name: "DStv Compact Plus", price: 30000 },
+    { id: "10", bundle_id: 10, name: "DStv Premium", price: 44500 },
   ],
   gotv: [
     { id: "4", bundle_id: 4, name: "GOtv Smallie Monthly", price: 1900 },
+    { id: "11", bundle_id: 11, name: "GOtv Jinja", price: 3900 },
+    { id: "12", bundle_id: 12, name: "GOtv Jolli", price: 5800 },
+    { id: "13", bundle_id: 13, name: "GOtv Max", price: 8500 },
+    { id: "14", bundle_id: 14, name: "GOtv Supa", price: 11400 },
+    { id: "15", bundle_id: 15, name: "GOtv Supa Plus", price: 16800 },
   ],
   startimes: [
     { id: "5", bundle_id: 5, name: "Nova (Antenna) - 1 Week", price: 700 },
+    { id: "17", bundle_id: 17, name: "Nova (Antenna) - 1 Month", price: 2100 },
+    { id: "16", bundle_id: 16, name: "Nova (Dish) - 1 Week", price: 700 },
+    { id: "18", bundle_id: 18, name: "Basic (Antenna) - 1 Week", price: 1400 },
+    { id: "20", bundle_id: 20, name: "Basic (Antenna) - 1 Month", price: 4000 },
+    { id: "19", bundle_id: 19, name: "Basic (Dish) - 1 Week", price: 1700 },
+    { id: "21", bundle_id: 21, name: "Basic (Dish) - 1 Month", price: 5100 },
+    { id: "22", bundle_id: 22, name: "Classic (Dish) - 1 Week", price: 2500 },
+    { id: "23", bundle_id: 23, name: "Classic (Dish) - 1 Month", price: 7400 },
+    { id: "25", bundle_id: 25, name: "Super (Antenna) - 1 Week", price: 3200 },
+    { id: "26", bundle_id: 26, name: "Super (Antenna) - 1 Month", price: 9500 },
+    { id: "24", bundle_id: 24, name: "Super (Dish) - 1 Week", price: 3300 },
   ],
 };
 
@@ -426,11 +448,11 @@ Deno.serve(async (req) => {
         throw new Error(`Invalid electricity provider: ${provider}`);
       }
 
-      console.log(`Processing electricity: provider_id=${providerId} amount=${amount} for meter ${meter_number}`);
+      console.log(`Processing electricity: disco_id=${providerId} amount=${amount} for meter ${meter_number}`);
 
       try {
         const result = await callVtuApiPost("/electricity/purchase/", {
-          provider_id: providerId,
+          disco_id: providerId,
           meter_number: meter_number,
           amount: amount,
           meter_type: meter_type.toLowerCase(),
@@ -491,12 +513,12 @@ Deno.serve(async (req) => {
         throw new Error(`Invalid cable plan ID: ${plan_code}`);
       }
 
-      console.log(`Processing cable TV: bundle_id=${bundleId} for ${smartcard_number}`);
+      console.log(`Processing cable TV: plan_id=${bundleId} for ${smartcard_number}`);
 
       try {
         const result = await callVtuApiPost("/cable/purchase/", {
-          bundle_id: bundleId,
-          iuc_number: smartcard_number,
+          plan_id: bundleId,
+          cardnumber: smartcard_number,
         });
 
         const isSuccess = result.status === "success" || result.Status === "successful" || result.success === true;
