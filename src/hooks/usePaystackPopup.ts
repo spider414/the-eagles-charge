@@ -155,7 +155,7 @@ export const usePaystackPopup = () => {
                 if (verifyResult.data?.success) {
                   toast({
                     title: "Payment Successful!",
-                    description: `₦${amount.toLocaleString()} has been added to your wallet`,
+                    description: `Payment of ₦${amount.toLocaleString()} confirmed`,
                   });
                   refreshProfile();
                   onSuccess?.(response.reference);
