@@ -164,7 +164,7 @@ const DATA_PLANS: Record<string, Array<{
   "9mobile": [],
 };
 
-// Cable TV plans with bundle IDs
+// Cable TV plans with bundle IDs (synced with CheapDataHub official plan IDs)
 const CABLE_PLANS: Record<string, Array<{
   id: string;
   bundle_id: number;
@@ -173,12 +173,33 @@ const CABLE_PLANS: Record<string, Array<{
 }>> = {
   dstv: [
     { id: "3", bundle_id: 3, name: "DStv Padi", price: 4400 },
+    { id: "6", bundle_id: 6, name: "DStv Yanga", price: 6000 },
+    { id: "7", bundle_id: 7, name: "DStv Confam", price: 11000 },
+    { id: "8", bundle_id: 8, name: "DStv Compact", price: 19000 },
+    { id: "9", bundle_id: 9, name: "DStv Compact Plus", price: 30000 },
+    { id: "10", bundle_id: 10, name: "DStv Premium", price: 44500 },
   ],
   gotv: [
     { id: "4", bundle_id: 4, name: "GOtv Smallie Monthly", price: 1900 },
+    { id: "11", bundle_id: 11, name: "GOtv Jinja", price: 3900 },
+    { id: "12", bundle_id: 12, name: "GOtv Jolli", price: 5800 },
+    { id: "13", bundle_id: 13, name: "GOtv Max", price: 8500 },
+    { id: "14", bundle_id: 14, name: "GOtv Supa", price: 11400 },
+    { id: "15", bundle_id: 15, name: "GOtv Supa Plus", price: 16800 },
   ],
   startimes: [
     { id: "5", bundle_id: 5, name: "Nova (Antenna) - 1 Week", price: 700 },
+    { id: "17", bundle_id: 17, name: "Nova (Antenna) - 1 Month", price: 2100 },
+    { id: "16", bundle_id: 16, name: "Nova (Dish) - 1 Week", price: 700 },
+    { id: "18", bundle_id: 18, name: "Basic (Antenna) - 1 Week", price: 1400 },
+    { id: "20", bundle_id: 20, name: "Basic (Antenna) - 1 Month", price: 4000 },
+    { id: "19", bundle_id: 19, name: "Basic (Dish) - 1 Week", price: 1700 },
+    { id: "21", bundle_id: 21, name: "Basic (Dish) - 1 Month", price: 5100 },
+    { id: "22", bundle_id: 22, name: "Classic (Dish) - 1 Week", price: 2500 },
+    { id: "23", bundle_id: 23, name: "Classic (Dish) - 1 Month", price: 7400 },
+    { id: "25", bundle_id: 25, name: "Super (Antenna) - 1 Week", price: 3200 },
+    { id: "26", bundle_id: 26, name: "Super (Antenna) - 1 Month", price: 9500 },
+    { id: "24", bundle_id: 24, name: "Super (Dish) - 1 Week", price: 3300 },
   ],
 };
 
