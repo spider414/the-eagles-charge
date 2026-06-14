@@ -59,6 +59,9 @@ const Auth = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [verificationId, setVerificationId] = useState("");
   const [recoveryMethod, setRecoveryMethod] = useState<"otp" | "security">("otp");
+  const [securityQuestionTouched, setSecurityQuestionTouched] = useState(false);
+  const [securityAnswerTouched, setSecurityAnswerTouched] = useState(false);
+  const [forgotSecurityAnswerTouched, setForgotSecurityAnswerTouched] = useState(false);
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -929,10 +932,17 @@ const Auth = () => {
                       placeholder="e.g., What is your mother's maiden name?"
                       value={securityQuestion}
                       onChange={(e) => setSecurityQuestion(e.target.value)}
+                      onBlur={() => setSecurityQuestionTouched(true)}
                       className="pl-10"
                       required
                     />
                   </div>
+                  {securityQuestionTouched && !securityQuestion.trim() && (
+                    <p className="text-sm text-destructive">Security question is required</p>
+                  )}
+                  {securityQuestionTouched && securityQuestion.trim() && securityQuestion.trim().length < 5 && (
+                    <p className="text-sm text-destructive">Question must be at least 5 characters</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -945,10 +955,17 @@ const Auth = () => {
                       placeholder="Your answer"
                       value={securityAnswer}
                       onChange={(e) => setSecurityAnswer(e.target.value)}
+                      onBlur={() => setSecurityAnswerTouched(true)}
                       className="pl-10"
                       required
                     />
                   </div>
+                  {securityAnswerTouched && !securityAnswer.trim() && (
+                    <p className="text-sm text-destructive">Security answer is required</p>
+                  )}
+                  {securityAnswerTouched && securityAnswer.trim() && securityAnswer.trim().length < 2 && (
+                    <p className="text-sm text-destructive">Answer must be at least 2 characters</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -966,7 +983,17 @@ const Auth = () => {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={
+                    isLoading ||
+                    !securityQuestion.trim() ||
+                    securityQuestion.trim().length < 5 ||
+                    !securityAnswer.trim() ||
+                    securityAnswer.trim().length < 2
+                  }
+                >
                   {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </form>
@@ -1085,9 +1112,15 @@ const Auth = () => {
               </CardDescription>
               
               <div className="space-y-4">
-                <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm font-medium">{forgotSecurityQuestion}</p>
-                </div>
+                {forgotSecurityQuestion ? (
+                  <div className="p-4 bg-muted rounded-lg">
+                    <p className="text-sm font-medium">{forgotSecurityQuestion}</p>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-destructive/10 border border-destructive rounded-lg">
+                    <p className="text-sm text-destructive font-medium">No security question found for this account.</p>
+                  </div>
+                )}
                 
                 <div className="space-y-2">
                   <Label htmlFor="security-answer-input">Your Answer</Label>
@@ -1099,15 +1132,22 @@ const Auth = () => {
                       placeholder="Enter your answer"
                       value={forgotSecurityAnswer}
                       onChange={(e) => setForgotSecurityAnswer(e.target.value)}
+                      onBlur={() => setForgotSecurityAnswerTouched(true)}
                       className="pl-10"
                     />
                   </div>
+                  {forgotSecurityAnswerTouched && !forgotSecurityAnswer.trim() && (
+                    <p className="text-sm text-destructive">Answer is required</p>
+                  )}
+                  {forgotSecurityAnswerTouched && forgotSecurityAnswer.trim() && forgotSecurityAnswer.trim().length < 2 && (
+                    <p className="text-sm text-destructive">Answer must be at least 2 characters</p>
+                  )}
                 </div>
 
                 <Button
                   onClick={handleSecurityReset}
                   className="w-full"
-                  disabled={isLoading || forgotSecurityAnswer.trim().length < 2}
+                  disabled={isLoading || !forgotSecurityQuestion || forgotSecurityAnswer.trim().length < 2}
                 >
                   {isLoading ? (
                     <>
@@ -1126,6 +1166,7 @@ const Auth = () => {
                   disabled={isLoading}
                   onClick={() => {
                     setForgotSecurityAnswer("");
+                    setForgotSecurityAnswerTouched(false);
                     setStep("forgot-phone");
                   }}
                 >
