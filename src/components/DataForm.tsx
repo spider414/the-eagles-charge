@@ -53,8 +53,6 @@ const HOT_PLAN_IDS = [
   "36", "40", "37", "38",
   // Airtel popular plans
   "17", "18", "52",
-  // 9mobile popular plans
-  "71", "73", "74",
 ];
 
 const isHotPlan = (planId: string): boolean => HOT_PLAN_IDS.includes(planId);
