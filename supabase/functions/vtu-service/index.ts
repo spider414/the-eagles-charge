@@ -448,11 +448,11 @@ Deno.serve(async (req) => {
         throw new Error(`Invalid electricity provider: ${provider}`);
       }
 
-      console.log(`Processing electricity: provider_id=${providerId} amount=${amount} for meter ${meter_number}`);
+      console.log(`Processing electricity: disco_id=${providerId} amount=${amount} for meter ${meter_number}`);
 
       try {
         const result = await callVtuApiPost("/electricity/purchase/", {
-          provider_id: providerId,
+          disco_id: providerId,
           meter_number: meter_number,
           amount: amount,
           meter_type: meter_type.toLowerCase(),
