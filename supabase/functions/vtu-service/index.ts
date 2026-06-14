@@ -513,12 +513,12 @@ Deno.serve(async (req) => {
         throw new Error(`Invalid cable plan ID: ${plan_code}`);
       }
 
-      console.log(`Processing cable TV: bundle_id=${bundleId} for ${smartcard_number}`);
+      console.log(`Processing cable TV: plan_id=${bundleId} for ${smartcard_number}`);
 
       try {
         const result = await callVtuApiPost("/cable/purchase/", {
-          bundle_id: bundleId,
-          iuc_number: smartcard_number,
+          plan_id: bundleId,
+          cardnumber: smartcard_number,
         });
 
         const isSuccess = result.status === "success" || result.Status === "successful" || result.success === true;
