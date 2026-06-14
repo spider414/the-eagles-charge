@@ -57,8 +57,8 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         >
           <CreditCard className={cn("h-6 w-6", selected === "paystack" ? "text-primary" : "text-muted-foreground")} />
           <div className="text-center">
-            <p className="text-sm font-medium">Card/Bank</p>
-            <p className="text-xs text-muted-foreground">Paystack</p>
+            <p className="text-sm font-medium">pay with card</p>
+            <p className="text-xs text-muted-foreground"></p>
           </div>
         </button>
       </div>
