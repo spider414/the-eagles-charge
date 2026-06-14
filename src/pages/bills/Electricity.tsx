@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { usePaystack } from "@/hooks/usePaystack";
+import { usePaystackPopup } from "@/hooks/usePaystackPopup";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useMeterVerification } from "@/hooks/useMeterVerification";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
@@ -35,7 +35,7 @@ const Electricity = () => {
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystackPopup();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
   const { isVerifying, customerInfo, verificationError, verifyMeter, resetVerification } = useMeterVerification();
 

@@ -11,7 +11,7 @@ import NetworkSelector, { NetworkType } from "./NetworkSelector";
 import PaymentMethodSelector, { PaymentMethod } from "./PaymentMethodSelector";
 import FavoriteNumbersSelector from "./FavoriteNumbersSelector";
 import { useToast } from "@/hooks/use-toast";
-import { usePaystack } from "@/hooks/usePaystack";
+import { usePaystackPopup } from "@/hooks/usePaystackPopup";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
@@ -237,7 +237,7 @@ const DataForm = () => {
   const [paymentEmail, setPaymentEmail] = useState("");
   const { toast } = useToast();
   const { user, profile, refreshProfile } = useAuth();
-  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystackPopup();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
   const { addFavorite } = useFavoriteNumbers();
 

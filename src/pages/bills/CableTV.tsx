@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { usePaystack } from "@/hooks/usePaystack";
+import { usePaystackPopup } from "@/hooks/usePaystackPopup";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useSmartcardVerification } from "@/hooks/useSmartcardVerification";
 import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
@@ -57,7 +57,7 @@ const CableTV = () => {
   const navigate = useNavigate();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
-  const { initializePayment, isLoading: paystackLoading } = usePaystack();
+  const { initializePayment, isLoading: paystackLoading } = usePaystackPopup();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
   const { isVerifying, customerInfo, verificationError, verifySmartcard, resetVerification } = useSmartcardVerification();
 
