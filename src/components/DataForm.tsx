@@ -170,6 +170,19 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
     </div>
   );
 
+  if (plans.length === 0 && !isLoading) {
+    return (
+      <div className="space-y-3 animate-fade-in">
+        <Label>Select Data Plan</Label>
+        <div className="p-8 text-center border border-dashed border-border rounded-xl">
+          <Wifi className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium">No data plans available</p>
+          <p className="text-sm text-muted-foreground mt-1">Data bundles are temporarily unavailable for this network.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3 animate-fade-in">
       <Label>Select Data Plan</Label>
