@@ -562,11 +562,15 @@ Deno.serve(async (req) => {
           }
           
         } else if (metadata.transaction_type === "electricity" && metadata.meter_number && metadata.electricity_provider) {
-          console.log(`Processing electricity via CheapDataHub: ${metadata.electricity_provider} ₦${amount} for meter ${metadata.meter_number}`);
+          const providerId = ELECTRICITY_PROVIDER_IDS[metadata.electricity_provider.toLowerCase()];
+          if (!providerId) {
+            throw new Error(`Unsupported electricity provider: ${metadata.electricity_provider}`);
+          }
+          console.log(`Processing electricity via CheapDataHub: disco_id=${providerId} ₦${amount} for meter ${metadata.meter_number}`);
           
           vtuResult = await cheapDataHubPost("/electricity/purchase/", {
+            disco_id: providerId,
             meter_number: metadata.meter_number,
-            disco_name: metadata.electricity_provider.toUpperCase(),
             amount: amount,
             meter_type: (metadata.meter_type || "prepaid").toLowerCase(),
           });
