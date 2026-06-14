@@ -68,6 +68,20 @@ interface ValidateBVNRequest {
 
 type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest | CreateDVARequest | GetDVARequest | ValidateBVNRequest;
 
+// CheapDataHub electricity DisCo to disco_id mapping
+const ELECTRICITY_PROVIDER_IDS: Record<string, number> = {
+  aedc: 1,
+  ekedc: 2,
+  ibedc: 3,
+  ikedc: 4,
+  kedco: 5,
+  phedc: 6,
+  jedc: 7,
+  eedc: 8,
+  yedc: 9,
+  bedc: 10,
+};
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
