@@ -45,6 +45,7 @@ const App = () => {
             <Sonner />
             <BrowserRouter>
               <FloatingChatButton />
+              <ReloadPrompt />
               <SessionLockProvider>
                 <Routes>
                   <Route path="/" element={<Index />} />
