@@ -42,6 +42,7 @@ const Auth = () => {
   const [signupOtp, setSignupOtp] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [securityQuestion, setSecurityQuestion] = useState("");
   const [securityAnswer, setSecurityAnswer] = useState("");
