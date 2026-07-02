@@ -107,6 +107,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          contact_email: string | null
           created_at: string
           deletion_reason: string | null
           deletion_scheduled_at: string | null
@@ -134,6 +135,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          contact_email?: string | null
           created_at?: string
           deletion_reason?: string | null
           deletion_scheduled_at?: string | null
@@ -161,6 +163,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          contact_email?: string | null
           created_at?: string
           deletion_reason?: string | null
           deletion_scheduled_at?: string | null
