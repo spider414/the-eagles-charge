@@ -361,6 +361,16 @@ const Auth = () => {
       return;
     }
 
+    const trimmedEmail = signupEmail.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address or leave it blank.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode, securityQuestion, securityAnswer, ninData);
     setIsLoading(false);
@@ -376,6 +386,23 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      // Save contact email + send welcome (best-effort, don't block signup)
+      if (trimmedEmail) {
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            await supabase
+              .from("profiles")
+              .update({ contact_email: trimmedEmail })
+              .eq("user_id", newUser.id);
+          }
+          await supabase.functions.invoke("send-email", {
+            body: { type: "welcome", to: trimmedEmail, name: signupName },
+          });
+        } catch (emailErr) {
+          console.warn("Welcome email failed:", emailErr);
+        }
+      }
       toast({
         title: "Account Created!",
         description: "Welcome to THE EAGLES! You can now start making transactions.",
