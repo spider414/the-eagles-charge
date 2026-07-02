@@ -264,6 +264,46 @@ Deno.serve(async (req) => {
         console.error("Transaction update error:", updateError);
       }
 
+      // Send email receipt (best-effort). Use Paystack customer email when it is a real address,
+      // otherwise fall back to the profile's saved contact_email.
+      if (transactionStatus === "completed") {
+        try {
+          const paystackEmail: string | undefined = paystackData.data?.customer?.email;
+          const isReal = (e?: string) =>
+            !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.endsWith("@eagles.local");
+
+          let receiptEmail = isReal(paystackEmail) ? paystackEmail! : "";
+          let receiptName: string | null = null;
+
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("full_name, contact_email")
+            .eq("user_id", userId)
+            .maybeSingle();
+          receiptName = prof?.full_name ?? null;
+          if (!receiptEmail && isReal(prof?.contact_email)) {
+            receiptEmail = prof!.contact_email!;
+          }
+
+          if (receiptEmail) {
+            await supabase.functions.invoke("send-email", {
+              body: {
+                type: "receipt",
+                to: receiptEmail,
+                name: receiptName,
+                reference,
+                amount: (paystackData.data?.amount || 0) / 100,
+                transaction_type: existingTx?.transaction_type || "payment",
+                paid_at: paystackData.data?.paid_at || new Date().toISOString(),
+              },
+              headers: { Authorization: authHeader },
+            });
+          }
+        } catch (mailErr) {
+          console.warn("Receipt email failed:", mailErr);
+        }
+      }
+
       // Handle wallet top-up - credit wallet after successful payment using atomic function
       if (transactionStatus === "completed" && existingTx?.transaction_type === "wallet_topup") {
         const amountToCredit = paystackData.data.amount / 100; // Convert from kobo to naira

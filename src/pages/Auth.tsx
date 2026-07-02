@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint, ScanFace, Loader2 } from "lucide-react";
+import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint, ScanFace, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,7 @@ const Auth = () => {
   const [signupOtp, setSignupOtp] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupName, setSignupName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
   const [referralCode, setReferralCode] = useState("");
   const [securityQuestion, setSecurityQuestion] = useState("");
   const [securityAnswer, setSecurityAnswer] = useState("");
@@ -360,6 +361,16 @@ const Auth = () => {
       return;
     }
 
+    const trimmedEmail = signupEmail.trim();
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address or leave it blank.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     const { error } = await signUp(signupPhone, signupPassword, signupName, referralCode, securityQuestion, securityAnswer, ninData);
     setIsLoading(false);
@@ -375,6 +386,23 @@ const Auth = () => {
         variant: "destructive",
       });
     } else {
+      // Save contact email + send welcome (best-effort, don't block signup)
+      if (trimmedEmail) {
+        try {
+          const { data: { user: newUser } } = await supabase.auth.getUser();
+          if (newUser) {
+            await supabase
+              .from("profiles")
+              .update({ contact_email: trimmedEmail })
+              .eq("user_id", newUser.id);
+          }
+          await supabase.functions.invoke("send-email", {
+            body: { type: "welcome", to: trimmedEmail, name: signupName },
+          });
+        } catch (emailErr) {
+          console.warn("Welcome email failed:", emailErr);
+        }
+      }
       toast({
         title: "Account Created!",
         description: "Welcome to THE EAGLES! You can now start making transactions.",
@@ -904,6 +932,24 @@ const Auth = () => {
                       className="pl-10"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="signup-email">Email (optional)</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="signup-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={signupEmail}
+                      onChange={(e) => setSignupEmail(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    We'll use this to send you a welcome message and payment receipts.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
