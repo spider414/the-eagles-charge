@@ -38,6 +38,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
+import EmailPreferences from "@/components/EmailPreferences";
+import AdminEmailBranding from "@/components/AdminEmailBranding";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 interface SettingItem {
@@ -600,6 +602,12 @@ const Settings = () => {
             {supportSettings.map((item, index) => renderSettingItem(item, index))}
           </CardContent>
         </Card>
+
+        {/* Email Preferences */}
+        <EmailPreferences />
+
+        {/* Admin: Email templates & branding (visible only to admins) */}
+        <AdminEmailBranding />
 
         {/* Account Section */}
         <Card>

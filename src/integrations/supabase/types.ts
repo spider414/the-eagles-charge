@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_settings: {
+        Row: {
+          brand_name: string
+          created_at: string
+          dark_color: string
+          footer_text: string | null
+          from_address: string
+          header_tagline: string | null
+          id: string
+          logo_emoji: string | null
+          logo_url: string | null
+          primary_color: string
+          support_email: string
+          updated_at: string
+        }
+        Insert: {
+          brand_name?: string
+          created_at?: string
+          dark_color?: string
+          footer_text?: string | null
+          from_address?: string
+          header_tagline?: string | null
+          id?: string
+          logo_emoji?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          support_email?: string
+          updated_at?: string
+        }
+        Update: {
+          brand_name?: string
+          created_at?: string
+          dark_color?: string
+          footer_text?: string | null
+          from_address?: string
+          header_tagline?: string | null
+          id?: string
+          logo_emoji?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          support_email?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_templates: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          intro: string
+          outro: string
+          subject: string
+          template_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          intro?: string
+          outro?: string
+          subject: string
+          template_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          intro?: string
+          outro?: string
+          subject?: string
+          template_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       favorite_numbers: {
         Row: {
           created_at: string
@@ -115,6 +193,9 @@ export type Database = {
           dva_account_number: string | null
           dva_bank_name: string | null
           email: string
+          email_marketing_opt_in: boolean
+          email_product_updates_opt_in: boolean
+          email_promotions_opt_in: boolean
           full_name: string | null
           id: string
           nin_full_name: string | null
@@ -129,6 +210,7 @@ export type Database = {
           security_answer: string | null
           security_question: string | null
           total_referral_earnings: number | null
+          unsubscribe_token: string | null
           updated_at: string
           user_id: string
           wallet_balance: number | null
@@ -143,6 +225,9 @@ export type Database = {
           dva_account_number?: string | null
           dva_bank_name?: string | null
           email: string
+          email_marketing_opt_in?: boolean
+          email_product_updates_opt_in?: boolean
+          email_promotions_opt_in?: boolean
           full_name?: string | null
           id?: string
           nin_full_name?: string | null
@@ -157,6 +242,7 @@ export type Database = {
           security_answer?: string | null
           security_question?: string | null
           total_referral_earnings?: number | null
+          unsubscribe_token?: string | null
           updated_at?: string
           user_id: string
           wallet_balance?: number | null
@@ -171,6 +257,9 @@ export type Database = {
           dva_account_number?: string | null
           dva_bank_name?: string | null
           email?: string
+          email_marketing_opt_in?: boolean
+          email_product_updates_opt_in?: boolean
+          email_promotions_opt_in?: boolean
           full_name?: string | null
           id?: string
           nin_full_name?: string | null
@@ -185,6 +274,7 @@ export type Database = {
           security_answer?: string | null
           security_question?: string | null
           total_referral_earnings?: number | null
+          unsubscribe_token?: string | null
           updated_at?: string
           user_id?: string
           wallet_balance?: number | null
