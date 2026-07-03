@@ -603,6 +603,12 @@ const Settings = () => {
           </CardContent>
         </Card>
 
+        {/* Email Preferences */}
+        <EmailPreferences />
+
+        {/* Admin: Email templates & branding (visible only to admins) */}
+        <AdminEmailBranding />
+
         {/* Account Section */}
         <Card>
           <CardHeader className="pb-2">
