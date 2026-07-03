@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-const FROM_ADDRESS = "The Eagles Charge <onboarding@resend.dev>";
+const FROM_ADDRESS = "The Eagles Charge <noreply@harmicglobal.com>";
 
 interface WelcomePayload {
   type: "welcome";
