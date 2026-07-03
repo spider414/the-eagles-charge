@@ -275,6 +275,39 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Best-effort password-reset confirmation email
+    try {
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("full_name, contact_email, email")
+        .eq("user_id", profile.user_id)
+        .maybeSingle();
+      const isReal = (e?: string | null) =>
+        !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.endsWith("@eagles.local");
+      const to = isReal(prof?.contact_email)
+        ? prof!.contact_email!
+        : isReal(prof?.email)
+          ? prof!.email!
+          : "";
+      if (to) {
+        const ip =
+          req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+          req.headers.get("cf-connecting-ip") ||
+          undefined;
+        await supabase.functions.invoke("send-email", {
+          body: {
+            type: "password_reset",
+            to,
+            name: prof?.full_name ?? null,
+            reset_at: new Date().toISOString(),
+            ip,
+          },
+        });
+      }
+    } catch (mailErr) {
+      console.warn("Password reset email failed:", mailErr);
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
