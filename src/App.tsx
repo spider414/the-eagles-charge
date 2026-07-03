@@ -32,6 +32,7 @@ import DeleteAccount from "./pages/DeleteAccount";
 import ExamPin from "./pages/ExamPin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -70,6 +71,7 @@ const App = () => {
                   <Route path="/delete-account" element={<DeleteAccount />} />
                   <Route path="/exam-pin" element={<ExamPin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
+                  <Route path="/unsubscribe" element={<Unsubscribe />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </SessionLockProvider>
