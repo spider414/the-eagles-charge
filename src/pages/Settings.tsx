@@ -38,6 +38,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
+import EmailPreferences from "@/components/EmailPreferences";
+import AdminEmailBranding from "@/components/AdminEmailBranding";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 interface SettingItem {
