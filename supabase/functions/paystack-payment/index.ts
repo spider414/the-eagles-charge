@@ -704,6 +704,49 @@ Deno.serve(async (req) => {
 
         console.log(`Wallet payment completed for transaction ${transaction.id}`);
 
+        // Best-effort receipt email for wallet payments
+        try {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("full_name, contact_email, email")
+            .eq("user_id", userId)
+            .maybeSingle();
+          const isReal = (e?: string | null) =>
+            !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.endsWith("@eagles.local");
+          const receiptEmail = isReal(prof?.contact_email)
+            ? prof!.contact_email!
+            : isReal(prof?.email)
+              ? prof!.email!
+              : "";
+          if (receiptEmail) {
+            await supabase.functions.invoke("send-email", {
+              body: {
+                type: "receipt",
+                to: receiptEmail,
+                name: prof?.full_name ?? null,
+                reference,
+                amount,
+                transaction_type: metadata.transaction_type,
+                paid_at: new Date().toISOString(),
+                status: "successful",
+                payment_method: "Wallet",
+                network: metadata.network,
+                phone_number: metadata.phone_number,
+                plan_name: metadata.data_plan || metadata.cable_plan || metadata.internet_plan,
+                meter_number: metadata.meter_number,
+                meter_type: metadata.meter_type,
+                token: vtuToken,
+                cable_provider: metadata.cable_provider,
+                cable_smartcard: metadata.cable_smartcard,
+                new_balance: newBalance,
+              },
+              headers: { Authorization: authHeader },
+            });
+          }
+        } catch (mailErr) {
+          console.warn("Wallet receipt email failed:", mailErr);
+        }
+
         return new Response(
           JSON.stringify({
             success: true,
