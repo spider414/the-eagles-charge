@@ -67,23 +67,35 @@ const Support = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background"
+      style={{
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
-        <div className="container flex h-16 items-center gap-4">
+      <header
+        className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="container flex h-16 items-center gap-3 sm:gap-4 min-w-0">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-gold">
               <Bird className="h-5 w-5 text-secondary-foreground" />
             </div>
-            <span className="font-semibold">Help & Support</span>
+            <span className="font-semibold truncate">Help & Support</span>
           </div>
         </div>
       </header>
 
-      <main className="container py-6 max-w-lg mx-auto space-y-6">
+      <main
+        className="container py-6 max-w-lg mx-auto space-y-6"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.5rem)" }}
+      >
         {/* Support Options */}
         <Card>
           <CardHeader>
@@ -96,13 +108,13 @@ const Support = () => {
                 key={index}
                 className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-2 rounded-lg bg-muted">
+                <div className="flex items-center gap-3 min-w-0 w-full">
+                  <div className="p-2 rounded-lg bg-muted shrink-0">
                     <option.icon className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium">{option.title}</p>
-                    <p className="text-sm text-muted-foreground break-words">{option.description}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium break-words">{option.title}</p>
+                    <p className="text-sm text-muted-foreground break-all">{option.description}</p>
                   </div>
                 </div>
                 <Button variant="outline" size="sm" onClick={option.action} className="w-full sm:w-auto shrink-0">
@@ -121,12 +133,12 @@ const Support = () => {
           </CardHeader>
           <CardContent>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-lg bg-muted">
+              <div className="flex items-center gap-3 min-w-0 w-full">
+                <div className="p-2 rounded-lg bg-muted shrink-0">
                   <Mail className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <div className="min-w-0">
-                  <p className="font-medium">Secondary Email</p>
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium break-words">Secondary Email</p>
                   <p className="text-sm text-muted-foreground break-all">harrisonokeke91@gmail.com</p>
                 </div>
               </div>
@@ -141,13 +153,13 @@ const Support = () => {
         {/* FAQs */}
         <Card>
           <CardHeader>
-            <CardTitle>Frequently Asked Questions</CardTitle>
+            <CardTitle className="break-words">Frequently Asked Questions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {faqs.map((faq, index) => (
               <div key={index} className="border-b border-border last:border-0 pb-4 last:pb-0">
-                <p className="font-medium">{faq.question}</p>
-                <p className="text-sm text-muted-foreground mt-1">{faq.answer}</p>
+                <p className="font-medium break-words">{faq.question}</p>
+                <p className="text-sm text-muted-foreground mt-1 break-words">{faq.answer}</p>
               </div>
             ))}
           </CardContent>
