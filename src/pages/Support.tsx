@@ -94,18 +94,18 @@ const Support = () => {
             {supportOptions.map((option, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-4 rounded-lg border border-border"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="p-2 rounded-lg bg-muted">
                     <option.icon className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-medium">{option.title}</p>
-                    <p className="text-sm text-muted-foreground">{option.description}</p>
+                    <p className="text-sm text-muted-foreground break-words">{option.description}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={option.action}>
+                <Button variant="outline" size="sm" onClick={option.action} className="w-full sm:w-auto shrink-0">
                   <ExternalLink className="h-4 w-4 mr-1" />
                   {option.buttonText}
                 </Button>
@@ -120,17 +120,17 @@ const Support = () => {
             <CardTitle>Alternative Email</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-between p-4 rounded-lg border border-border">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 rounded-lg border border-border">
+              <div className="flex items-center gap-3 min-w-0">
                 <div className="p-2 rounded-lg bg-muted">
                   <Mail className="h-5 w-5 text-muted-foreground" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="font-medium">Secondary Email</p>
-                  <p className="text-sm text-muted-foreground">harrisonokeke91@gmail.com</p>
+                  <p className="text-sm text-muted-foreground break-all">harrisonokeke91@gmail.com</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => window.open("mailto:harrisonokeke91@gmail.com", "_blank")}>
+              <Button variant="outline" size="sm" onClick={() => window.open("mailto:harrisonokeke91@gmail.com", "_blank")} className="w-full sm:w-auto shrink-0">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 Send Email
               </Button>
