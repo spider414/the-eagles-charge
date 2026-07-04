@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      email_send_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json | null
+          recipient_email: string
+          reference: string | null
+          skipped_reason: string | null
+          status: string
+          subject: string | null
+          template_type: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email: string
+          reference?: string | null
+          skipped_reason?: string | null
+          status: string
+          subject?: string | null
+          template_type: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json | null
+          recipient_email?: string
+          reference?: string | null
+          skipped_reason?: string | null
+          status?: string
+          subject?: string | null
+          template_type?: string
+        }
+        Relationships: []
+      }
       email_settings: {
         Row: {
           brand_name: string
