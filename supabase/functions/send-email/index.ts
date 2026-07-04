@@ -338,7 +338,28 @@ Deno.serve(async (req) => {
     const branding: Branding = brandRow ? { ...fallbackBranding(), ...brandRow } : fallbackBranding();
     const tpl: TemplateCopy = tplRow ?? fallbackTemplate(payload.type);
 
+    const logAttempt = async (
+      status: "sent" | "skipped" | "failed",
+      opts: { subject?: string; reference?: string; skipped_reason?: string; error?: string; metadata?: Record<string, unknown> } = {},
+    ) => {
+      try {
+        await adminClient.from("email_send_log").insert({
+          template_type: payload.type,
+          recipient_email: payload.to,
+          subject: opts.subject ?? null,
+          reference: opts.reference ?? null,
+          status,
+          skipped_reason: opts.skipped_reason ?? null,
+          error_message: opts.error ?? null,
+          metadata: opts.metadata ?? null,
+        });
+      } catch (e) {
+        console.error("email_send_log insert failed", e);
+      }
+    };
+
     if (tpl.enabled === false) {
+      await logAttempt("skipped", { skipped_reason: "template_disabled", subject: tpl.subject });
       return new Response(JSON.stringify({ skipped: "template_disabled" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -354,6 +375,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
       const prefKey = NON_ESSENTIAL[payload.type];
       if (profile && (profile as Record<string, unknown>)[prefKey] === false) {
+        await logAttempt("skipped", { skipped_reason: "user_opted_out", subject: tpl.subject });
         return new Response(JSON.stringify({ skipped: "user_opted_out" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -366,11 +388,13 @@ Deno.serve(async (req) => {
 
     let subject = tpl.subject;
     let html = "";
+    let reference: string | undefined;
     if (payload.type === "welcome") {
       html = welcomeHtml(branding, tpl, payload.name, unsubUrl);
     } else if (payload.type === "receipt") {
       subject = `${tpl.subject} • ${prettyType(payload.transaction_type)} • ${ngn(payload.amount)}`;
       html = receiptHtml(branding, tpl, payload);
+      reference = payload.reference;
     } else if (payload.type === "password_reset") {
       html = passwordResetHtml(branding, tpl, payload);
     } else {
@@ -380,7 +404,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    await sendResend(branding.from_address || DEFAULT_FROM, payload.to, subject, html);
+    try {
+      await sendResend(branding.from_address || DEFAULT_FROM, payload.to, subject, html);
+    } catch (e) {
+      await logAttempt("failed", {
+        subject,
+        reference,
+        error: e instanceof Error ? e.message : String(e),
+      });
+      throw e;
+    }
+    await logAttempt("sent", { subject, reference });
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

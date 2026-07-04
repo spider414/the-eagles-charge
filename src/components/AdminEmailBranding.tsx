@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Palette, Save, Loader2 } from "lucide-react";
+import { Palette, Save, Loader2, History, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +32,18 @@ type Template = {
   enabled: boolean;
 };
 
+type LogRow = {
+  id: string;
+  template_type: string;
+  recipient_email: string;
+  subject: string | null;
+  reference: string | null;
+  status: string;
+  skipped_reason: string | null;
+  error_message: string | null;
+  created_at: string;
+};
+
 const LABELS: Record<string, string> = {
   welcome: "Welcome email",
   receipt: "Payment receipt",
@@ -46,6 +58,19 @@ export default function AdminEmailBranding() {
   const [saving, setSaving] = useState(false);
   const [branding, setBranding] = useState<Branding | null>(null);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [logs, setLogs] = useState<LogRow[]>([]);
+  const [loadingLogs, setLoadingLogs] = useState(false);
+
+  const loadLogs = async () => {
+    setLoadingLogs(true);
+    const { data } = await supabase
+      .from("email_send_log")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
+    if (data) setLogs(data as LogRow[]);
+    setLoadingLogs(false);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -67,6 +92,7 @@ export default function AdminEmailBranding() {
       ]);
       if (b) setBranding(b as Branding);
       if (t) setTemplates(t as Template[]);
+      await loadLogs();
       setLoading(false);
     })();
   }, [user]);
@@ -198,6 +224,59 @@ export default function AdminEmailBranding() {
           ))}
           <p className="text-xs text-muted-foreground">
             Receipt and password reset templates cannot be disabled — they are essential for security and compliance.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold flex items-center gap-2">
+              <History className="h-4 w-4" />
+              Recent email sends
+            </h3>
+            <Button size="sm" variant="outline" onClick={loadLogs} disabled={loadingLogs}>
+              {loadingLogs ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </Button>
+          </div>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <div className="max-h-96 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted sticky top-0">
+                  <tr className="text-left">
+                    <th className="px-3 py-2 font-medium">When</th>
+                    <th className="px-3 py-2 font-medium">Type</th>
+                    <th className="px-3 py-2 font-medium">Recipient</th>
+                    <th className="px-3 py-2 font-medium">Reference</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.length === 0 ? (
+                    <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">No email activity yet.</td></tr>
+                  ) : logs.map((l) => (
+                    <tr key={l.id} className="border-t border-border align-top">
+                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{new Date(l.created_at).toLocaleString()}</td>
+                      <td className="px-3 py-2">{LABELS[l.template_type] ?? l.template_type}</td>
+                      <td className="px-3 py-2 break-all">{l.recipient_email}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{l.reference ?? "—"}</td>
+                      <td className="px-3 py-2">
+                        <span className={
+                          l.status === "sent" ? "text-green-600 font-medium" :
+                          l.status === "failed" ? "text-red-600 font-medium" :
+                          "text-amber-600 font-medium"
+                        }>
+                          {l.status}
+                          {l.skipped_reason ? ` · ${l.skipped_reason}` : ""}
+                        </span>
+                        {l.error_message ? <div className="text-xs text-red-600 mt-1">{l.error_message}</div> : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Showing the 50 most recent welcome, receipt, and password reset attempts.
           </p>
         </div>
       </CardContent>
