@@ -176,3 +176,64 @@ npx cap sync
 No `server.url` block exists anymore, so store builds always load the
 bundled `dist/` assets — the app works fully offline for shell + assets,
 and only network calls go to the backend.
+
+## 6. Command-line release scripts
+
+All wired in `package.json`:
+
+```bash
+npm run version:sync    # sync version/build across pkg + iOS + Android
+npm run cap:sync        # version:sync + vite build + cap sync
+npm run android:release # cap:sync + ./gradlew bundleRelease (signed AAB)
+npm run ios:release     # cap:sync + xcodebuild archive + exportArchive (IPA)
+```
+
+Set the version explicitly:
+
+```bash
+APP_VERSION=1.2.3 APP_BUILD=42 npm run cap:sync
+```
+
+Otherwise `version:sync` reads `package.json` `version` and defaults the
+build number to `1` (or `GITHUB_RUN_NUMBER` in CI). The single source of
+truth is `package.json` `version` — the sync script rewrites
+`ios/App/App/Info.plist`, `ios/App/App.xcodeproj/project.pbxproj`, and
+`android/app/build.gradle` to match.
+
+## 7. GitHub Actions — signed builds on tag push
+
+`.github/workflows/mobile-release.yml` produces a signed AAB and IPA on
+every tag matching `v*.*.*` (optionally `v1.2.3-42` to pin the build
+number) and can also be dispatched manually.
+
+Add these encrypted **repository secrets** (Settings → Secrets and
+variables → Actions):
+
+**iOS**
+- `IOS_P12_BASE64` — `base64 -i Distribution.p12`
+- `IOS_P12_PASSWORD`
+- `IOS_PROVISIONING_PROFILE_BASE64` — `base64 -i AppStore.mobileprovision`
+- `IOS_KEYCHAIN_PASSWORD` — any strong random string
+- `IOS_TEAM_ID` — 10-char Apple Developer team ID
+- `APPSTORE_API_KEY_ID`, `APPSTORE_API_ISSUER_ID`, `APPSTORE_API_KEY_BASE64`
+  — App Store Connect API key for TestFlight upload (optional; omit to
+  just get the IPA as an artifact)
+
+**Android**
+- `ANDROID_KEYSTORE_BASE64` — `base64 -i eagles-upload.keystore`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
+
+Cut a release:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+The workflow parses the tag → marketing version + build, runs
+`npm run cap:sync` with `APP_VERSION`/`APP_BUILD` env, builds and signs
+both platforms, and uploads `ios-ipa` and `android-aab` as workflow
+artifacts. If the App Store Connect API secrets are set, the IPA is also
+pushed to TestFlight automatically.
