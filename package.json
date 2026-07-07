@@ -1,7 +1,7 @@
 {
   "name": "vite_react_shadcn_ts",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,18 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "version:sync": "node scripts/sync-version.mjs",
+    "cap:sync": "npm run version:sync && npm run build && cap sync",
+    "mobile:build": "npm run cap:sync",
+    "ios:open": "cap open ios",
+    "ios:build": "npm run cap:sync && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath build/ios/App.xcarchive archive",
+    "ios:ipa": "xcodebuild -exportArchive -archivePath build/ios/App.xcarchive -exportOptionsPlist ios/ExportOptions.plist -exportPath build/ios/ipa",
+    "ios:release": "npm run ios:build && npm run ios:ipa",
+    "android:open": "cap open android",
+    "android:build": "npm run cap:sync && cd android && ./gradlew bundleRelease",
+    "android:aab": "cd android && ./gradlew bundleRelease",
+    "android:release": "npm run android:build"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.1",
