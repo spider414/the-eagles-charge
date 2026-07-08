@@ -11,8 +11,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check:no-pwa-install": "node scripts/check-no-pwa-install.mjs",
     "version:sync": "node scripts/sync-version.mjs",
-    "cap:sync": "npm run version:sync && npm run build && cap sync",
+    "cap:sync": "npm run check:no-pwa-install && npm run version:sync && npm run build && cap sync",
     "mobile:build": "npm run cap:sync",
     "ios:open": "cap open ios",
     "ios:build": "npm run cap:sync && xcodebuild -workspace ios/App/App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath build/ios/App.xcarchive archive",
@@ -80,7 +81,6 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.9",
-    "vite-plugin-pwa": "^1.2.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
