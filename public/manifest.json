@@ -3,7 +3,7 @@
   "short_name": "Eagles Charge",
   "description": "Fast, reliable airtime & data top-up for MTN, Glo, Airtel, and 9mobile",
   "start_url": "/",
-  "display": "standalone",
+  "display": "browser",
   "background_color": "#f5f7f5",
   "theme_color": "#1a6b47",
   "orientation": "portrait-primary",
