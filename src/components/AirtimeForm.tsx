@@ -276,7 +276,7 @@ const AirtimeForm = () => {
             </div>
           )}
 
-          {user && (
+          {user && profile && (
             <PaymentMethodSelector
               selected={paymentMethod}
               onSelect={setPaymentMethod}
@@ -288,7 +288,7 @@ const AirtimeForm = () => {
           <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
             {isLoading 
               ? "Processing..." 
-              : paymentMethod === "wallet"
+              : user && paymentMethod === "wallet"
               ? `Pay ₦${Number(amount || 0).toLocaleString()} from Wallet`
               : `Pay ₦${Number(amount || 0).toLocaleString()}`
             }
