@@ -39,6 +39,9 @@ on:
 jobs:
   version:
     runs-on: ubuntu-latest
+    # Guard: only run on tag pushes or manual dispatch. Prevents "No jobs were run"
+    # failure emails when GitHub evaluates the workflow on unrelated events.
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     outputs:
       version: ${{ steps.parse.outputs.version }}
       build: ${{ steps.parse.outputs.build }}
@@ -61,6 +64,7 @@ jobs:
   android:
     needs: version
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     env:
       APP_VERSION: ${{ needs.version.outputs.version }}
       APP_BUILD:   ${{ needs.version.outputs.build }}
@@ -106,6 +110,7 @@ jobs:
   ios:
     needs: version
     runs-on: macos-14
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     env:
       APP_VERSION: ${{ needs.version.outputs.version }}
       APP_BUILD:   ${{ needs.version.outputs.build }}
