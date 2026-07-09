@@ -17,6 +17,32 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Check admin role — reseller/provider balance alerts are admin-only.
+  useEffect(() => {
+    if (!user) {
+      setIsAdmin(false);
+      return;
+    }
+    supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle()
+      .then(({ data }) => setIsAdmin(!!data));
+  }, [user]);
+
+  const isAdminOnlyNotification = useCallback((n: { title?: string; body?: string }) => {
+    const t = `${n.title ?? ""} ${n.body ?? ""}`.toLowerCase();
+    return (
+      t.includes("cheapdatahub") ||
+      t.includes("reseller wallet") ||
+      t.includes("low provider balance") ||
+      t.includes("vtu provider")
+    );
+  }, []);
 
   const fetchNotifications = useCallback(async () => {
     if (!user) return;
@@ -30,15 +56,18 @@ export const useNotifications = () => {
         .limit(50);
 
       if (data) {
-        setNotifications(data as unknown as AppNotification[]);
-        setUnreadCount(data.filter((n: any) => !n.read).length);
+        const filtered = (data as unknown as AppNotification[]).filter(
+          (n) => isAdmin || !isAdminOnlyNotification(n)
+        );
+        setNotifications(filtered);
+        setUnreadCount(filtered.filter((n) => !n.read).length);
       }
     } catch {
       // silent
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, isAdmin, isAdminOnlyNotification]);
 
   const markAsRead = useCallback(async (id: string) => {
     await supabase.from("notifications").update({ read: true }).eq("id", id);
@@ -96,6 +125,7 @@ export const useNotifications = () => {
         },
         (payload) => {
           const newNotif = payload.new as unknown as AppNotification;
+          if (!isAdmin && isAdminOnlyNotification(newNotif)) return;
           setNotifications((prev) => [newNotif, ...prev]);
           setUnreadCount((prev) => prev + 1);
 
@@ -110,7 +140,7 @@ export const useNotifications = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, isAdmin, isAdminOnlyNotification]);
 
   return {
     notifications,
