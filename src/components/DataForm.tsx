@@ -490,7 +490,7 @@ const DataForm = () => {
             </div>
           )}
 
-          {user && selectedPlan && (
+          {user && profile && selectedPlan && (
             <PaymentMethodSelector
               selected={paymentMethod}
               onSelect={setPaymentMethod}
@@ -503,7 +503,7 @@ const DataForm = () => {
             {isLoading
               ? "Processing..."
               : selectedPlan
-              ? paymentMethod === "wallet"
+              ? user && paymentMethod === "wallet"
                 ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
                 : `Pay ₦${selectedPlan.price.toLocaleString()}`
               : "Select a Plan"}
