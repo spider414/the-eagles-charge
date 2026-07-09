@@ -105,6 +105,7 @@ const RecentTransactions = () => {
         .from("transactions")
         .select("id, transaction_type, amount, status, created_at, phone_number, network")
         .eq("user_id", user.id)
+        .neq("status", "pending")
         .order("created_at", { ascending: false })
         .limit(5);
 
