@@ -422,6 +422,21 @@ const WalletTopUp = () => {
                   <ShieldCheck className="h-3 w-3 text-green-500" />
                   Transfers to this account credit your wallet instantly
                 </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => reconcileTransfers(false)}
+                  disabled={isReconciling}
+                >
+                  {isReconciling ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking transfers...
+                    </>
+                  ) : (
+                    "I've sent money — refresh balance"
+                  )}
+                </Button>
               </div>
             ) : dvaPending ? (
               <div className="text-center py-6 space-y-4">
