@@ -96,6 +96,8 @@ const WalletTopUp = () => {
       if (response.data?.success && response.data?.data) {
         setDvaDetails(response.data.data);
         setDvaPending(false); // Stop polling
+        // Silently pull in any transfers whose webhook was missed
+        reconcileTransfers(true);
         toast({ title: "Account Ready!", description: "Your virtual account is now active" });
       } else if (response.data?.pending) {
         setDvaPending(true);
