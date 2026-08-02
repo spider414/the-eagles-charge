@@ -57,6 +57,10 @@ interface GetDVARequest {
   action: "get_dva";
 }
 
+interface ReconcileDVARequest {
+  action: "reconcile_dva";
+}
+
 interface ValidateBVNRequest {
   action: "validate_bvn";
   bvn: string;
@@ -66,7 +70,7 @@ interface ValidateBVNRequest {
   last_name: string;
 }
 
-type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest | CreateDVARequest | GetDVARequest | ValidateBVNRequest;
+type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest | CreateDVARequest | GetDVARequest | ValidateBVNRequest | ReconcileDVARequest;
 
 // CheapDataHub electricity DisCo to disco_id mapping
 const ELECTRICITY_PROVIDER_IDS: Record<string, number> = {
@@ -1191,6 +1195,96 @@ Deno.serve(async (req) => {
           message: "No virtual account found. Please create one with your BVN.",
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Reconcile bank transfers made to the user's dedicated virtual account.
+    // Covers cases where the Paystack webhook was missed or delayed.
+    if (body.action === "reconcile_dva") {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, paystack_customer_code")
+        .eq("user_id", userId)
+        .single();
+
+      if (!profile?.paystack_customer_code) {
+        return new Response(
+          JSON.stringify({ success: true, credited: 0, message: "No virtual account found" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+
+      // Resolve numeric Paystack customer id
+      const customerRes = await fetch(
+        `https://api.paystack.co/customer/${profile.paystack_customer_code}`,
+        { headers: { Authorization: `Bearer ${paystackSecretKey}` } }
+      );
+      const customerData = await customerRes.json();
+      const customerId = customerData?.data?.id;
+
+      if (!customerId) {
+        return new Response(
+          JSON.stringify({ success: true, credited: 0, message: "Customer not found on Paystack" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      const txnRes = await fetch(
+        `https://api.paystack.co/transaction?customer=${customerId}&status=success&perPage=50`,
+        { headers: { Authorization: `Bearer ${paystackSecretKey}` } }
+      );
+      const txnData = await txnRes.json();
+      const transfers = (txnData?.data ?? []).filter(
+        (t: { channel?: string; amount?: number }) =>
+          t.channel === "dedicated_nuban" && (t.amount ?? 0) > 0
+      );
+
+      let credited = 0;
+      let totalAmount = 0;
+
+      for (const t of transfers) {
+        const reference = String(t.reference);
+        const amount = Number(t.amount) / 100;
+
+        const { data: existing } = await supabaseAdmin
+          .from("transactions")
+          .select("id")
+          .eq("paystack_reference", reference)
+          .maybeSingle();
+
+        if (existing) continue;
+
+        const { error: creditError } = await supabaseAdmin.rpc("credit_wallet", {
+          p_profile_id: profile.id,
+          p_amount: amount,
+        });
+
+        if (creditError) {
+          console.error("Reconcile credit failed:", reference, creditError);
+          continue;
+        }
+
+        await supabaseAdmin.from("transactions").insert({
+          user_id: userId,
+          transaction_type: "wallet_topup",
+          status: "completed",
+          amount,
+          paystack_reference: reference,
+          description: "Bank transfer to virtual account",
+        });
+
+        credited += 1;
+        totalAmount += amount;
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, credited, amount: totalAmount }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 

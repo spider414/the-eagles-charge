@@ -31,6 +31,7 @@ const WalletTopUp = () => {
   const [dvaDetails, setDvaDetails] = useState<DVADetails | null>(null);
   const [isLoadingDVA, setIsLoadingDVA] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isReconciling, setIsReconciling] = useState(false);
   
   // BVN verification form
   const [showBVNForm, setShowBVNForm] = useState(false);
@@ -95,6 +96,8 @@ const WalletTopUp = () => {
       if (response.data?.success && response.data?.data) {
         setDvaDetails(response.data.data);
         setDvaPending(false); // Stop polling
+        // Silently pull in any transfers whose webhook was missed
+        reconcileTransfers(true);
         toast({ title: "Account Ready!", description: "Your virtual account is now active" });
       } else if (response.data?.pending) {
         setDvaPending(true);
@@ -103,6 +106,43 @@ const WalletTopUp = () => {
       console.error("Error fetching DVA:", error);
     } finally {
       setIsLoadingDVA(false);
+    }
+  };
+
+  // Re-check Paystack for transfers that were not credited (missed webhooks)
+  const reconcileTransfers = async (silent = false) => {
+    setIsReconciling(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("paystack-payment", {
+        body: { action: "reconcile_dva" },
+        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+      });
+      if (error) throw error;
+
+      if (data?.credited > 0) {
+        await refreshProfile();
+        toast({
+          title: "Wallet Credited",
+          description: `₦${Number(data.amount).toLocaleString()} from ${data.credited} transfer(s) added to your wallet`,
+        });
+      } else if (!silent) {
+        toast({
+          title: "No New Transfers",
+          description: "We couldn't find any uncredited transfers. Please try again in a moment.",
+        });
+      }
+    } catch (err) {
+      console.error("Reconcile error:", err);
+      if (!silent) {
+        toast({
+          title: "Check Failed",
+          description: "Could not verify your transfers. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsReconciling(false);
     }
   };
 
@@ -384,6 +424,21 @@ const WalletTopUp = () => {
                   <ShieldCheck className="h-3 w-3 text-green-500" />
                   Transfers to this account credit your wallet instantly
                 </p>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => reconcileTransfers(false)}
+                  disabled={isReconciling}
+                >
+                  {isReconciling ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Checking transfers...
+                    </>
+                  ) : (
+                    "I've sent money — refresh balance"
+                  )}
+                </Button>
               </div>
             ) : dvaPending ? (
               <div className="text-center py-6 space-y-4">
