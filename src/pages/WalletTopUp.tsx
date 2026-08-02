@@ -31,6 +31,7 @@ const WalletTopUp = () => {
   const [dvaDetails, setDvaDetails] = useState<DVADetails | null>(null);
   const [isLoadingDVA, setIsLoadingDVA] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isReconciling, setIsReconciling] = useState(false);
   
   // BVN verification form
   const [showBVNForm, setShowBVNForm] = useState(false);
@@ -103,6 +104,43 @@ const WalletTopUp = () => {
       console.error("Error fetching DVA:", error);
     } finally {
       setIsLoadingDVA(false);
+    }
+  };
+
+  // Re-check Paystack for transfers that were not credited (missed webhooks)
+  const reconcileTransfers = async (silent = false) => {
+    setIsReconciling(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("paystack-payment", {
+        body: { action: "reconcile_dva" },
+        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+      });
+      if (error) throw error;
+
+      if (data?.credited > 0) {
+        await refreshProfile();
+        toast({
+          title: "Wallet Credited",
+          description: `₦${Number(data.amount).toLocaleString()} from ${data.credited} transfer(s) added to your wallet`,
+        });
+      } else if (!silent) {
+        toast({
+          title: "No New Transfers",
+          description: "We couldn't find any uncredited transfers. Please try again in a moment.",
+        });
+      }
+    } catch (err) {
+      console.error("Reconcile error:", err);
+      if (!silent) {
+        toast({
+          title: "Check Failed",
+          description: "Could not verify your transfers. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setIsReconciling(false);
     }
   };
 
