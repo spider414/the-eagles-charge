@@ -100,6 +100,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         total_referral_earnings: data.total_referral_earnings ?? 0,
       } as Profile);
     }
+
+    // Self-heal: some signups never got a profile row (insert raced with session
+    // creation). Create it now from auth metadata so Settings/Profile aren't empty.
+    if (!error && !data) {
+      const { data: authData } = await supabase.auth.getUser();
+      const authUser = authData?.user;
+      if (authUser && authUser.id === userId) {
+        const meta = (authUser.user_metadata ?? {}) as Record<string, string>;
+        const derivedPhone =
+          meta.phone_number ||
+          (authUser.email?.endsWith("@eagles.local")
+            ? authUser.email.split("@")[0]
+            : null);
+
+        const { error: insertError } = await supabase.from("profiles").insert({
+          user_id: userId,
+          email: authUser.email ?? "",
+          phone_number: derivedPhone,
+          full_name: meta.full_name || null,
+        });
+
+        if (insertError) {
+          console.error("Profile self-heal failed:", insertError);
+        } else {
+          await fetchProfile(userId);
+        }
+      }
+    }
   };
 
   const refreshProfile = async () => {
@@ -160,6 +188,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
       options: {
         emailRedirectTo: redirectUrl,
+        data: {
+          phone_number: phoneNumber,
+          full_name: fullName || null,
+        },
       },
     });
 
