@@ -57,6 +57,10 @@ interface GetDVARequest {
   action: "get_dva";
 }
 
+interface ReconcileDVARequest {
+  action: "reconcile_dva";
+}
+
 interface ValidateBVNRequest {
   action: "validate_bvn";
   bvn: string;
@@ -66,7 +70,7 @@ interface ValidateBVNRequest {
   last_name: string;
 }
 
-type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest | CreateDVARequest | GetDVARequest | ValidateBVNRequest;
+type RequestBody = InitializeRequest | VerifyRequest | WalletPaymentRequest | BankTransferRequest | CreateDVARequest | GetDVARequest | ValidateBVNRequest | ReconcileDVARequest;
 
 // CheapDataHub electricity DisCo to disco_id mapping
 const ELECTRICITY_PROVIDER_IDS: Record<string, number> = {
