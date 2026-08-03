@@ -41,7 +41,10 @@ export default function EmailPreferences() {
     const next = { ...prefs, [key]: value };
     setPrefs(next);
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ [key]: value }).eq("id", user.id);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ [key]: value } as Partial<Prefs>)
+      .eq("id", user.id);
     setSaving(false);
     if (error) {
       setPrefs(prefs);
