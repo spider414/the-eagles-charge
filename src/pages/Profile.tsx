@@ -192,7 +192,12 @@ const Profile = () => {
 
     setIsSaving(true);
     try {
-      const updateData: Record<string, string | boolean> = {
+      const updateData: {
+        full_name: string;
+        phone_number: string;
+        email?: string;
+        payment_email_locked?: boolean;
+      } = {
         full_name: formData.full_name,
         phone_number: formData.phone_number,
       };
