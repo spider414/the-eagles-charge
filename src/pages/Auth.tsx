@@ -106,8 +106,9 @@ const Auth = () => {
   };
 
   const sendOtp = async (phone: string, purpose: "signup" | "password_reset") => {
+    const normalizedPhone = normalizePhone(phone);
     try {
-      phoneSchema.parse(phone);
+      phoneSchema.parse(normalizedPhone);
     } catch (err) {
       if (err instanceof z.ZodError) {
         toast({
@@ -124,7 +125,7 @@ const Auth = () => {
     let error: any = null;
     try {
       const res = await supabase.functions.invoke("send-otp", {
-        body: { phone_number: phone, purpose },
+        body: { phone_number: normalizedPhone, purpose },
       });
       data = res.data;
       error = res.error;
@@ -203,18 +204,47 @@ const Auth = () => {
     return true;
   };
 
-  const verifyOtp = async (phone: string, otp: string, purpose: "signup" | "password_reset") => {
+  const verifyOtp = async (
+    phone: string,
+    otp: string,
+    purpose: "signup" | "password_reset",
+    onRetry?: () => void,
+  ) => {
+    const normalizedPhone = normalizePhone(phone);
     setIsLoading(true);
     const { data, error } = await supabase.functions.invoke("verify-otp", {
-      body: { phone_number: phone, otp_code: otp, purpose },
+      body: { phone_number: normalizedPhone, otp_code: otp.replace(/\D/g, ""), purpose },
     });
     setIsLoading(false);
 
     if (error || data?.error) {
+      let description = data?.error || "Invalid OTP. Please try again.";
+      let payload: any = data;
+      const ctx = (error as any)?.context;
+      if (ctx && typeof ctx.json === "function") {
+        try {
+          const body = await ctx.json();
+          if (body) {
+            payload = body;
+            if (body.error) description = body.error;
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+
+      const canRetry = payload?.canRetry !== false && !payload?.contactSupport;
+
       toast({
         title: "Verification Failed",
-        description: data?.error || "Invalid OTP. Please try again.",
+        description,
         variant: "destructive",
+        action:
+          canRetry && onRetry ? (
+            <ToastAction altText="Send a new code" onClick={onRetry}>
+              Send New Code
+            </ToastAction>
+          ) : undefined,
       });
       return null;
     }
@@ -277,10 +307,15 @@ const Auth = () => {
       return;
     }
 
-    const verificationResult = await verifyOtp(signupPhone, signupOtp, "signup");
+    const verificationResult = await verifyOtp(signupPhone, signupOtp, "signup", async () => {
+      setSignupOtp("");
+      await sendOtp(signupPhone, "signup");
+    });
     if (verificationResult) {
       setPhoneVerified(true);
       setStep("signup-nin");
+    } else {
+      setSignupOtp("");
     }
   };
 
@@ -500,10 +535,15 @@ const Auth = () => {
       return;
     }
 
-    const verificationResult = await verifyOtp(forgotPhone, forgotOtp, "password_reset");
+    const verificationResult = await verifyOtp(forgotPhone, forgotOtp, "password_reset", async () => {
+      setForgotOtp("");
+      await sendOtp(forgotPhone, "password_reset");
+    });
     if (verificationResult) {
       setVerificationId(verificationResult);
       setStep("forgot-reset");
+    } else {
+      setForgotOtp("");
     }
   };
 
@@ -763,7 +803,8 @@ const Auth = () => {
                       type="tel"
                       placeholder="08012345678"
                       value={signupPhone}
-                      onChange={(e) => setSignupPhone(e.target.value)}
+                      onChange={(e) => setSignupPhone(cleanPhoneInput(e.target.value))}
+                      onBlur={(e) => setSignupPhone(normalizePhone(e.target.value))}
                       className="pl-10"
                     />
                   </div>
