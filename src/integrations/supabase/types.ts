@@ -191,6 +191,39 @@ export type Database = {
         }
         Relationships: []
       }
+      otp_audit_log: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json | null
+          phone_hash: string
+          phone_hint: string | null
+          purpose: string | null
+          reason: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          phone_hash: string
+          phone_hint?: string | null
+          purpose?: string | null
+          reason?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          phone_hash?: string
+          phone_hint?: string | null
+          purpose?: string | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
       otp_verifications: {
         Row: {
           created_at: string
