@@ -1,0 +1,1 @@
+DELETE FROM public.rate_limit_attempts WHERE endpoint IN ('verify-otp','send-otp');

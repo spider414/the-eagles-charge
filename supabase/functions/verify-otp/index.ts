@@ -21,6 +21,16 @@ interface VerifyRequest {
   purpose: "signup" | "password_reset";
 }
 
+// Normalize a Nigerian phone number to the same 0XXXXXXXXXX format
+// that send-otp stores in the database.
+function normalizePhone(phone: string): string {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("0")) return digits;
+  if (digits.length === 13 && digits.startsWith("234")) return `0${digits.slice(3)}`;
+  if (digits.length === 10) return `0${digits}`;
+  return digits;
+}
+
 interface RateLimitRecord {
   id: string;
   identifier: string;
@@ -150,15 +160,18 @@ Deno.serve(async (req) => {
       );
     }
 
+    const normalizedPhone = normalizePhone(phone_number);
+    const cleanOtp = String(otp_code).replace(/\D/g, "");
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
     // Check rate limit before processing
-    const rateLimitCheck = await checkRateLimit(supabase, phone_number, "verify-otp");
+    const rateLimitCheck = await checkRateLimit(supabase, normalizedPhone, "verify-otp");
     if (!rateLimitCheck.allowed) {
-      console.log(`Rate limit exceeded for verify-otp: ${phone_number}`);
+      console.log(`Rate limit exceeded for verify-otp: ${normalizedPhone}`);
       return new Response(
         JSON.stringify({
           error: "Too many failed attempts. Please contact customer support for assistance.",
@@ -169,17 +182,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Find the OTP record
-    const { data: otpRecord, error: fetchError } = await supabase
+    // Find the most recent unverified OTP record (there can be several)
+    const { data: otpRows, error: fetchError } = await supabase
       .from("otp_verifications")
       .select("*")
-      .eq("phone_number", phone_number)
+      .eq("phone_number", normalizedPhone)
       .eq("purpose", purpose)
       .eq("verified", false)
-      .maybeSingle();
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    const otpRecord = otpRows && otpRows.length > 0 ? otpRows[0] : null;
 
     if (fetchError || !otpRecord) {
-      const failResult = await recordFailedAttempt(supabase, phone_number, "verify-otp");
+      if (fetchError) console.error("OTP lookup error:", fetchError);
+      const failResult = await recordFailedAttempt(supabase, normalizedPhone, "verify-otp");
       const errorMessage = failResult.locked
         ? "Too many failed attempts. Please contact customer support for assistance."
         : `No pending verification found. Please request a new OTP. (${failResult.attemptsRemaining} attempts remaining)`;
@@ -201,7 +218,7 @@ Deno.serve(async (req) => {
         .delete()
         .eq("id", otpRecord.id);
 
-      const failResult = await recordFailedAttempt(supabase, phone_number, "verify-otp");
+      const failResult = await recordFailedAttempt(supabase, normalizedPhone, "verify-otp");
       const errorMessage = failResult.locked
         ? "Too many failed attempts. Please contact customer support for assistance."
         : `OTP has expired. Please request a new one. (${failResult.attemptsRemaining} attempts remaining)`;
@@ -217,11 +234,11 @@ Deno.serve(async (req) => {
     }
 
     // Hash the input OTP and compare with stored hash
-    const hashedInputOTP = await hashOTP(otp_code);
+    const hashedInputOTP = await hashOTP(cleanOtp);
     
     // Verify OTP code (comparing hashes)
     if (otpRecord.otp_code !== hashedInputOTP) {
-      const failResult = await recordFailedAttempt(supabase, phone_number, "verify-otp");
+      const failResult = await recordFailedAttempt(supabase, normalizedPhone, "verify-otp");
       const errorMessage = failResult.locked
         ? "Too many failed attempts. Please contact customer support for assistance."
         : `Invalid OTP code. Please try again. (${failResult.attemptsRemaining} attempts remaining)`;
@@ -237,7 +254,8 @@ Deno.serve(async (req) => {
     }
 
     // Success - clear rate limit and mark as verified
-    await clearRateLimit(supabase, phone_number, "verify-otp");
+    await clearRateLimit(supabase, normalizedPhone, "verify-otp");
+    await clearRateLimit(supabase, normalizedPhone, "send-otp");
     
     await supabase
       .from("otp_verifications")
