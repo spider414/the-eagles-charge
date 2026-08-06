@@ -715,7 +715,8 @@ const Auth = () => {
                           type="tel"
                           placeholder="08012345678"
                           value={loginPhone}
-                          onChange={(e) => setLoginPhone(e.target.value)}
+                          onChange={(e) => setLoginPhone(cleanPhoneInput(e.target.value))}
+                          onBlur={(e) => setLoginPhone(normalizePhone(e.target.value))}
                           className="pl-10"
                           required
                         />
@@ -1107,7 +1108,8 @@ const Auth = () => {
                       type="tel"
                       placeholder="08012345678"
                       value={forgotPhone}
-                      onChange={(e) => setForgotPhone(e.target.value)}
+                      onChange={(e) => setForgotPhone(cleanPhoneInput(e.target.value))}
+                      onBlur={(e) => setForgotPhone(normalizePhone(e.target.value))}
                       className="pl-10"
                     />
                   </div>
