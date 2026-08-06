@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 import { encodeHex } from "https://deno.land/std@0.208.0/encoding/hex.ts";
+import { logOtpEvent } from "../_shared/otp-audit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -172,10 +173,17 @@ Deno.serve(async (req) => {
     const rateLimitCheck = await checkRateLimit(supabase, normalizedPhone, "verify-otp");
     if (!rateLimitCheck.allowed) {
       console.log(`Rate limit exceeded for verify-otp: ${normalizedPhone}`);
+      await logOtpEvent(supabase, {
+        event: "verify_failure",
+        phone: normalizedPhone,
+        purpose,
+        reason: "blocked: too many failed verification attempts",
+      });
       return new Response(
         JSON.stringify({
           error: "Too many failed attempts. Please contact customer support for assistance.",
           contactSupport: true,
+          canRetry: false,
           lockedUntil: rateLimitCheck.lockedUntil,
         }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -200,11 +208,20 @@ Deno.serve(async (req) => {
       const errorMessage = failResult.locked
         ? "Too many failed attempts. Please contact customer support for assistance."
         : `No pending verification found. Please request a new OTP. (${failResult.attemptsRemaining} attempts remaining)`;
-      
+      await logOtpEvent(supabase, {
+        event: "verify_failure",
+        phone: normalizedPhone,
+        purpose,
+        reason: "no pending OTP found",
+        metadata: { attempts_remaining: failResult.attemptsRemaining },
+      });
+
       return new Response(
         JSON.stringify({ 
           error: errorMessage,
           contactSupport: failResult.locked,
+          canRetry: !failResult.locked,
+          needsNewCode: true,
           attemptsRemaining: failResult.attemptsRemaining,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -223,10 +240,20 @@ Deno.serve(async (req) => {
         ? "Too many failed attempts. Please contact customer support for assistance."
         : `OTP has expired. Please request a new one. (${failResult.attemptsRemaining} attempts remaining)`;
 
+      await logOtpEvent(supabase, {
+        event: "verify_failure",
+        phone: normalizedPhone,
+        purpose,
+        reason: "OTP expired",
+        metadata: { attempts_remaining: failResult.attemptsRemaining },
+      });
+
       return new Response(
         JSON.stringify({ 
           error: errorMessage,
           contactSupport: failResult.locked,
+          canRetry: !failResult.locked,
+          needsNewCode: true,
           attemptsRemaining: failResult.attemptsRemaining,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -243,10 +270,19 @@ Deno.serve(async (req) => {
         ? "Too many failed attempts. Please contact customer support for assistance."
         : `Invalid OTP code. Please try again. (${failResult.attemptsRemaining} attempts remaining)`;
 
+      await logOtpEvent(supabase, {
+        event: "verify_failure",
+        phone: normalizedPhone,
+        purpose,
+        reason: "invalid code",
+        metadata: { attempts_remaining: failResult.attemptsRemaining },
+      });
+
       return new Response(
         JSON.stringify({ 
           error: errorMessage,
           contactSupport: failResult.locked,
+          canRetry: !failResult.locked,
           attemptsRemaining: failResult.attemptsRemaining,
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -261,6 +297,13 @@ Deno.serve(async (req) => {
       .from("otp_verifications")
       .update({ verified: true })
       .eq("id", otpRecord.id);
+
+    await logOtpEvent(supabase, {
+      event: "verify_success",
+      phone: normalizedPhone,
+      purpose,
+      reason: "verified",
+    });
 
     return new Response(
       JSON.stringify({ 
