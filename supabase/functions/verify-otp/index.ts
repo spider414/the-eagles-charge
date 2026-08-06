@@ -21,6 +21,16 @@ interface VerifyRequest {
   purpose: "signup" | "password_reset";
 }
 
+// Normalize a Nigerian phone number to the same 0XXXXXXXXXX format
+// that send-otp stores in the database.
+function normalizePhone(phone: string): string {
+  const digits = (phone || "").replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("0")) return digits;
+  if (digits.length === 13 && digits.startsWith("234")) return `0${digits.slice(3)}`;
+  if (digits.length === 10) return `0${digits}`;
+  return digits;
+}
+
 interface RateLimitRecord {
   id: string;
   identifier: string;
