@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logOtpEvent } from "../_shared/otp-audit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -211,6 +212,12 @@ Deno.serve(async (req) => {
     const rateLimitCheck = await checkRateLimit(supabase, normalizedPhone, "send-otp");
     if (!rateLimitCheck.allowed) {
       console.log(`Rate limit (failed attempts) exceeded for send-otp: ${normalizedPhone}`);
+      await logOtpEvent(supabase, {
+        event: "send",
+        phone: normalizedPhone,
+        purpose,
+        reason: "blocked: locked out after repeated failures",
+      });
       return new Response(
         JSON.stringify({
           error: "Too many failed attempts. Please contact customer support for assistance.",
@@ -237,6 +244,12 @@ Deno.serve(async (req) => {
     // Max 3 OTP requests per phone per hour
     if (recentOtps && recentOtps.length >= 3) {
       console.log(`Rate limit exceeded for phone: ${normalizedPhone}`);
+      await logOtpEvent(supabase, {
+        event: "send",
+        phone: normalizedPhone,
+        purpose,
+        reason: "blocked: max 3 OTP requests per hour",
+      });
       return new Response(
         JSON.stringify({ error: "Too many OTP requests. Please try again in 1 hour." }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -251,9 +264,16 @@ Deno.serve(async (req) => {
       if (timeSinceLastOtp < 60000) {
         const waitSeconds = Math.ceil((60000 - timeSinceLastOtp) / 1000);
         console.log(`Cooldown active for phone: ${normalizedPhone}, wait ${waitSeconds}s`);
+        await logOtpEvent(supabase, {
+          event: "send",
+          phone: normalizedPhone,
+          purpose,
+          reason: `blocked: 60s cooldown (${waitSeconds}s remaining)`,
+        });
         return new Response(
           JSON.stringify({ 
-            error: `Please wait ${waitSeconds} seconds before requesting another OTP.` 
+            error: `Please wait ${waitSeconds} seconds before requesting another OTP.`,
+            retryAfter: waitSeconds,
           }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
@@ -363,6 +383,12 @@ Deno.serve(async (req) => {
 
     if (!twilioResponse.ok) {
       console.error("Twilio error:", twilioResult);
+      await logOtpEvent(supabase, {
+        event: "send",
+        phone: normalizedPhone,
+        purpose,
+        reason: "failed: SMS delivery error",
+      });
       return new Response(
         JSON.stringify({ 
           error: "Failed to send OTP. Please try again.",
@@ -371,6 +397,13 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    await logOtpEvent(supabase, {
+      event: "send",
+      phone: normalizedPhone,
+      purpose,
+      reason: "sent",
+    });
 
     return new Response(
       JSON.stringify({ 
