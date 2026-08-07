@@ -243,15 +243,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (phoneNumber: string, password: string) => {
-    // Use the fake email format to match signup
-    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email: fakeEmail,
-      password,
-    });
+    const digits = phoneNumber.replace(/\D/g, '');
+    // Current format first, then the legacy `.local` format for older accounts.
+    const candidates = [
+      `${digits}@phone.harmicglobal.com`,
+      `${digits}@eagles.local`,
+    ];
 
-    return { error: error as Error | null };
+    let lastError: Error | null = null;
+    for (const email of candidates) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!error) return { error: null };
+      lastError = error as Error;
+    }
+
+    return { error: lastError };
   };
 
   const signOut = async () => {
