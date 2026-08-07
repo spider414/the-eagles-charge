@@ -44,7 +44,7 @@ const Internet = () => {
   const [isAccountVerified, setIsAccountVerified] = useState(false);
 
   // Check if user has a synthetic phone-based email
-  const hasSyntheticEmail = () => user?.email?.endsWith("@eagles.local");
+  const hasSyntheticEmail = () => user?.email?.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
   const emailSuggestion = getEmailSuggestion(paymentEmail);
 
   // Debounced account verification

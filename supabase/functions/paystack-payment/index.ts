@@ -274,7 +274,7 @@ Deno.serve(async (req) => {
         try {
           const paystackEmail: string | undefined = paystackData.data?.customer?.email;
           const isReal = (e?: string) =>
-            !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.endsWith("@eagles.local");
+            !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
 
           let receiptEmail = isReal(paystackEmail) ? paystackEmail! : "";
           let receiptName: string | null = null;
@@ -716,7 +716,7 @@ Deno.serve(async (req) => {
             .eq("user_id", userId)
             .maybeSingle();
           const isReal = (e?: string | null) =>
-            !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.endsWith("@eagles.local");
+            !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
           const receiptEmail = isReal(prof?.contact_email)
             ? prof!.contact_email!
             : isReal(prof?.email)

@@ -76,7 +76,7 @@ const WalletTopUp = () => {
       // Pre-fill payment email if profile has a valid non-synthetic email
       const profileEmail = profile.email || "";
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (emailRegex.test(profileEmail) && !profileEmail.endsWith("@eagles.local")) {
+      if (emailRegex.test(profileEmail) && !profileEmail.match(/@(eagles\.local|phone\.harmicglobal\.com)$/)) {
         setPaymentEmail(profileEmail);
       }
     }
@@ -150,12 +150,12 @@ const WalletTopUp = () => {
   const getDVAEmail = (): string => {
     // If user has a real email, use it
     const userEmail = user?.email || "";
-    if (!userEmail.endsWith("@eagles.local") && isValidEmail(userEmail)) {
+    if (!userEmail.match(/@(eagles\.local|phone\.harmicglobal\.com)$/) && isValidEmail(userEmail)) {
       return userEmail;
     }
     // If profile has a valid payment email, use it
     const profileEmail = profile?.email || "";
-    if (!profileEmail.endsWith("@eagles.local") && isValidEmail(profileEmail)) {
+    if (!profileEmail.match(/@(eagles\.local|phone\.harmicglobal\.com)$/) && isValidEmail(profileEmail)) {
       return profileEmail;
     }
     // Generate a unique email using the user's phone number or ID
@@ -271,7 +271,7 @@ const WalletTopUp = () => {
   // Check if user has a synthetic phone-based email
   const hasSyntheticEmail = () => {
     const email = user?.email || "";
-    return email.endsWith("@eagles.local");
+    return email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
   };
 
   // Get email suggestion for typos

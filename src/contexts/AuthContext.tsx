@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const meta = (authUser.user_metadata ?? {}) as Record<string, string>;
         const derivedPhone =
           meta.phone_number ||
-          (authUser.email?.endsWith("@eagles.local")
+          (authUser.email?.match(/@(eagles\.local|phone\.harmicglobal\.com)$/)
             ? authUser.email.split("@")[0]
             : null);
 
