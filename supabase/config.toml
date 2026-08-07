@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.verify-nin-phone]
 verify_jwt = false
+
+[functions.phone-signup]
+verify_jwt = false
+
+[functions.migrate-legacy-emails]
+verify_jwt = false
