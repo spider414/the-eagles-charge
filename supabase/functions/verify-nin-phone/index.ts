@@ -27,21 +27,46 @@ Deno.serve(async (req) => {
     const phone = normalizePhone(body?.phone_number ?? body?.phone ?? '');
     if (!phone) return json({ error: 'A valid Nigerian phone number is required' }, 400);
 
-    const res = await fetch(`${API_BASE}/nin-phone`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-      body: JSON.stringify({ phone, consent: true }),
-    });
+    const intl = '234' + phone.slice(1);
+    // The provider is picky about the field name / phone format, so try the
+    // documented variants before giving up.
+    const variants: Record<string, unknown>[] = [
+      { phone_number: phone },
+      { number: phone },
+      { phone: phone },
+      { phone_number: intl },
+      { number: intl },
+    ];
 
-    const text = await res.text();
+    let res: Response | null = null;
+    let text = '';
     let payload: any = null;
-    try { payload = JSON.parse(text); } catch { /* non-JSON */ }
 
-    if (!res.ok || !payload || payload.status !== 'success' || !payload.data) {
-      console.error('NIN lookup failed', res.status, text.slice(0, 400));
+    for (const v of variants) {
+      res = await fetch(`${API_BASE}/nin-phone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+        body: JSON.stringify({ ...v, consent: true }),
+      });
+      text = await res.text();
+      payload = null;
+      try { payload = JSON.parse(text); } catch { /* non-JSON */ }
+      if (res.ok && payload?.status === 'success' && payload?.data) break;
+      console.error('NIN lookup attempt failed', JSON.stringify(v), res.status, text.slice(0, 300));
+      // Auth/credit problems won't be fixed by another variant.
+      if (res.status === 401 || res.status === 402 || res.status === 403) break;
+    }
+
+    if (!res || !res.ok || !payload || payload.status !== 'success' || !payload.data) {
       return json(
-        { error: payload?.message || 'No NIN record found for this phone number' },
-        res.status === 401 || res.status === 402 ? 500 : 400,
+        {
+          success: false,
+          error:
+            res && (res.status === 401 || res.status === 402 || res.status === 403)
+              ? 'NIN verification service is unavailable right now. Please continue and verify later.'
+              : 'No NIN record is linked to this phone number. Please check the number or try another one.',
+        },
+        200,
       );
     }
 
