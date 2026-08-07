@@ -34,7 +34,7 @@ export const isValidEmail = (email: string): boolean => {
   if (!emailRegex.test(trimmed)) return false;
   
   // Reject synthetic emails
-  if (trimmed.endsWith('@eagles.local')) return false;
+  if (trimmed.match(/@(eagles\.local|phone\.harmicglobal\.com)$/)) return false;
   
   // Check for common TLD typos
   const parts = trimmed.split('.');

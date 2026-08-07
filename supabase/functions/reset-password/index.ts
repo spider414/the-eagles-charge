@@ -283,7 +283,7 @@ Deno.serve(async (req) => {
         .eq("user_id", profile.user_id)
         .maybeSingle();
       const isReal = (e?: string | null) =>
-        !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.endsWith("@eagles.local");
+        !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !e.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
       const to = isReal(prof?.contact_email)
         ? prof!.contact_email!
         : isReal(prof?.email)

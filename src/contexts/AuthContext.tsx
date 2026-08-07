@@ -110,7 +110,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const meta = (authUser.user_metadata ?? {}) as Record<string, string>;
         const derivedPhone =
           meta.phone_number ||
-          (authUser.email?.endsWith("@eagles.local")
+          (authUser.email?.match(/@(eagles\.local|phone\.harmicglobal\.com)$/)
             ? authUser.email.split("@")[0]
             : null);
 
@@ -179,8 +179,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string, ninData?: { nin: string; full_name: string } | null) => {
-    // Create a fake email from phone number for Supabase auth (phone auth requires SMS setup)
-    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
+    // Create a synthetic email from the phone number for Supabase auth.
+    // NOTE: Supabase rejects reserved TLDs like `.local`, so we use a real domain.
+    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@phone.harmicglobal.com`;
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -242,15 +243,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (phoneNumber: string, password: string) => {
-    // Use the fake email format to match signup
-    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
-    
-    const { error } = await supabase.auth.signInWithPassword({
-      email: fakeEmail,
-      password,
-    });
+    const digits = phoneNumber.replace(/\D/g, '');
+    // Current format first, then the legacy `.local` format for older accounts.
+    const candidates = [
+      `${digits}@phone.harmicglobal.com`,
+      `${digits}@eagles.local`,
+    ];
 
-    return { error: error as Error | null };
+    let lastError: Error | null = null;
+    for (const email of candidates) {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (!error) return { error: null };
+      lastError = error as Error;
+    }
+
+    return { error: lastError };
   };
 
   const signOut = async () => {

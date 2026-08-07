@@ -92,7 +92,7 @@ interface PasswordResetPayload {
 type Payload = WelcomePayload | ReceiptPayload | PasswordResetPayload;
 
 const isValidEmail = (email: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.endsWith("@eagles.local");
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
 
 const escape = (v: unknown) =>
   String(v ?? "")

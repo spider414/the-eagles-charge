@@ -81,7 +81,7 @@ export const usePaystackPopup = () => {
 
       // Validate email before proceeding
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!email || !emailRegex.test(email) || email.endsWith("@eagles.local")) {
+      if (!email || !emailRegex.test(email) || email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/)) {
         toast({
           title: "Invalid Email",
           description: "A valid email address is required for card payments. Please update your profile.",
