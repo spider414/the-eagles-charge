@@ -179,8 +179,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string, ninData?: { nin: string; full_name: string } | null) => {
-    // Create a fake email from phone number for Supabase auth (phone auth requires SMS setup)
-    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@eagles.local`;
+    // Create a synthetic email from the phone number for Supabase auth.
+    // NOTE: Supabase rejects reserved TLDs like `.local`, so we use a real domain.
+    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@phone.harmicglobal.com`;
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
