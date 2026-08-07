@@ -179,24 +179,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signUp = async (phoneNumber: string, password: string, fullName?: string, referralCode?: string, securityQuestion?: string, securityAnswer?: string, ninData?: { nin: string; full_name: string } | null) => {
-    // Create a synthetic email from the phone number for Supabase auth.
-    // NOTE: Supabase rejects reserved TLDs like `.local`, so we use a real domain.
-    const fakeEmail = `${phoneNumber.replace(/\D/g, '')}@phone.harmicglobal.com`;
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { data, error } = await supabase.auth.signUp({
-      email: fakeEmail,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          phone_number: phoneNumber,
-          full_name: fullName || null,
-        },
-      },
+    // Synthetic email from the phone number (Supabase rejects reserved TLDs like `.local`).
+    const digits = phoneNumber.replace(/\D/g, '');
+    const fakeEmail = `${digits}@phone.harmicglobal.com`;
+
+    // Create the account server-side, pre-confirmed, so no confirmation email is needed.
+    const { data: fnData, error: fnError } = await supabase.functions.invoke("phone-signup", {
+      body: { phone_number: digits, password, full_name: fullName || null },
     });
 
-    if (!error && data.user) {
+    const apiError = (fnData as { error?: string } | null)?.error;
+    if (fnError || apiError) {
+      return { error: new Error(apiError || fnError?.message || "Could not create account") };
+    }
+
+    // Sign in immediately.
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: fakeEmail,
+      password,
+    });
+
+    if (!signInError && signInData.user) {
+      const newUserId = signInData.user.id;
       // Find referrer if referral code provided
       let referredBy: string | null = null;
       if (referralCode) {
@@ -221,7 +225,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error: profileError } = await supabase
         .from("profiles")
         .insert({
-          user_id: data.user.id,
+          user_id: newUserId,
           email: fakeEmail,
           phone_number: phoneNumber,
           full_name: fullName || null,
@@ -239,7 +243,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    return { error: error as Error | null };
+    return { error: (signInError as Error) ?? null };
   };
 
   const signIn = async (phoneNumber: string, password: string) => {
