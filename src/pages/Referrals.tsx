@@ -120,8 +120,9 @@ const Referrals = () => {
               </div>
             </div>
             <p className="text-sm text-primary-foreground/80 mb-4">
-              Share your unique referral code with friends. When they sign up and make their first transaction, 
-              you both earn ₦1,000 bonus credits!
+              Share your unique referral code. When a friend signs up with it and makes their
+              first real wallet deposit (card or bank transfer), you get ₦1,000 credited
+              instantly. The ₦2,000 welcome bonus does not count as a deposit.
             </p>
           </CardContent>
         </Card>
@@ -195,7 +196,7 @@ const Referrals = () => {
               <div>
                 <h4 className="font-medium">Friend Signs Up</h4>
                 <p className="text-sm text-muted-foreground">
-                  They create an account using your referral code
+                  They create an account using your referral code and get their ₦2,000 welcome bonus
                 </p>
               </div>
             </div>
@@ -204,11 +205,18 @@ const Referrals = () => {
                 3
               </div>
               <div>
-                <h4 className="font-medium">Both Earn Rewards</h4>
+                <h4 className="font-medium">They Fund Their Wallet</h4>
                 <p className="text-sm text-muted-foreground">
-                  After their first transaction, you both get ₦1,000 bonus!
+                  On their first successful wallet funding, ₦1,000 lands in your wallet automatically
                 </p>
               </div>
+            </div>
+            <div className="rounded-lg border border-border bg-muted/50 p-4 text-xs text-muted-foreground space-y-1">
+              <p className="font-medium text-foreground">Eligibility rules</p>
+              <p>• Paid once per referred friend — on their first qualifying deposit only.</p>
+              <p>• The ₦2,000 welcome bonus is excluded and never triggers a referral payout.</p>
+              <p>• The deposit must be a completed wallet top-up (card or virtual account transfer).</p>
+              <p>• The referral code must be entered at sign-up; it cannot be added later.</p>
             </div>
           </CardContent>
         </Card>
