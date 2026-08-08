@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck, Mail, AlertCircle } from "lucide-react";
+import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck, Mail, AlertCircle, Clock, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -387,12 +387,12 @@ const WalletTopUp = () => {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
-              Your Virtual Account
+              Bank Transfer
             </CardTitle>
             <CardDescription>
               {dvaDetails 
-                ? "Transfer to this account anytime to fund your wallet instantly"
-                : "Get a dedicated account number for easy wallet funding"
+                ? "Transfer any amount from your bank app to the account below"
+                : "Get a dedicated account number and fund your wallet by bank transfer"
               }
             </CardDescription>
           </CardHeader>
@@ -420,9 +420,17 @@ const WalletTopUp = () => {
                   <span className="text-sm text-muted-foreground">Account Name</span>
                   <span className="font-medium text-sm">{dvaDetails.account_name}</span>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <div className="flex justify-between items-center py-2 border-t border-border">
+                  <span className="text-sm text-muted-foreground">Payment Reference</span>
+                  <span className="font-mono text-sm">{dvaDetails.account_number}</span>
+                </div>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3 text-primary" />
+                  Estimated credit time: 1–5 minutes (up to 15 minutes at peak hours)
+                </p>
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3 text-green-500" />
-                  Transfers to this account credit your wallet instantly
+                  No narration needed — your account number is the reference. Paystack settles automatically.
                 </p>
                 <Button
                   variant="outline"
@@ -536,7 +544,8 @@ const WalletTopUp = () => {
                 <div>
                   <p className="font-medium mb-1">Get Your Dedicated Account</p>
                   <p className="text-sm text-muted-foreground">
-                    Create a unique bank account number for instant wallet funding
+                    Create a unique bank account number, then transfer from any Nigerian bank.
+                    Funds land in your wallet in about 1–5 minutes.
                   </p>
                 </div>
                 <Button onClick={() => setShowBVNForm(true)}>
@@ -647,6 +656,22 @@ const WalletTopUp = () => {
             <p className="text-xs text-center text-muted-foreground">
               Secured by Paystack. Your payment information is encrypted.
             </p>
+          </CardContent>
+        </Card>
+
+        {/* Referral bonus eligibility */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Gift className="h-5 w-5 text-primary" />
+              Referral bonus
+            </CardTitle>
+            <CardDescription>How the ₦1,000 referrer reward is triggered</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-1 text-xs text-muted-foreground">
+            <p>• If you signed up with a referral code, your <span className="text-foreground font-medium">first</span> completed wallet funding pays your referrer ₦1,000.</p>
+            <p>• The ₦2,000 welcome bonus does <span className="text-foreground font-medium">not</span> count — it is excluded from eligibility.</p>
+            <p>• Card payments and bank transfers both qualify; the reward is paid once per referred user.</p>
           </CardContent>
         </Card>
       </main>
