@@ -204,14 +204,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Find referrer if referral code provided
       let referredBy: string | null = null;
       if (referralCode) {
-        const { data: referrerProfile } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("referral_code", referralCode.toUpperCase())
-          .maybeSingle();
-        
-        if (referrerProfile) {
-          referredBy = referrerProfile.id;
+        // RLS hides other users' profiles, so resolve the code via a safe RPC
+        const { data: referrerId } = await supabase.rpc("resolve_referral_code", {
+          _code: referralCode.toUpperCase(),
+        });
+        if (referrerId) {
+          referredBy = referrerId as string;
         }
       }
 
