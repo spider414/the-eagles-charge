@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeft, Building2, Briefcase, Clock, Bell, ArrowRight } from "lucide-react";
+import { ArrowLeft, Clock, Bell, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -24,25 +24,21 @@ const ComingSoon = () => {
     );
   }
 
-  const availableServices = [
-    {
-      icon: Building2,
-      title: "Company & Business Registration",
-      description: "Register your business with the Corporate Affairs Commission (CAC)",
-      color: "gradient-hero",
-      link: "/business-registration",
-      available: true,
-    },
-  ];
+  const availableServices: {
+    icon: typeof Clock;
+    title: string;
+    description: string;
+    color: string;
+    link: string;
+    available: boolean;
+  }[] = [];
 
-  const upcomingServices = [
-    {
-      icon: Briefcase,
-      title: "Tax Identification Number (TIN)",
-      description: "Get your TIN for tax compliance",
-      color: "bg-emerald-500",
-    },
-  ];
+  const upcomingServices: {
+    icon: typeof Clock;
+    title: string;
+    description: string;
+    color: string;
+  }[] = [];
 
   return (
     <PageTransition>
@@ -79,6 +75,7 @@ const ComingSoon = () => {
           </div>
 
           {/* Available Services */}
+          {availableServices.length > 0 && (
           <div className="mb-6">
             <h2 className="text-sm font-medium text-muted-foreground mb-3">NOW AVAILABLE</h2>
             {availableServices.map((service, index) => (
@@ -103,8 +100,10 @@ const ComingSoon = () => {
               </Link>
             ))}
           </div>
+          )}
 
           {/* Upcoming Services */}
+          {upcomingServices.length > 0 && (
           <div className="mb-8">
             <h2 className="text-sm font-medium text-muted-foreground mb-3">COMING SOON</h2>
             <div className="space-y-4">
@@ -130,6 +129,7 @@ const ComingSoon = () => {
               ))}
             </div>
           </div>
+          )}
 
           {/* Notify Me Card */}
           <Card className="gradient-hero text-primary-foreground animate-fade-in" style={{ animationDelay: "200ms" }}>

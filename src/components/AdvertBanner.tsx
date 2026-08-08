@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Gift, Building2, Briefcase, Sparkles, Wifi, Phone, Zap, Tv, Shield, GraduationCap } from "lucide-react";
+import { Gift, Sparkles, Wifi, Phone, Zap, Tv, GraduationCap } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface Advert {
@@ -15,18 +15,6 @@ const adverts: Advert[] = [
     text: "🎉 Refer a friend and earn ₦1,000 bonus each!",
     color: "text-purple-400",
     href: "/referrals",
-  },
-  {
-    icon: Building2,
-    text: "🏢 CAC Business Registration – BN, LTD & NGO available now!",
-    color: "text-blue-400",
-    href: "/business-services",
-  },
-  {
-    icon: Briefcase,
-    text: "📋 TIN Registration – Individual ₦800, Corporate ₦1,200",
-    color: "text-emerald-400",
-    href: "/tin-registration",
   },
   {
     icon: Sparkles,
@@ -63,12 +51,6 @@ const adverts: Advert[] = [
     text: "🎓 Buy WAEC, NECO & NABTEB exam PINs instantly!",
     color: "text-orange-400",
     href: "/exam-pin",
-  },
-  {
-    icon: Shield,
-    text: "🛡️ SCUML Registration – Stay compliant for ₦15,000",
-    color: "text-indigo-400",
-    href: "/scuml-registration",
   },
 ];
 
