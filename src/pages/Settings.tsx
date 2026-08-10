@@ -1,31 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Bird,
-  ArrowLeft,
-  Moon,
-  Sun,
-  Bell,
-  Shield,
-  HelpCircle,
-  FileText,
-  LogOut,
-  ChevronRight,
-  Smartphone,
-  Fingerprint,
-  Vibrate,
-  Volume2,
-  Zap,
-  Wallet,
-  Phone,
-  Wifi,
-  Receipt,
-  Trash2,
-  UserX,
-  KeyRound,
-  Clock,
-  Lock,
-} from "lucide-react";
+import { ArrowLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, LogOut, ChevronRight, Smartphone, Fingerprint, Vibrate, Volume2, Zap, Wallet, Phone, Wifi, Receipt, Trash2, UserX, KeyRound, Clock, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +15,7 @@ import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
 import EmailPreferences from "@/components/EmailPreferences";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
+import BrandLogo from "@/components/BrandLogo";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -504,9 +480,7 @@ const Settings = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold">
-              <Bird className="h-5 w-5 text-secondary-foreground" />
-            </div>
+            <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">Settings</span>
           </div>
         </div>

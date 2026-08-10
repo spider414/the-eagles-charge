@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck, Mail, AlertCircle, Clock, Gift } from "lucide-react";
+import { ArrowLeft, Wallet, CreditCard, Building2, Copy, Check, Loader2, ShieldCheck, Mail, AlertCircle, Clock, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { usePaystackPopup } from "@/hooks/usePaystackPopup";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
+import BrandLogo from "@/components/BrandLogo";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
@@ -362,9 +363,7 @@ const WalletTopUp = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold">
-              <Bird className="h-5 w-5 text-secondary-foreground" />
-            </div>
+            <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">Fund Wallet</span>
           </div>
         </div>

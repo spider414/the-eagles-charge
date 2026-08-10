@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Zap, Mail, AlertCircle, Loader2, User, MapPin, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Zap, Mail, AlertCircle, Loader2, User, MapPin, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethodSelector";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
+import BrandLogo from "@/components/BrandLogo";
 
 const discos = [
   { id: "ekedc", name: "Eko Electricity (EKEDC)" },
@@ -192,9 +193,7 @@ const Electricity = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
-                <Bird className="h-6 w-6 text-secondary-foreground" />
-              </div>
+              <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
               <span className="text-xl font-bold text-foreground">
                 Electricity <span className="text-gradient-gold">Bills</span>
               </span>

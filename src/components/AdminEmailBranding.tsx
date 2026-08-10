@@ -50,6 +50,29 @@ const LABELS: Record<string, string> = {
   password_reset: "Password reset",
 };
 
+const ALLOWED_TYPES = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+const MAX_BYTES = 2 * 1024 * 1024;
+const OUTPUT_SIZE = 512;
+
+/** Center-crops to a square and resizes to 512x512 PNG so the logo renders well at every breakpoint. */
+async function cropToSquarePng(file: File): Promise<Blob> {
+  if (file.type === "image/svg+xml") return file;
+  const bitmap = await createImageBitmap(file);
+  const side = Math.min(bitmap.width, bitmap.height);
+  const sx = (bitmap.width - side) / 2;
+  const sy = (bitmap.height - side) / 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = OUTPUT_SIZE;
+  canvas.height = OUTPUT_SIZE;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas not supported");
+  ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE);
+  bitmap.close?.();
+  return await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Could not process image"))), "image/png", 0.92)
+  );
+}
+
 export default function AdminEmailBranding() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -64,18 +87,28 @@ export default function AdminEmailBranding() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleLogoUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Invalid file", description: "Please choose an image file.", variant: "destructive" });
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      toast({ title: "Unsupported file type", description: "Use PNG, JPG, WEBP or SVG.", variant: "destructive" });
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > MAX_BYTES) {
       toast({ title: "File too large", description: "Logo must be under 2MB.", variant: "destructive" });
       return;
     }
     setUploading(true);
-    const ext = file.name.split(".").pop() || "png";
-    const path = `logo-${Date.now()}.${ext}`;
-    const { error: upErr } = await supabase.storage.from("branding").upload(path, file, { upsert: true });
+    let payload: Blob;
+    try {
+      payload = await cropToSquarePng(file);
+    } catch (e) {
+      setUploading(false);
+      toast({ title: "Could not process image", description: (e as Error).message, variant: "destructive" });
+      return;
+    }
+    const isSvg = file.type === "image/svg+xml";
+    const path = `logo-${Date.now()}.${isSvg ? "svg" : "png"}`;
+    const { error: upErr } = await supabase.storage
+      .from("branding")
+      .upload(path, payload, { upsert: true, contentType: isSvg ? "image/svg+xml" : "image/png" });
     if (upErr) {
       setUploading(false);
       toast({ title: "Upload failed", description: upErr.message, variant: "destructive" });
@@ -91,7 +124,7 @@ export default function AdminEmailBranding() {
       return;
     }
     setBranding((prev) => (prev ? { ...prev, logo_url: signed.signedUrl } : prev));
-    toast({ title: "Logo uploaded", description: "Remember to save branding." });
+    toast({ title: "Logo uploaded", description: "Cropped to a square. Remember to save branding." });
   };
 
   const loadLogs = async () => {
@@ -203,7 +236,9 @@ export default function AdminEmailBranding() {
                     <img src={branding.logo_url} alt="Brand logo preview" className="h-10 w-auto rounded border border-border object-contain" />
                   ) : null}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">PNG or JPG, max 2MB. Click “Save branding” to apply.</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  PNG, JPG, WEBP or SVG · max 2MB · auto-cropped to a 512×512 square. Click “Save branding” to apply.
+                </p>
               </div>
               <div>
                 <Label>Primary color</Label>

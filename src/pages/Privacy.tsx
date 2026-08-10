@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import BrandLogo from "@/components/BrandLogo";
 
 const Privacy = () => {
   const navigate = useNavigate();
@@ -15,9 +16,7 @@ const Privacy = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold">
-              <Bird className="h-5 w-5 text-secondary-foreground" />
-            </div>
+            <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">Privacy Policy</span>
           </div>
         </div>

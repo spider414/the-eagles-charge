@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, User, Mail, Phone, Save, Camera, Lock } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, Save, Camera, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
+import BrandLogo from "@/components/BrandLogo";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -267,9 +268,7 @@ const Profile = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold">
-              <Bird className="h-5 w-5 text-secondary-foreground" />
-            </div>
+            <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">Profile</span>
           </div>
         </div>

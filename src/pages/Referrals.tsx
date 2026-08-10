@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Gift, Users, Copy, Share2, Wallet } from "lucide-react";
+import { ArrowLeft, Gift, Users, Copy, Share2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import BrandLogo from "@/components/BrandLogo";
 
 interface ReferralStats {
   totalReferrals: number;
@@ -94,9 +95,7 @@ const Referrals = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
-                <Bird className="h-6 w-6 text-secondary-foreground" />
-              </div>
+              <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
               <span className="text-xl font-bold text-foreground">
                 Referral <span className="text-gradient-gold">Program</span>
               </span>

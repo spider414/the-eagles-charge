@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, ArrowLeft, Phone, Wifi, Zap, Tv, Globe, Receipt, Filter } from "lucide-react";
+import { ArrowLeft, Phone, Wifi, Zap, Tv, Globe, Receipt, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import TransactionDetailDialog from "@/components/TransactionDetailDialog";
+import BrandLogo from "@/components/BrandLogo";
 
 interface Transaction {
   id: string;
@@ -118,9 +119,7 @@ const History = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
-                <Bird className="h-6 w-6 text-secondary-foreground" />
-              </div>
+              <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
               <span className="text-xl font-bold text-foreground">
                 Transaction <span className="text-gradient-gold">History</span>
               </span>

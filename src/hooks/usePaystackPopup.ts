@@ -36,6 +36,7 @@ declare global {
         ref: string;
         channels?: string[];
         metadata?: Record<string, unknown>;
+        label?: string;
         callback: (response: { reference: string }) => void;
         onClose: () => void;
       }) => {
@@ -130,7 +131,10 @@ export const usePaystackPopup = () => {
           amount: amount * 100, // Paystack expects amount in kobo
           ref: data.reference,
           channels: ["card"], // Only show card payment option
+          label: "HARMIC RECHARGE",
           metadata: {
+            brand: "HARMIC RECHARGE",
+            logo_url: "https://the-eagles-charge.lovable.app/brand-logo.png",
             custom_fields: Object.entries(metadata).map(([key, value]) => ({
               display_name: key,
               variable_name: key,

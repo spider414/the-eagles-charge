@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Bell, BookOpen, ShieldCheck } from "lucide-react";
+import { Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Bell, BookOpen, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,7 +12,7 @@ import PageTransition from "@/components/PageTransition";
 import PullToRefresh from "@/components/PullToRefresh";
 import NotificationCenter from "@/components/NotificationCenter";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import harmicLogo from "@/assets/harmic-logo.jpg.asset.json";
+import BrandLogo from "@/components/BrandLogo";
 
 interface DVADetails {
   account_number: string;
@@ -96,11 +96,7 @@ const Dashboard = () => {
       {createPortal(<header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-xl overscroll-none touch-none pt-[env(safe-area-inset-top)]">
         <div className="container flex h-14 items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <img
-              src={harmicLogo.url}
-              alt="Harmic Recharge logo"
-              className="h-8 w-8 rounded-lg object-cover shadow-gold"
-            />
+            <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="text-lg font-bold text-foreground">
               HARMIC <span className="text-gradient-gold">RECHARGE</span>
             </span>
