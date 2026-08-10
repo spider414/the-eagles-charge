@@ -131,26 +131,26 @@ const Dashboard = () => {
 
       <main className="container pt-24 pb-8 pb-24 md:pb-8">
         {/* Welcome Card */}
-        <Card className="mb-8 gradient-hero text-primary-foreground">
-          <CardContent className="p-6">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <Card className="mb-4 gradient-hero text-primary-foreground">
+          <CardContent className="p-3">
+            <div className="flex flex-col gap-2">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <h1 className="text-2xl font-bold mb-1">
+                  <h1 className="text-lg font-semibold mb-0.5">
                     Welcome, {profile?.full_name || user.email?.split("@")[0]}! 👋
                   </h1>
-                  <p className="text-primary-foreground/80">
+                  <p className="text-xs text-primary-foreground/80">
                     Ready to recharge? Let's get you connected.
                   </p>
                 </div>
-                <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/10 rounded-xl px-4 py-3 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
-                  <Wallet className="h-6 w-6" />
+                <Link to="/wallet/topup" className="flex items-center gap-2 bg-primary-foreground/10 rounded-lg px-3 py-2 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
+                  <Wallet className="h-4 w-4" />
                   <div className="flex-1">
-                    <p className="text-sm text-primary-foreground/80">Wallet Balance</p>
-                    <p className="text-xl font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
+                    <p className="text-[10px] text-primary-foreground/80">Wallet Balance</p>
+                    <p className="text-sm font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
                   </div>
-                  <div className="p-2 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
-                    <Plus className="h-4 w-4" />
+                  <div className="p-1 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
+                    <Plus className="h-3 w-3" />
                   </div>
                 </Link>
               </div>
