@@ -57,10 +57,62 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString();
 
+    const SYNTHETIC = /@(eagles\.local|phone\.harmicglobal\.com)$/i;
+    const isRealEmail = (e?: string | null) =>
+      !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !SYNTHETIC.test(e);
+
+    const { data: settingsRow } = await supabaseAdmin
+      .from("email_settings")
+      .select("support_email, brand_name")
+      .limit(1)
+      .maybeSingle();
+    const supportEmail = settingsRow?.support_email || "harmicrecharge@harmicglobal.com";
+    const brandName = settingsRow?.brand_name || "HARMIC RECHARGE";
+
+    const notifyByEmail = async (to: string, name: string | null) => {
+      try {
+        const res = await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseServiceRoleKey}` },
+          body: JSON.stringify({ type: "account_deleted", to, name, deleted_at: new Date().toISOString() }),
+        });
+        if (!res.ok) console.error("Deletion email failed", res.status, await res.text());
+      } catch (e) {
+        console.error("Deletion email error", e);
+      }
+    };
+
+    const notifyBySms = async (phone: string) => {
+      const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
+      const authToken = Deno.env.get("TWILIO_AUTH_TOKEN");
+      const from = Deno.env.get("TWILIO_PHONE_NUMBER");
+      if (!sid || !authToken || !from) return;
+      let to = phone.trim().replace(/\s+/g, "");
+      if (to.startsWith("0")) to = "+234" + to.slice(1);
+      else if (!to.startsWith("+")) to = "+" + to;
+      try {
+        const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${btoa(`${sid}:${authToken}`)}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: new URLSearchParams({
+            To: to,
+            From: from,
+            Body: `${brandName}: Your account and all its data have been permanently deleted as requested. This cannot be reversed. If you did not request this, contact ${supportEmail}.`,
+          }),
+        });
+        if (!res.ok) console.error("Deletion SMS failed", res.status, await res.text());
+      } catch (e) {
+        console.error("Deletion SMS error", e);
+      }
+    };
+
     // Find all profiles scheduled for deletion where the deletion date has passed
     const { data: profilesToDelete, error: fetchError } = await supabaseAdmin
       .from("profiles")
-      .select("id, user_id, email, phone_number")
+      .select("id, user_id, email, contact_email, full_name, phone_number")
       .not("deletion_scheduled_at", "is", null)
       .lte("deletion_scheduled_at", now);
 
@@ -85,6 +137,15 @@ Deno.serve(async (req) => {
     for (const profile of profilesToDelete) {
       try {
         console.log(`Processing deletion for user: ${profile.user_id}`);
+
+        // Notify the user BEFORE their records are removed
+        const notifyEmail = isRealEmail(profile.contact_email)
+          ? profile.contact_email
+          : isRealEmail(profile.email)
+            ? profile.email
+            : null;
+        if (notifyEmail) await notifyByEmail(notifyEmail, profile.full_name ?? null);
+        if (profile.phone_number) await notifyBySms(profile.phone_number);
 
         // Delete related data first (respecting foreign key constraints)
         
@@ -118,6 +179,26 @@ Deno.serve(async (req) => {
           console.error(`Error deleting referral rewards for ${profile.user_id}:`, refError);
         }
 
+        // 3b. Delete notifications & push subscriptions
+        const { error: notifError } = await supabaseAdmin
+          .from("notifications")
+          .delete()
+          .eq("user_id", profile.user_id);
+        if (notifError) console.error(`Error deleting notifications for ${profile.user_id}:`, notifError);
+
+        const { error: pushError } = await supabaseAdmin
+          .from("push_subscriptions")
+          .delete()
+          .eq("user_id", profile.user_id);
+        if (pushError) console.error(`Error deleting push subscriptions for ${profile.user_id}:`, pushError);
+
+        // 3c. Detach referral links so the profile row can be removed
+        const { error: refLinkError } = await supabaseAdmin
+          .from("profiles")
+          .update({ referred_by: null })
+          .eq("referred_by", profile.id);
+        if (refLinkError) console.error(`Error detaching referrals for ${profile.user_id}:`, refLinkError);
+
         // 4. Delete profile
         const { error: profileError } = await supabaseAdmin
           .from("profiles")
@@ -135,6 +216,12 @@ Deno.serve(async (req) => {
           console.error(`Error deleting auth user ${profile.user_id}:`, authError);
           // Continue anyway, profile is already deleted
         }
+
+        await supabaseAdmin.from("admin_activity_log").insert({
+          action: "account_deleted",
+          target_user_id: profile.user_id,
+          details: { notified_email: notifyEmail, notified_sms: !!profile.phone_number },
+        });
 
         deletedAccounts.push(profile.user_id);
         console.log(`Successfully deleted account for user: ${profile.user_id}`);
