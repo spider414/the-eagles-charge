@@ -341,7 +341,7 @@ Deno.serve(async (req) => {
         .select("email, contact_email")
         .eq("user_id", callerUserId)
         .maybeSingle();
-      const allowed = [ownProfile?.email, ownProfile?.contact_email]
+      const allowed = [ownProfile?.email, ownProfile?.contact_email, callerEmail]
         .filter(Boolean)
         .map((e) => String(e).toLowerCase());
       if (!allowed.includes(payload.to.toLowerCase())) {
