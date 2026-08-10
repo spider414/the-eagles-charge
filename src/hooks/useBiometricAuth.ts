@@ -119,7 +119,7 @@ export const useBiometricAuth = () => {
         user: {
           id: userIdBuffer.buffer as ArrayBuffer,
           name: userId,
-          displayName: "Eagles User",
+          displayName: "HARMIC RECHARGE User",
         },
         pubKeyCredParams: [
           { alg: -7, type: "public-key" },  // ES256 (preferred for mobile)

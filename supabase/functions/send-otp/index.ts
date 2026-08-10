@@ -363,7 +363,7 @@ Deno.serve(async (req) => {
     const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`;
     const credentials = btoa(`${twilioAccountSid}:${twilioAuthToken}`);
 
-    const messageBody = `Your Eagles verification code is: ${otpCode}. Valid for 10 minutes. Do not share this code.`;
+    const messageBody = `Your HARMIC RECHARGE verification code is: ${otpCode}. Valid for 10 minutes. Do not share this code.`;
 
     const twilioResponse = await fetch(twilioUrl, {
       method: "POST",
