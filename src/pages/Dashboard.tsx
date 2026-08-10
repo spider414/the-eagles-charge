@@ -91,12 +91,12 @@ const Dashboard = () => {
   return <PageTransition><PullToRefresh onRefresh={handleRefresh} className="min-h-screen"><div className="min-h-screen bg-background">
       {/* Render outside the pull-to-refresh transform so it stays viewport-locked. */}
       {createPortal(<header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-xl overscroll-none touch-none pt-[env(safe-area-inset-top)]">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-14 items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
-              <Bird className="h-6 w-6 text-secondary-foreground" />
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold shadow-gold">
+              <Bird className="h-5 w-5 text-secondary-foreground" />
             </div>
-            <span className="text-xl font-bold text-foreground">
+            <span className="text-lg font-bold text-foreground">
               THE <span className="text-gradient-gold">EAGLES</span>
             </span>
           </Link>
@@ -129,25 +129,25 @@ const Dashboard = () => {
         </div>
       </header>, document.body)}
 
-      <main className="container pt-24 pb-8 pb-24 md:pb-8">
+      <main className="container pt-20 pb-6 pb-20 md:pb-6">
         {/* Welcome Card */}
-        <Card className="mb-4 gradient-hero text-primary-foreground">
-          <CardContent className="p-3">
+        <Card className="mb-3 gradient-hero text-primary-foreground">
+          <CardContent className="p-2.5">
             <div className="flex flex-col gap-2">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
-                  <h1 className="text-lg font-semibold mb-0.5">
+                  <h1 className="text-base font-semibold mb-0.5">
                     Welcome, {profile?.full_name || user.email?.split("@")[0]}! 👋
                   </h1>
-                  <p className="text-xs text-primary-foreground/80">
+                  <p className="text-[10px] text-primary-foreground/80">
                     Ready to recharge? Let's get you connected.
                   </p>
                 </div>
-                <Link to="/wallet/topup" className="flex items-center gap-2 bg-primary-foreground/10 rounded-lg px-3 py-2 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
+                <Link to="/wallet/topup" className="flex items-center gap-2 bg-primary-foreground/10 rounded-lg px-2.5 py-1.5 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
                   <Wallet className="h-4 w-4" />
                   <div className="flex-1">
                     <p className="text-[10px] text-primary-foreground/80">Wallet Balance</p>
-                    <p className="text-sm font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
+                    <p className="text-xs font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
                   </div>
                   <div className="p-1 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
                     <Plus className="h-3 w-3" />
@@ -156,46 +156,46 @@ const Dashboard = () => {
               </div>
               
               {/* Virtual Account Section */}
-              {dvaDetails ? <div className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-primary-foreground/20">
-                  <Building2 className="h-5 w-5 text-primary-foreground/70" />
+              {dvaDetails ? <div className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-3 py-2 border border-primary-foreground/20">
+                  <Building2 className="h-4 w-4 text-primary-foreground/70" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-primary-foreground/60">Your Account</p>
+                    <p className="text-[10px] text-primary-foreground/60">Your Account</p>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold">{dvaDetails.account_number}</span>
-                      <span className="text-sm text-primary-foreground/70">• {dvaDetails.bank_name}</span>
+                      <span className="font-mono text-sm font-bold">{dvaDetails.account_number}</span>
+                      <span className="text-xs text-primary-foreground/70">• {dvaDetails.bank_name}</span>
                     </div>
                   </div>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={handleCopyAccount}>
-                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  <Button size="icon" variant="ghost" className="h-7 w-7 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10" onClick={handleCopyAccount}>
+                    {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                   </Button>
-                </div> : <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-4 py-3 border border-dashed border-primary-foreground/30 hover:bg-primary-foreground/10 transition-colors">
-                  <Building2 className="h-5 w-5 text-primary-foreground/50" />
+                </div> : <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-3 py-2 border border-dashed border-primary-foreground/30 hover:bg-primary-foreground/10 transition-colors">
+                  <Building2 className="h-4 w-4 text-primary-foreground/50" />
                   <div className="flex-1">
-                    <p className="text-sm text-primary-foreground/70">Get a dedicated bank account for instant wallet funding</p>
+                    <p className="text-xs text-primary-foreground/70">Get a dedicated bank account for instant wallet funding</p>
                   </div>
-                  <Plus className="h-4 w-4 text-primary-foreground/50" />
+                  <Plus className="h-3.5 w-3.5 text-primary-foreground/50" />
                 </Link>}
             </div>
           </CardContent>
         </Card>
 
         {/* Quick Actions - Mobile Navigation */}
-        <div className="md:hidden flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="md:hidden flex gap-1.5 mb-4 overflow-x-auto pb-2">
           <Link to="/wallet/topup">
-            <Button variant="default" size="sm" className="whitespace-nowrap gradient-gold text-secondary-foreground">
-              <Plus className="h-4 w-4 mr-2" />
+            <Button variant="default" size="sm" className="whitespace-nowrap gradient-gold text-secondary-foreground h-7 px-2.5 text-xs">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
               Fund Wallet
             </Button>
           </Link>
           <Link to="/history">
-            <Button variant="outline" size="sm" className="whitespace-nowrap">
-              <History className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" className="whitespace-nowrap h-7 px-2.5 text-xs">
+              <History className="h-3.5 w-3.5 mr-1.5" />
               History
             </Button>
           </Link>
           <Link to="/referrals">
-            <Button variant="outline" size="sm" className="whitespace-nowrap">
-              <Users className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" className="whitespace-nowrap h-7 px-2.5 text-xs">
+              <Users className="h-3.5 w-3.5 mr-1.5" />
               Referrals
             </Button>
           </Link>
@@ -205,17 +205,17 @@ const Dashboard = () => {
         <AdvertBanner />
 
         {/* Quick Services Grid */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-3">Services</h2>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="mb-5">
+          <h2 className="text-base font-semibold mb-2">Services</h2>
+          <div className="grid grid-cols-2 gap-2">
             {/* Airtime */}
             <Link to="/airtime">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mb-2">
-                    <Phone className="h-5 w-5 text-primary-foreground" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mb-1.5">
+                    <Phone className="h-4 w-4 text-primary-foreground" />
                   </div>
-                  <span className="text-xs font-semibold">Airtime</span>
+                  <span className="text-[10px] font-semibold">Airtime</span>
                 </CardContent>
               </Card>
             </Link>
@@ -223,11 +223,11 @@ const Dashboard = () => {
             {/* Data */}
             <Link to="/data">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center mb-2">
-                    <Wifi className="h-5 w-5 text-white" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center mb-1.5">
+                    <Wifi className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-xs font-semibold">Data</span>
+                  <span className="text-[10px] font-semibold">Data</span>
                 </CardContent>
               </Card>
             </Link>
@@ -235,11 +235,11 @@ const Dashboard = () => {
             {/* Refer & Earn */}
             <Link to="/referrals">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center mb-2">
-                    <Gift className="h-5 w-5 text-white" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center mb-1.5">
+                    <Gift className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-xs font-semibold">Refer & Earn</span>
+                  <span className="text-[10px] font-semibold">Refer & Earn</span>
                 </CardContent>
               </Card>
             </Link>
@@ -247,11 +247,11 @@ const Dashboard = () => {
             {/* Electricity */}
             <Link to="/bills/electricity">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-yellow-500 flex items-center justify-center mb-2">
-                    <Zap className="h-5 w-5 text-white" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-yellow-500 flex items-center justify-center mb-1.5">
+                    <Zap className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-xs font-semibold">Electricity</span>
+                  <span className="text-[10px] font-semibold">Electricity</span>
                 </CardContent>
               </Card>
             </Link>
@@ -259,11 +259,11 @@ const Dashboard = () => {
             {/* Cable TV */}
             <Link to="/bills/cable">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center mb-2">
-                    <Tv className="h-5 w-5 text-white" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center mb-1.5">
+                    <Tv className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-xs font-semibold">Cable TV</span>
+                  <span className="text-[10px] font-semibold">Cable TV</span>
                 </CardContent>
               </Card>
             </Link>
@@ -271,11 +271,11 @@ const Dashboard = () => {
             {/* Internet */}
             <Link to="/bills/internet">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center mb-2">
-                    <Globe className="h-5 w-5 text-white" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center mb-1.5">
+                    <Globe className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-xs font-semibold">Internet</span>
+                  <span className="text-[10px] font-semibold">Internet</span>
                 </CardContent>
               </Card>
             </Link>
@@ -283,11 +283,11 @@ const Dashboard = () => {
             {/* Exam PINs */}
             <Link to="/exam-pin">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center mb-2">
-                    <BookOpen className="h-5 w-5 text-white" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center mb-1.5">
+                    <BookOpen className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-xs font-semibold">Exam PINs</span>
+                  <span className="text-[10px] font-semibold">Exam PINs</span>
                 </CardContent>
               </Card>
             </Link>
@@ -295,11 +295,11 @@ const Dashboard = () => {
             {/* Wallet Top-up */}
             <Link to="/wallet/topup">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-3 flex flex-col items-center text-center">
-                  <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center mb-2">
-                    <Wallet className="h-5 w-5 text-accent-foreground" />
+                <CardContent className="p-2 flex flex-col items-center text-center">
+                  <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center mb-1.5">
+                    <Wallet className="h-4 w-4 text-accent-foreground" />
                   </div>
-                  <span className="text-xs font-semibold">Top Up</span>
+                  <span className="text-[10px] font-semibold">Top Up</span>
                 </CardContent>
               </Card>
             </Link>
@@ -313,26 +313,26 @@ const Dashboard = () => {
 
       {/* Render outside the pull-to-refresh transform so it stays viewport-locked. */}
       {createPortal(<nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border z-50 pb-[env(safe-area-inset-bottom)] overscroll-none touch-none">
-        <div className="flex items-center justify-around py-2 px-4">
-          <Link to="/dashboard" className="flex flex-col items-center gap-1 py-2 px-3 text-primary">
-            <Wallet className="h-5 w-5" />
-            <span className="text-xs font-medium">Home</span>
+        <div className="flex items-center justify-around py-1.5 px-2">
+          <Link to="/dashboard" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-primary">
+            <Wallet className="h-4 w-4" />
+            <span className="text-[10px] font-medium">Home</span>
           </Link>
-          <Link to="/history" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
-            <History className="h-5 w-5" />
-            <span className="text-xs font-medium">History</span>
+          <Link to="/history" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
+            <History className="h-4 w-4" />
+            <span className="text-[10px] font-medium">History</span>
           </Link>
-          <Link to="/referrals" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
-            <Users className="h-5 w-5" />
-            <span className="text-xs font-medium">Referrals</span>
+          <Link to="/referrals" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Users className="h-4 w-4" />
+            <span className="text-[10px] font-medium">Referrals</span>
           </Link>
-          <Link to="/profile" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
-            <User className="h-5 w-5" />
-            <span className="text-xs font-medium">Profile</span>
+          <Link to="/profile" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
+            <User className="h-4 w-4" />
+            <span className="text-[10px] font-medium">Profile</span>
           </Link>
-          <Link to="/settings" className="flex flex-col items-center gap-1 py-2 px-3 text-muted-foreground hover:text-foreground transition-colors">
-            <Settings className="h-5 w-5" />
-            <span className="text-xs font-medium">Settings</span>
+          <Link to="/settings" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
+            <Settings className="h-4 w-4" />
+            <span className="text-[10px] font-medium">Settings</span>
           </Link>
         </div>
       </nav>, document.body)}
