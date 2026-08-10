@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, MessageCircle, Mail, ExternalLink } from "lucide-react";
+import { ArrowLeft, MessageCircle, Mail, ExternalLink } from "lucide-react";
+import BrandLogo from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import SupportChatDialog from "@/components/SupportChatDialog";
@@ -77,9 +78,7 @@ const Support = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg gradient-gold">
-              <Bird className="h-5 w-5 text-secondary-foreground" />
-            </div>
+            <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold truncate">Help & Support</span>
           </div>
         </div>
