@@ -128,7 +128,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container pt-24 py-8 pb-24 md:pb-8">
+      <main className="container pt-24 pb-8 pb-24 md:pb-8">
         {/* Welcome Card */}
         <Card className="mb-8 gradient-hero text-primary-foreground">
           <CardContent className="p-6">
