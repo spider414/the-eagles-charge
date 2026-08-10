@@ -6,6 +6,8 @@ interface Profile {
   id: string;
   user_id: string;
   email: string;
+  contact_email: string | null;
+  contact_email_verified?: boolean;
   full_name: string | null;
   phone_number: string | null;
   wallet_balance: number;
@@ -56,6 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         id,
         user_id,
         email,
+        contact_email,
+        contact_email_verified,
         full_name,
         phone_number,
         wallet_balance,
