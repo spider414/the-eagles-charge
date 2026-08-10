@@ -114,13 +114,22 @@ interface AccountDeletedPayload {
   deleted_at?: string;
 }
 
+interface EmailVerificationPayload {
+  type: "email_verification";
+  to: string;
+  name?: string;
+  code: string;
+  expires_minutes?: number;
+}
+
 type Payload =
   | WelcomePayload
   | ReceiptPayload
   | PasswordResetPayload
   | DeletionRequestPayload
   | DeletionConfirmedPayload
-  | AccountDeletedPayload;
+  | AccountDeletedPayload
+  | EmailVerificationPayload;
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
