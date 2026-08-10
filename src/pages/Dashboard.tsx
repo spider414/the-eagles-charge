@@ -89,8 +89,8 @@ const Dashboard = () => {
     return null;
   }
   return <PageTransition><PullToRefresh onRefresh={handleRefresh} className="min-h-screen"><div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+      {/* Render outside the pull-to-refresh transform so it stays viewport-locked. */}
+      {createPortal(<header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur-xl overscroll-none touch-none pt-[env(safe-area-inset-top)]">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
@@ -127,7 +127,7 @@ const Dashboard = () => {
             </Button>
           </nav>
         </div>
-      </header>
+      </header>, document.body)}
 
       <main className="container pt-24 pb-8 pb-24 md:pb-8">
         {/* Welcome Card */}
