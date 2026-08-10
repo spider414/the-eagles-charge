@@ -51,23 +51,17 @@ const DeleteAccountDialog = ({ open, onOpenChange }: DeleteAccountDialogProps) =
     setIsDeleting(true);
 
     try {
-      // Schedule deletion for 7 days from now
-      const deletionDate = new Date();
-      deletionDate.setDate(deletionDate.getDate() + 7);
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          deletion_scheduled_at: deletionDate.toISOString(),
-          deletion_reason: "User requested deletion",
-        })
-        .eq("user_id", user.id);
+      // Schedules deletion (7-day grace period), emails admins and confirms to the user
+      const { error } = await supabase.functions.invoke("request-account-deletion", {
+        body: { reason: "User requested deletion" },
+      });
 
       if (error) throw error;
 
       toast({
         title: "Account Scheduled for Deletion",
-        description: "Your account will be permanently deleted in 7 days. You can cancel this by logging back in.",
+        description:
+          "Your account will be permanently deleted in 7 days. We've emailed you a confirmation — log back in before then to cancel.",
       });
 
       // Sign out the user
