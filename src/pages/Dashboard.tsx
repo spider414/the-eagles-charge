@@ -89,7 +89,7 @@ const Dashboard = () => {
   }
   return <PageTransition><PullToRefresh onRefresh={handleRefresh} className="min-h-screen"><div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
+      <header className="fixed top-0 left-0 right-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/dashboard" className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
@@ -128,7 +128,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container py-8 pb-24 md:pb-8">
+      <main className="container pt-24 pb-8 pb-24 md:pb-8">
         {/* Welcome Card */}
         <Card className="mb-8 gradient-hero text-primary-foreground">
           <CardContent className="p-6">
