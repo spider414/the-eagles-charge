@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
 import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Bell, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -310,8 +311,8 @@ const Dashboard = () => {
 
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border z-50">
+      {/* Render outside the pull-to-refresh transform so it stays viewport-locked. */}
+      {createPortal(<nav className="md:hidden fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border z-50 pb-[env(safe-area-inset-bottom)] overscroll-none touch-none">
         <div className="flex items-center justify-around py-2 px-4">
           <Link to="/dashboard" className="flex flex-col items-center gap-1 py-2 px-3 text-primary">
             <Wallet className="h-5 w-5" />
@@ -334,7 +335,7 @@ const Dashboard = () => {
             <span className="text-xs font-medium">Settings</span>
           </Link>
         </div>
-      </nav>
+      </nav>, document.body)}
     </div></PullToRefresh></PageTransition>;
 };
 export default Dashboard;
