@@ -39,6 +39,12 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import PageTransition from "@/components/PageTransition";
 import { format } from "date-fns";
+import {
+  buildReceiptText,
+  downloadReceiptPdf,
+  shareReceiptPdf,
+  type ReceiptDoc,
+} from "@/utils/receiptGenerator";
 
 interface TransactionData {
   id: string;
@@ -243,22 +249,44 @@ const TransactionDetail = () => {
     return `${typePrefix}_${dateStr}_${idSuffix}`;
   };
 
-  const receiptText = transaction ? `
-HARMIC RECHARGE Receipt
--------------------
-Transaction ID: #${transaction.id.slice(0, 6)}
-Reference: ${generateReference(transaction)}
-Service: ${getServiceCategory(transaction)} - ${getServiceName(transaction)}
-Amount: ${isMoneyIn(transaction) ? "+" : "-"}₦${transaction.amount.toLocaleString()}
-${transaction.balance_before != null ? `Balance Before: ₦${transaction.balance_before.toLocaleString()}` : ""}
-${transaction.balance_after != null ? `Balance After: ₦${transaction.balance_after.toLocaleString()}` : ""}
-Status: ${transaction.status}
-Date: ${format(new Date(transaction.created_at), "PPpp")}
-${transaction.phone_number ? `Phone: ${transaction.phone_number}` : ""}
-${transaction.network ? `Network: ${transaction.network.toUpperCase()}` : ""}
--------------------
-Thank you for using HARMIC RECHARGE!
-  `.trim() : "";
+  const buildDoc = (tx: TransactionData): ReceiptDoc => {
+    const naira = (n: number) => `NGN ${n.toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const rows: Array<[string, string]> = [
+      ["Transaction ID", `#${tx.id.slice(0, 6)}`],
+      ["Reference", generateReference(tx)],
+      ["Service Type", getServiceCategory(tx)],
+      ["Service Name", getServiceName(tx)],
+      ["Direction", isMoneyIn(tx) ? "Money In" : "Money Out"],
+      ["Method", tx.paystack_reference ? "Paystack" : "Wallet"],
+      ["Date", format(new Date(tx.created_at), "MMM dd, yyyy 'at' HH:mm:ss")],
+      ["Description", tx.description || ""],
+      ["Phone Number", tx.phone_number || ""],
+      ["Network", tx.network?.toUpperCase() || ""],
+      ["Data Plan", tx.data_plan || ""],
+      ["Meter Number", tx.meter_number || ""],
+      ["Meter Type", tx.meter_type || ""],
+      ["Token", tx.token || ""],
+      ["Smartcard", tx.cable_smartcard || ""],
+      ["Cable Provider", tx.cable_provider?.toUpperCase() || ""],
+      ["Cable Plan", tx.cable_plan || ""],
+      ["Payment Ref", tx.paystack_reference || ""],
+      ["Balance Before", tx.balance_before != null ? naira(tx.balance_before) : ""],
+      ["Balance After", tx.balance_after != null ? naira(tx.balance_after) : ""],
+    ];
+    return {
+      title: `${getServiceName(tx)} Receipt`,
+      reference: generateReference(tx),
+      transactionId: tx.id,
+      amount: tx.amount,
+      moneyIn: isMoneyIn(tx),
+      status: tx.status,
+      date: tx.created_at,
+      rows: rows.filter(([, v]) => v),
+      pins: tx.transaction_type === "exam_pin" ? extractExamPins(tx.api_response) : undefined,
+    };
+  };
+
+  const receiptText = transaction ? buildReceiptText(buildDoc(transaction)) : "";
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(receiptText);
@@ -268,28 +296,25 @@ Thank you for using HARMIC RECHARGE!
   };
 
   const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: "Transaction Receipt", text: receiptText });
-      } catch (err) {
-        if ((err as Error).name !== "AbortError") handleCopy();
+    if (!transaction) return;
+    try {
+      const result = await shareReceiptPdf(buildDoc(transaction), receiptText);
+      if (result === "downloaded") {
+        toast({ title: "Receipt saved", description: "Sharing isn't supported here, so we saved the PDF instead." });
       }
-    } else {
-      handleCopy();
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") handleCopy();
     }
   };
 
-  const handleDownload = () => {
-    const blob = new Blob([receiptText], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `receipt-${transaction?.id.slice(0, 8)}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    toast({ title: "Downloaded!", description: "Receipt saved to your device" });
+  const handleDownload = async () => {
+    if (!transaction) return;
+    try {
+      await downloadReceiptPdf(buildDoc(transaction));
+      toast({ title: "Downloaded!", description: "PDF receipt saved to your device" });
+    } catch {
+      toast({ title: "Error", description: "Could not generate the receipt PDF", variant: "destructive" });
+    }
   };
 
   if (isLoading || loading) {
