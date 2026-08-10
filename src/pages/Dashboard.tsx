@@ -182,19 +182,19 @@ const Dashboard = () => {
         {/* Quick Actions - Mobile Navigation */}
         <div className="md:hidden flex gap-1.5 mb-4 overflow-x-auto pb-2">
           <Link to="/wallet/topup">
-            <Button variant="default" size="xs" className="whitespace-nowrap gradient-gold text-secondary-foreground">
+            <Button variant="default" size="sm" className="whitespace-nowrap gradient-gold text-secondary-foreground h-7 px-2.5 text-xs">
               <Plus className="h-3.5 w-3.5 mr-1.5" />
               Fund Wallet
             </Button>
           </Link>
           <Link to="/history">
-            <Button variant="outline" size="xs" className="whitespace-nowrap">
+            <Button variant="outline" size="sm" className="whitespace-nowrap h-7 px-2.5 text-xs">
               <History className="h-3.5 w-3.5 mr-1.5" />
               History
             </Button>
           </Link>
           <Link to="/referrals">
-            <Button variant="outline" size="xs" className="whitespace-nowrap">
+            <Button variant="outline" size="sm" className="whitespace-nowrap h-7 px-2.5 text-xs">
               <Users className="h-3.5 w-3.5 mr-1.5" />
               Referrals
             </Button>
