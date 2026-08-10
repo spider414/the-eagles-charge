@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import AdvertBanner from "@/components/AdvertBanner";
 import RecentTransactions from "@/components/RecentTransactions";
 import PageTransition from "@/components/PageTransition";
@@ -70,6 +71,21 @@ const Dashboard = () => {
 
   const handleRefresh = useCallback(async () => {
     try {
+      // Pull in any bank transfers to the virtual account that were not credited yet
+      try {
+        const { data } = await supabase.functions.invoke("paystack-payment", {
+          body: { action: "reconcile_dva" },
+        });
+        if (data?.credited > 0) {
+          toast({
+            title: "Deposit found 🎉",
+            description: `₦${Number(data.amount).toLocaleString()} has been added to your wallet`,
+          });
+        }
+      } catch (e) {
+        console.error("Reconcile error:", e);
+      }
+
       if (refreshProfile) {
         await refreshProfile();
       }
