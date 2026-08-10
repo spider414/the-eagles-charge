@@ -14,7 +14,7 @@ const FloatingChatButton = () => {
   const [chatOpen, setChatOpen] = useState(false);
 
   const whatsappNumber = "35677980822";
-  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi, I need help with THE EAGLES VTU")}`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hi, I need help with HARMIC RECHARGE")}`;
 
   return (
     <>

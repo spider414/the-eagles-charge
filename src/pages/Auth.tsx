@@ -441,7 +441,7 @@ const Auth = () => {
       }
       toast({
         title: "Account Created!",
-        description: "Welcome to THE EAGLES! You can now start making transactions.",
+        description: "Welcome to HARMIC RECHARGE! You can now start making transactions.",
       });
       navigate("/dashboard");
     }
@@ -684,7 +684,7 @@ const Auth = () => {
             <Bird className="h-7 w-7 text-secondary-foreground" />
           </div>
           <span className="text-2xl font-bold text-foreground">
-            THE <span className="text-gradient-gold">EAGLES</span>
+            HARMIC <span className="text-gradient-gold">RECHARGE</span>
           </span>
         </div>
 

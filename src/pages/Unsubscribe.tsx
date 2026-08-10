@@ -66,7 +66,7 @@ export default function Unsubscribe() {
             <MailX className="h-5 w-5" /> Email Preferences
           </CardTitle>
           <CardDescription>
-            Manage which emails you receive from The Eagles Charge. Password reset and payment receipt emails are always sent.
+            Manage which emails you receive from HARMIC RECHARGE. Password reset and payment receipt emails are always sent.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

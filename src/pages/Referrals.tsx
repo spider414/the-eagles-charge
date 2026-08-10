@@ -63,8 +63,8 @@ const Referrals = () => {
     
     if (navigator.share) {
       navigator.share({
-        title: "Join THE EAGLES",
-        text: `Join THE EAGLES using my referral code ${profile?.referral_code} and get bonus credits!`,
+        title: "Join HARMIC RECHARGE",
+        text: `Join HARMIC RECHARGE using my referral code ${profile?.referral_code} and get bonus credits!`,
         url: referralLink,
       });
     } else {

@@ -138,7 +138,7 @@ const Settings = () => {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
       // Show a test notification
-      new Notification("Eagles VTU", {
+      new Notification("HARMIC RECHARGE", {
         body: "Notifications enabled! You'll receive transaction alerts.",
         icon: "/favicon.ico",
       });
@@ -646,7 +646,7 @@ const Settings = () => {
 
         {/* App Version */}
         <p className="text-center text-sm text-muted-foreground pt-4">
-          THE EAGLES VTU v1.0.0
+          HARMIC RECHARGE v1.0.0
         </p>
       </main>
 

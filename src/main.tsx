@@ -15,7 +15,7 @@ if (typeof window !== "undefined") {
 }
 
 // Always evict any legacy service worker + caches from prior PWA builds that
-// showed the "Install Eagles Charge" prompt. Runs on every load so returning
+// showed the "Install HARMIC RECHARGE" prompt. Runs on every load so returning
 // browsers can't resurrect the old install UI.
 const CLEANUP_FLAG = "eagles-install-prompt-cleanup-v3";
 if (typeof window !== "undefined") {
@@ -54,7 +54,7 @@ if (typeof window !== "undefined" && typeof document !== "undefined") {
     nodes.forEach((n) => {
       const t = (n as HTMLElement).innerText || "";
       if (
-        t.includes("Install Eagles Charge") ||
+        t.includes("Install HARMIC RECHARGE") ||
         t.includes("Add to Home Screen") ||
         (t.includes("Install our app") && t.includes("Maybe later"))
       ) {

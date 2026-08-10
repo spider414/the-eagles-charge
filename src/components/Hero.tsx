@@ -46,7 +46,7 @@ const Hero = () => {
             </h1>
 
             <p className="text-lg text-primary-foreground/80 mb-8 max-w-lg mx-auto lg:mx-0">
-              Nigeria's trusted platform for fast, reliable mobile top-ups. Recharge any network in seconds with THE EAGLES.
+              Nigeria's trusted platform for fast, reliable mobile top-ups. Recharge any network in seconds with HARMIC RECHARGE.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -84,7 +84,7 @@ const Hero = () => {
             <div className="relative animate-float">
               <img
                 src={eagleHero}
-                alt="The Eagles - Nigeria's Trusted VTU Platform"
+                alt="HARMIC RECHARGE - Nigeria's Trusted VTU Platform"
                 className="w-full max-w-md mx-auto rounded-2xl shadow-elevated"
               />
             </div>

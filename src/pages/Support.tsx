@@ -167,7 +167,7 @@ const Support = () => {
 
         {/* App Info */}
         <p className="text-center text-sm text-muted-foreground">
-          THE EAGLES VTU v1.0.0
+          HARMIC RECHARGE v1.0.0
         </p>
       </main>
 

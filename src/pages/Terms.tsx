@@ -34,14 +34,14 @@ const Terms = () => {
             <section>
               <h3 className="text-lg font-semibold">1. Acceptance of Terms</h3>
               <p className="text-sm text-muted-foreground">
-                By accessing and using THE EAGLES VTU application, you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.
+                By accessing and using HARMIC RECHARGE application, you accept and agree to be bound by these Terms and Conditions. If you do not agree to these terms, please do not use our services.
               </p>
             </section>
 
             <section>
               <h3 className="text-lg font-semibold">2. Services</h3>
               <p className="text-sm text-muted-foreground">
-                THE EAGLES VTU provides digital services including but not limited to airtime top-up, data bundle purchases, electricity bill payments, cable TV subscriptions, and internet subscriptions.
+                HARMIC RECHARGE provides digital services including but not limited to airtime top-up, data bundle purchases, electricity bill payments, cable TV subscriptions, and internet subscriptions.
               </p>
             </section>
 
@@ -76,7 +76,7 @@ const Terms = () => {
             <section>
               <h3 className="text-lg font-semibold">7. Limitation of Liability</h3>
               <p className="text-sm text-muted-foreground">
-                THE EAGLES VTU shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services.
+                HARMIC RECHARGE shall not be liable for any indirect, incidental, or consequential damages arising from the use of our services.
               </p>
             </section>
 
@@ -97,7 +97,7 @@ const Terms = () => {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground">
-          THE EAGLES VTU v1.0.0
+          HARMIC RECHARGE v1.0.0
         </p>
       </main>
     </div>

@@ -14,7 +14,7 @@ const Header = () => {
             <Bird className="h-6 w-6 text-secondary-foreground" />
           </div>
           <span className="text-xl font-bold text-foreground">
-            THE <span className="text-gradient-gold">EAGLES</span>
+            HARMIC <span className="text-gradient-gold">RECHARGE</span>
           </span>
         </Link>
 

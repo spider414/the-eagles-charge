@@ -244,7 +244,7 @@ const TransactionDetail = () => {
   };
 
   const receiptText = transaction ? `
-Eagles VTU Receipt
+HARMIC RECHARGE Receipt
 -------------------
 Transaction ID: #${transaction.id.slice(0, 6)}
 Reference: ${generateReference(transaction)}
@@ -257,7 +257,7 @@ Date: ${format(new Date(transaction.created_at), "PPpp")}
 ${transaction.phone_number ? `Phone: ${transaction.phone_number}` : ""}
 ${transaction.network ? `Network: ${transaction.network.toUpperCase()}` : ""}
 -------------------
-Thank you for using Eagles VTU!
+Thank you for using HARMIC RECHARGE!
   `.trim() : "";
 
   const handleCopy = async () => {

@@ -2,7 +2,7 @@
 // This file is imported by the main service worker
 
 self.addEventListener("push", (event) => {
-  let data = { title: "The Eagles Charge", body: "You have a new notification" };
+  let data = { title: "HARMIC RECHARGE", body: "You have a new notification" };
 
   try {
     if (event.data) {
