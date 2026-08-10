@@ -32,6 +32,7 @@ import ExamPin from "./pages/ExamPin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 import Unsubscribe from "./pages/Unsubscribe";
+import Admin from "./pages/Admin";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -70,6 +71,7 @@ const App = () => {
                   <Route path="/exam-pin" element={<ExamPin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
+                  <Route path="/admin" element={<Admin />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </SessionLockProvider>
