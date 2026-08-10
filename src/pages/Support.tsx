@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, MessageCircle, Mail, Phone, ExternalLink } from "lucide-react";
+import { Bird, ArrowLeft, MessageCircle, Mail, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import SupportChatDialog from "@/components/SupportChatDialog";
@@ -37,13 +37,6 @@ const Support = () => {
       description: "henry4god99@gmail.com",
       action: () => window.open("mailto:henry4god99@gmail.com", "_blank"),
       buttonText: "Send Email",
-    },
-    {
-      icon: Phone,
-      title: "Phone Support",
-      description: "+35677980822",
-      action: () => window.open("tel:+35677980822", "_blank"),
-      buttonText: "Call Now",
     },
   ];
 
