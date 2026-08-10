@@ -36,7 +36,7 @@ const faqs = [
   },
   {
     question: "How do I contact customer support?",
-    answer: "You can reach us via WhatsApp, email at henry4god99@gmail.com, or through the Support page in the app. Our team responds within 24 hours.",
+    answer: "You can reach us via WhatsApp, email at harmicrecharge@harmicglobal.com, or through the Support page in the app. Our team responds within 24 hours.",
   },
 ];
 

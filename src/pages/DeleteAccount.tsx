@@ -56,7 +56,7 @@ const DeleteAccount = () => {
               <div className="mt-4 pt-4 border-t border-border">
                 <p className="text-sm text-muted-foreground">
                   Alternatively, you can request account deletion by contacting our support team 
-                  at <a href="mailto:henry4god99@gmail.com" className="text-primary underline">henry4god99@gmail.com</a>
+                  at <a href="mailto:harmicrecharge@harmicglobal.com" className="text-primary underline">harmicrecharge@harmicglobal.com</a>
                 </p>
               </div>
             </CardContent>
@@ -158,8 +158,8 @@ const DeleteAccount = () => {
               <div className="space-y-2">
                 <p className="text-sm">
                   <strong>Email:</strong>{" "}
-                  <a href="mailto:henry4god99@gmail.com" className="text-primary underline">
-                    henry4god99@gmail.com
+                  <a href="mailto:harmicrecharge@harmicglobal.com" className="text-primary underline">
+                    harmicrecharge@harmicglobal.com
                   </a>
                 </p>
                 <p className="text-sm">

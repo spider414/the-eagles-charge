@@ -134,7 +134,7 @@ Key Features:
 5. Favorites - Save frequently used phone numbers for quick access
 
 Support Contacts:
-- Email: henry4god99@gmail.com or harrisonokeke91@gmail.com
+- Email: harmicrecharge@harmicglobal.com
 - Phone/WhatsApp: +35677980822
 
 Always be helpful, friendly, and professional. If you don't know something specific, suggest the user contact support via email or WhatsApp for further assistance.`;
