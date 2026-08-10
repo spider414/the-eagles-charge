@@ -34,8 +34,8 @@ const Support = () => {
     {
       icon: Mail,
       title: "Email Support",
-      description: "henry4god99@gmail.com",
-      action: () => window.open("mailto:henry4god99@gmail.com", "_blank"),
+      description: "harmicrecharge@harmicglobal.com",
+      action: () => window.open("mailto:harmicrecharge@harmicglobal.com", "_blank"),
       buttonText: "Send Email",
     },
   ];
@@ -132,10 +132,10 @@ const Support = () => {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="font-medium break-words">Secondary Email</p>
-                  <p className="text-sm text-muted-foreground break-all">harrisonokeke91@gmail.com</p>
+                  <p className="text-sm text-muted-foreground break-all">harmicrecharge@harmicglobal.com</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm" onClick={() => window.open("mailto:harrisonokeke91@gmail.com", "_blank")} className="w-full sm:w-auto shrink-0">
+              <Button variant="outline" size="sm" onClick={() => window.open("mailto:harmicrecharge@harmicglobal.com", "_blank")} className="w-full sm:w-auto shrink-0">
                 <ExternalLink className="h-4 w-4 mr-1" />
                 Send Email
               </Button>
