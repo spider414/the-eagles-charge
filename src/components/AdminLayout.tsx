@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import BrandLogo from "@/components/BrandLogo";
 import { ActivitySquare, ArrowLeft, CreditCard, LayoutDashboard, Loader2, Mail, ShieldAlert, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
