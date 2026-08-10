@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate, Link } from "react-router-dom";
-import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Bell, BookOpen } from "lucide-react";
+import { Bird, Phone, Wifi, Zap, Tv, Globe, History, Users, LogOut, Wallet, Plus, User, Settings, Building2, Copy, Check, Gift, Bell, BookOpen, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,6 +11,7 @@ import RecentTransactions from "@/components/RecentTransactions";
 import PageTransition from "@/components/PageTransition";
 import PullToRefresh from "@/components/PullToRefresh";
 import NotificationCenter from "@/components/NotificationCenter";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 interface DVADetails {
   account_number: string;
@@ -27,6 +28,7 @@ const Dashboard = () => {
     signOut,
     refreshProfile
   } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const {
     toast
   } = useToast();
@@ -103,6 +105,16 @@ const Dashboard = () => {
 
           <nav className="flex items-center gap-1">
             <NotificationCenter />
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2"
+                aria-label="Admin panel"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span className="hidden md:inline">Admin</span>
+              </Link>
+            )}
             <Link to="/history" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <History className="h-4 w-4" />
               History

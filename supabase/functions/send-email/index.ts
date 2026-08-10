@@ -306,20 +306,26 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       serviceRoleKey!,
     );
+    let callerUserId: string | null = null;
+    let callerEmail: string | null = null;
+    let callerIsAdmin = false;
+    const isServiceCaller = token === serviceRoleKey;
     // Allow internal edge-function callers using the service role key.
-    if (token !== serviceRoleKey) {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { Authorization: authHeader } } },
-      );
-      const { data: claims, error: claimsError } = await supabase.auth.getClaims(token);
-      if (claimsError || !claims?.claims) {
+    if (!isServiceCaller) {
+      const { data: userData, error: userError } = await adminClient.auth.getUser(token);
+      if (userError || !userData?.user) {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
           status: 401,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      callerUserId = userData.user.id;
+      callerEmail = userData.user.email ?? null;
+      const { data: isAdminData } = await adminClient.rpc("has_role", {
+        _user_id: callerUserId,
+        _role: "admin",
+      });
+      callerIsAdmin = !!isAdminData;
     }
 
     const payload = (await req.json()) as Payload;
@@ -328,6 +334,24 @@ Deno.serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Non-admin end users may only send email to their own address.
+    if (!isServiceCaller && !callerIsAdmin) {
+      const { data: ownProfile } = await adminClient
+        .from("profiles")
+        .select("email, contact_email")
+        .eq("user_id", callerUserId)
+        .maybeSingle();
+      const allowed = [ownProfile?.email, ownProfile?.contact_email, callerEmail]
+        .filter(Boolean)
+        .map((e) => String(e).toLowerCase());
+      if (!allowed.includes(payload.to.toLowerCase())) {
+        return new Response(JSON.stringify({ error: "Not allowed to email this recipient" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Load branding + template copy

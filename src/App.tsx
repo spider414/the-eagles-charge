@@ -32,7 +32,10 @@ import ExamPin from "./pages/ExamPin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 import Unsubscribe from "./pages/Unsubscribe";
-import Admin from "./pages/Admin";
+import AdminLayout from "@/components/AdminLayout";
+import AdminOverview from "./pages/admin/AdminOverview";
+import AdminEmail from "./pages/admin/AdminEmail";
+import AdminOtp from "./pages/admin/AdminOtp";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -71,7 +74,12 @@ const App = () => {
                   <Route path="/exam-pin" element={<ExamPin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
-                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin" element={<AdminLayout />}>
+                    <Route index element={<AdminOverview />} />
+                    <Route path="email" element={<AdminEmail />} />
+                    <Route path="otp" element={<AdminOtp />} />
+                    <Route path="*" element={<AdminOverview />} />
+                  </Route>
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </SessionLockProvider>
