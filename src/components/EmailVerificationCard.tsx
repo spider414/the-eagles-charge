@@ -22,6 +22,7 @@ const EmailVerificationCard = ({ onVerified }: { onVerified?: () => void }) => {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [cooldown, setCooldown] = useState(0);
+  const [changing, setChanging] = useState(false);
 
   const suggestion = getEmailSuggestion(newEmail);
 
@@ -44,6 +45,10 @@ const EmailVerificationCard = ({ onVerified }: { onVerified?: () => void }) => {
       const data = (await call({ action: "status" })) as unknown as Status;
       setStatus(data);
       if (data.pending) setNewEmail(data.pending.new_email);
+      if (data.verified && !data.pending) {
+        setChanging(false);
+        setNewEmail("");
+      }
     } catch (e) {
       console.error("email status error", e);
     } finally {
@@ -151,6 +156,13 @@ const EmailVerificationCard = ({ onVerified }: { onVerified?: () => void }) => {
               </Button>
             )}
 
+            {status?.email && status.verified && !status.pending && !changing && (
+              <Button variant="outline" className="w-full" onClick={() => setChanging(true)}>
+                <Mail className="mr-2 h-4 w-4" /> Change email
+              </Button>
+            )}
+
+            {(!status?.verified || status?.pending || changing) && (
             <div className="space-y-2">
               <Label htmlFor="new_email">New email address</Label>
               <Input
@@ -186,7 +198,13 @@ const EmailVerificationCard = ({ onVerified }: { onVerified?: () => void }) => {
                   </>
                 )}
               </Button>
+              {changing && (
+                <Button variant="ghost" className="w-full" onClick={() => { setChanging(false); setNewEmail(""); }}>
+                  Cancel
+                </Button>
+              )}
             </div>
+            )}
 
             {status?.pending && (
               <div className="space-y-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
