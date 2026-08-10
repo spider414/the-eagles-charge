@@ -33,9 +33,16 @@ const Profile = () => {
 
   useEffect(() => {
     if (profile) {
-      // Get the payment email (non-synthetic email from profile)
+      // Prefer the real email from profile, otherwise fall back to the
+      // contact email captured at registration (phone signups store a
+      // synthetic @phone.harmicglobal.com address in `email`).
       const profileEmail = profile.email || "";
-      const paymentEmail = isValidEmail(profileEmail) ? profileEmail : "";
+      const contactEmail = (profile as { contact_email?: string | null }).contact_email || "";
+      const paymentEmail = isValidEmail(profileEmail)
+        ? profileEmail
+        : isValidEmail(contactEmail)
+          ? contactEmail
+          : "";
       
       setFormData({
         full_name: profile.full_name || "",
