@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { Palette, Save, Loader2, History, RefreshCw } from "lucide-react";
+import { Palette, Save, Loader2, History, RefreshCw, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +60,39 @@ export default function AdminEmailBranding() {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [logs, setLogs] = useState<LogRow[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Invalid file", description: "Please choose an image file.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ title: "File too large", description: "Logo must be under 2MB.", variant: "destructive" });
+      return;
+    }
+    setUploading(true);
+    const ext = file.name.split(".").pop() || "png";
+    const path = `logo-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("branding").upload(path, file, { upsert: true });
+    if (upErr) {
+      setUploading(false);
+      toast({ title: "Upload failed", description: upErr.message, variant: "destructive" });
+      return;
+    }
+    // Long-lived signed URL so email clients can render the logo
+    const { data: signed, error: signErr } = await supabase.storage
+      .from("branding")
+      .createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
+    setUploading(false);
+    if (signErr || !signed?.signedUrl) {
+      toast({ title: "Could not get logo URL", description: signErr?.message, variant: "destructive" });
+      return;
+    }
+    setBranding((prev) => (prev ? { ...prev, logo_url: signed.signedUrl } : prev));
+    toast({ title: "Logo uploaded", description: "Remember to save branding." });
+  };
 
   const loadLogs = async () => {
     setLoadingLogs(true);
@@ -150,6 +183,27 @@ export default function AdminEmailBranding() {
               <div className="sm:col-span-2">
                 <Label>Logo URL</Label>
                 <Input placeholder="https://…/logo.png" value={branding.logo_url ?? ""} onChange={(e) => setBranding({ ...branding, logo_url: e.target.value })} />
+                <div className="flex items-center gap-3 mt-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleLogoUpload(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+                    {uploading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />}
+                    Upload logo
+                  </Button>
+                  {branding.logo_url ? (
+                    <img src={branding.logo_url} alt="Brand logo preview" className="h-10 w-auto rounded border border-border object-contain" />
+                  ) : null}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">PNG or JPG, max 2MB. Click “Save branding” to apply.</p>
               </div>
               <div>
                 <Label>Primary color</Label>
