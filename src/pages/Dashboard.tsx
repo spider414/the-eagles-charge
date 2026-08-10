@@ -103,6 +103,16 @@ const Dashboard = () => {
 
           <nav className="flex items-center gap-1">
             <NotificationCenter />
+            {isAdmin && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2"
+                aria-label="Admin panel"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                <span className="hidden md:inline">Admin</span>
+              </Link>
+            )}
             <Link to="/history" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <History className="h-4 w-4" />
               History
