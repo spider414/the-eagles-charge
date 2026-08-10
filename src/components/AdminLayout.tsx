@@ -95,6 +95,7 @@ export default function AdminLayout() {
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")} aria-label="Back to app">
               <ArrowLeft className="h-5 w-5" />
             </Button>
+            <BrandLogo className="h-7 w-7" rounded="rounded-md" />
             <h1 className="text-base font-semibold">Admin</h1>
           </header>
           <main className="flex-1 space-y-4 p-4">
