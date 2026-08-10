@@ -367,6 +367,11 @@ Deno.serve(async (req) => {
       opts: { subject?: string; reference?: string; skipped_reason?: string; error?: string; metadata?: Record<string, unknown> } = {},
     ) => {
       try {
+        await adminClient.from("admin_activity_log").insert({
+          actor_user_id: callerUserId,
+          action: `email_${status}`,
+          details: { template: payload.type, recipient: payload.to },
+        });
         await adminClient.from("email_send_log").insert({
           template_type: payload.type,
           recipient_email: payload.to,

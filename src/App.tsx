@@ -36,6 +36,9 @@ import AdminLayout from "@/components/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminEmail from "./pages/admin/AdminEmail";
 import AdminOtp from "./pages/admin/AdminOtp";
+import AdminActivity from "./pages/admin/AdminActivity";
+import AdminRoles from "./pages/admin/AdminRoles";
+import AdminBilling from "./pages/admin/AdminBilling";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -78,6 +81,9 @@ const App = () => {
                     <Route index element={<AdminOverview />} />
                     <Route path="email" element={<AdminEmail />} />
                     <Route path="otp" element={<AdminOtp />} />
+                    <Route path="activity" element={<AdminActivity />} />
+                    <Route path="roles" element={<AdminRoles />} />
+                    <Route path="billing" element={<AdminBilling />} />
                     <Route path="*" element={<AdminOverview />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />

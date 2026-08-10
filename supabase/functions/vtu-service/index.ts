@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { logAdminActivity } from "../_shared/admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -660,11 +661,22 @@ Deno.serve(async (req) => {
       });
 
       if (roleError || !isAdminData) {
+        await logAdminActivity({
+          actorUserId: userId,
+          action: "admin_access_denied",
+          details: { action: "provider_wallet_balance" },
+        });
         return new Response(
           JSON.stringify({ success: false, error: "Admin access required" }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      await logAdminActivity({
+        actorUserId: userId,
+        action: "admin_access_granted",
+        details: { action: "provider_wallet_balance" },
+      });
 
       try {
         const result = await callVtuApiGet("/wallet/balance/");

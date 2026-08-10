@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { ArrowLeft, LayoutDashboard, Loader2, Mail, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ActivitySquare, ArrowLeft, CreditCard, LayoutDashboard, Loader2, Mail, ShieldAlert, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -20,6 +20,9 @@ const items = [
   { title: "Overview", url: "/admin", icon: LayoutDashboard, end: true },
   { title: "Email branding", url: "/admin/email", icon: Mail },
   { title: "OTP audit log", url: "/admin/otp", icon: ShieldCheck },
+  { title: "Activity log", url: "/admin/activity", icon: ActivitySquare },
+  { title: "Roles", url: "/admin/roles", icon: Users },
+  { title: "Billing", url: "/admin/billing", icon: CreditCard },
 ];
 
 function AdminSidebar() {

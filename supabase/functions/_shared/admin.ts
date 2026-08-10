@@ -52,6 +52,11 @@ export async function requireAdmin(
     };
   }
   if (!caller.isAdmin) {
+    await logAdminActivity({
+      actorUserId: caller.userId,
+      action: "admin_access_denied",
+      details: { path: new URL(req.url).pathname },
+    });
     return {
       error: new Response(JSON.stringify({ error: "Admin access required" }), {
         status: 403,
@@ -59,5 +64,30 @@ export async function requireAdmin(
       }),
     };
   }
+  await logAdminActivity({
+    actorUserId: caller.userId,
+    action: "admin_access_granted",
+    details: { path: new URL(req.url).pathname, service: caller.isService },
+  });
   return { userId: caller.userId, isService: caller.isService };
+}
+
+
+/** Best-effort write to the admin activity log (service role bypasses RLS). */
+export async function logAdminActivity(entry: {
+  actorUserId?: string | null;
+  action: string;
+  targetUserId?: string | null;
+  details?: Record<string, unknown>;
+}) {
+  try {
+    await serviceClient().from("admin_activity_log").insert({
+      actor_user_id: entry.actorUserId ?? null,
+      action: entry.action,
+      target_user_id: entry.targetUserId ?? null,
+      details: entry.details ?? {},
+    });
+  } catch (e) {
+    console.error("admin_activity_log insert failed", e);
+  }
 }
