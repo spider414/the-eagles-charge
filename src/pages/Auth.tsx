@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint, ScanFace, Loader2, Mail } from "lucide-react";
+import { Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint, ScanFace, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import { z } from "zod";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { ToastAction } from "@/components/ui/toast";
+import BrandLogo from "@/components/BrandLogo";
 
 const phoneSchema = z.string()
   .min(10, "Phone number must be at least 10 digits")
@@ -680,9 +681,7 @@ const Auth = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-gold shadow-gold">
-            <Bird className="h-7 w-7 text-secondary-foreground" />
-          </div>
+          <BrandLogo className="h-12 w-12" rounded="rounded-xl" />
           <span className="text-2xl font-bold text-foreground">
             HARMIC <span className="text-gradient-gold">RECHARGE</span>
           </span>

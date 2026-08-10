@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Bird, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { usePaystack } from "@/hooks/usePaystack";
+import BrandLogo from "@/components/BrandLogo";
 
 const PaymentCallback = () => {
   const navigate = useNavigate();
@@ -41,9 +42,7 @@ const PaymentCallback = () => {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-gold shadow-gold">
-            <Bird className="h-7 w-7 text-secondary-foreground" />
-          </div>
+          <BrandLogo className="h-12 w-12" rounded="rounded-xl" />
           <span className="text-2xl font-bold text-foreground">
             HARMIC <span className="text-gradient-gold">RECHARGE</span>
           </span>

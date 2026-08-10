@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bird, ArrowLeft, Tv, Check, Mail, AlertCircle, Loader2, User, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, Tv, Check, Mail, AlertCircle, Loader2, User, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,6 +14,7 @@ import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethod
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+import BrandLogo from "@/components/BrandLogo";
 
 interface CablePlan {
   id: string;
@@ -206,9 +207,7 @@ const CableTV = () => {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
-                <Bird className="h-6 w-6 text-secondary-foreground" />
-              </div>
+              <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
               <span className="text-xl font-bold text-foreground">
                 Cable <span className="text-gradient-gold">TV</span>
               </span>

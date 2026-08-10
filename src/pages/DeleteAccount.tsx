@@ -1,7 +1,8 @@
-import { Bird, Trash2, Clock, ShieldCheck, Mail } from "lucide-react";
+import { Trash2, Clock, ShieldCheck, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import BrandLogo from "@/components/BrandLogo";
 
 const DeleteAccount = () => {
   return (
@@ -10,9 +11,7 @@ const DeleteAccount = () => {
       <header className="border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="container flex h-16 items-center gap-4">
           <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold">
-              <Bird className="h-5 w-5 text-secondary-foreground" />
-            </div>
+            <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">HARMIC RECHARGE</span>
           </Link>
         </div>

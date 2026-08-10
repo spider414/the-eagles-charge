@@ -1,4 +1,4 @@
-import { Bird } from "lucide-react";
+
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -7,9 +7,7 @@ const Footer = () => {
       <div className="container">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-gold shadow-gold">
-              <Bird className="h-6 w-6 text-secondary-foreground" />
-            </div>
+            <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
             <span className="text-xl font-bold text-primary-foreground">
               HARMIC <span className="text-gradient-gold">RECHARGE</span>
             </span>
