@@ -50,7 +50,7 @@ const money = (n: number) => `NGN ${n.toLocaleString("en-NG", { minimumFractionD
 export const buildReceiptPdf = async (doc: ReceiptDoc): Promise<jsPDF> => {
   const w = 105; // mm width (A6 width)
   const rowCount = doc.rows.length + (doc.pins?.length ?? 0) * 1.6;
-  const h = Math.max(148, 92 + rowCount * 7);
+  const h = Math.max(148, 104 + rowCount * 7);
   const pdf = new jsPDF({ unit: "mm", format: [w, h] });
 
   // ---- Header band
