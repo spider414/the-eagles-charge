@@ -206,16 +206,16 @@ const Dashboard = () => {
 
         {/* Quick Services Grid */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Services</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <h2 className="text-lg font-semibold mb-3">Services</h2>
+          <div className="grid grid-cols-2 gap-3">
             {/* Airtime */}
             <Link to="/airtime">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-3">
-                    <Phone className="h-7 w-7 text-primary-foreground" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center mb-2">
+                    <Phone className="h-5 w-5 text-primary-foreground" />
                   </div>
-                  <span className="text-sm font-semibold">Airtime</span>
+                  <span className="text-xs font-semibold">Airtime</span>
                 </CardContent>
               </Card>
             </Link>
@@ -223,11 +223,11 @@ const Dashboard = () => {
             {/* Data */}
             <Link to="/data">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center mb-3">
-                    <Wifi className="h-7 w-7 text-white" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center mb-2">
+                    <Wifi className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-semibold">Data</span>
+                  <span className="text-xs font-semibold">Data</span>
                 </CardContent>
               </Card>
             </Link>
@@ -235,11 +235,11 @@ const Dashboard = () => {
             {/* Refer & Earn */}
             <Link to="/referrals">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-purple-500 flex items-center justify-center mb-3">
-                    <Gift className="h-7 w-7 text-white" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-purple-500 flex items-center justify-center mb-2">
+                    <Gift className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-semibold">Refer & Earn</span>
+                  <span className="text-xs font-semibold">Refer & Earn</span>
                 </CardContent>
               </Card>
             </Link>
@@ -247,11 +247,11 @@ const Dashboard = () => {
             {/* Electricity */}
             <Link to="/bills/electricity">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-yellow-500 flex items-center justify-center mb-3">
-                    <Zap className="h-7 w-7 text-white" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-500 flex items-center justify-center mb-2">
+                    <Zap className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-semibold">Electricity</span>
+                  <span className="text-xs font-semibold">Electricity</span>
                 </CardContent>
               </Card>
             </Link>
@@ -259,11 +259,11 @@ const Dashboard = () => {
             {/* Cable TV */}
             <Link to="/bills/cable">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center mb-3">
-                    <Tv className="h-7 w-7 text-white" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center mb-2">
+                    <Tv className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-semibold">Cable TV</span>
+                  <span className="text-xs font-semibold">Cable TV</span>
                 </CardContent>
               </Card>
             </Link>
@@ -271,11 +271,11 @@ const Dashboard = () => {
             {/* Internet */}
             <Link to="/bills/internet">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-violet-500 flex items-center justify-center mb-3">
-                    <Globe className="h-7 w-7 text-white" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-violet-500 flex items-center justify-center mb-2">
+                    <Globe className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-semibold">Internet</span>
+                  <span className="text-xs font-semibold">Internet</span>
                 </CardContent>
               </Card>
             </Link>
@@ -283,11 +283,11 @@ const Dashboard = () => {
             {/* Exam PINs */}
             <Link to="/exam-pin">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-orange-500 flex items-center justify-center mb-3">
-                    <BookOpen className="h-7 w-7 text-white" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center mb-2">
+                    <BookOpen className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-sm font-semibold">Exam PINs</span>
+                  <span className="text-xs font-semibold">Exam PINs</span>
                 </CardContent>
               </Card>
             </Link>
@@ -295,11 +295,11 @@ const Dashboard = () => {
             {/* Wallet Top-up */}
             <Link to="/wallet/topup">
               <Card className="hover:shadow-card hover:border-primary/20 transition-all cursor-pointer h-full">
-                <CardContent className="p-6 flex flex-col items-center text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-accent flex items-center justify-center mb-3">
-                    <Wallet className="h-7 w-7 text-accent-foreground" />
+                <CardContent className="p-3 flex flex-col items-center text-center">
+                  <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center mb-2">
+                    <Wallet className="h-5 w-5 text-accent-foreground" />
                   </div>
-                  <span className="text-sm font-semibold">Top Up</span>
+                  <span className="text-xs font-semibold">Top Up</span>
                 </CardContent>
               </Card>
             </Link>
