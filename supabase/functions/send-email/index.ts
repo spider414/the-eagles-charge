@@ -307,6 +307,7 @@ Deno.serve(async (req) => {
       serviceRoleKey!,
     );
     let callerUserId: string | null = null;
+    let callerEmail: string | null = null;
     let callerIsAdmin = false;
     const isServiceCaller = token === serviceRoleKey;
     // Allow internal edge-function callers using the service role key.
@@ -319,6 +320,7 @@ Deno.serve(async (req) => {
         });
       }
       callerUserId = userData.user.id;
+      callerEmail = userData.user.email ?? null;
       const { data: isAdminData } = await adminClient.rpc("has_role", {
         _user_id: callerUserId,
         _role: "admin",
