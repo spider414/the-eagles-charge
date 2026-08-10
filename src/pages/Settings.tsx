@@ -39,8 +39,6 @@ import ChangePasswordDialog from "@/components/ChangePasswordDialog";
 import DeleteAccountDialog from "@/components/DeleteAccountDialog";
 import { PinSetupDialog } from "@/components/PinSetupDialog";
 import EmailPreferences from "@/components/EmailPreferences";
-import AdminEmailBranding from "@/components/AdminEmailBranding";
-import AdminOtpAuditLog from "@/components/AdminOtpAuditLog";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 
 interface SettingItem {
@@ -606,12 +604,6 @@ const Settings = () => {
 
         {/* Email Preferences */}
         <EmailPreferences />
-
-        {/* Admin: Email templates & branding (visible only to admins) */}
-        <AdminEmailBranding />
-
-        {/* Admin: OTP audit log (visible only to admins) */}
-        <AdminOtpAuditLog />
 
         {/* Account Section */}
         <Card>
