@@ -41,6 +41,45 @@ export type Database = {
         }
         Relationships: []
       }
+      email_change_requests: {
+        Row: {
+          attempts: number
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          new_email: string
+          purpose: string
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          attempts?: number
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          new_email: string
+          purpose?: string
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          attempts?: number
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          new_email?: string
+          purpose?: string
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -285,6 +324,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           contact_email: string | null
+          contact_email_verified: boolean
           created_at: string
           deletion_reason: string | null
           deletion_scheduled_at: string | null
@@ -317,6 +357,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           contact_email?: string | null
+          contact_email_verified?: boolean
           created_at?: string
           deletion_reason?: string | null
           deletion_scheduled_at?: string | null
@@ -349,6 +390,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           contact_email?: string | null
+          contact_email_verified?: boolean
           created_at?: string
           deletion_reason?: string | null
           deletion_scheduled_at?: string | null
