@@ -77,8 +77,29 @@ const Profile = () => {
       .single();
     
     if (data?.avatar_url) {
-      setAvatarUrl(data.avatar_url);
+      const signed = await resolveAvatarUrl(data.avatar_url);
+      if (signed) setAvatarUrl(signed);
     }
+  };
+
+  // The avatars bucket is private, so we always display via a signed URL.
+  const resolveAvatarUrl = async (stored: string): Promise<string | null> => {
+    // Support legacy values that were saved as full public URLs
+    let path = stored;
+    const marker = "/object/public/avatars/";
+    if (stored.includes(marker)) {
+      path = stored.split(marker)[1].split("?")[0];
+    }
+    if (path.startsWith("http")) return stored;
+
+    const { data, error } = await supabase.storage
+      .from("avatars")
+      .createSignedUrl(decodeURIComponent(path), 60 * 60 * 24 * 365);
+    if (error) {
+      console.error("Avatar signed URL error:", error);
+      return null;
+    }
+    return data?.signedUrl ?? null;
   };
 
   const handlePaymentEmailChange = (email: string) => {
@@ -133,22 +154,16 @@ const Profile = () => {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("avatars")
-        .getPublicUrl(fileName);
-
-      const publicUrl = urlData.publicUrl + `?t=${Date.now()}`; // Cache busting
-
-      // Update profile with avatar URL
+      // Store the storage path; the bucket is private so we display signed URLs
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: fileName })
         .eq("user_id", user.id);
 
       if (updateError) throw updateError;
 
-      setAvatarUrl(publicUrl);
+      const signed = await resolveAvatarUrl(fileName);
+      setAvatarUrl(signed ? `${signed}${signed.includes("?") ? "&" : "?"}t=${Date.now()}` : "");
       toast({
         title: "Photo Updated",
         description: "Your profile photo has been updated.",
