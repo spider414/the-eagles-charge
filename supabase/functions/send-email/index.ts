@@ -89,7 +89,38 @@ interface PasswordResetPayload {
   ip?: string;
 }
 
-type Payload = WelcomePayload | ReceiptPayload | PasswordResetPayload;
+interface DeletionRequestPayload {
+  type: "account_deletion_request";
+  to: string;
+  name?: string;
+  user_email?: string;
+  phone_number?: string;
+  user_id?: string;
+  scheduled_for?: string;
+  reason?: string;
+}
+
+interface DeletionConfirmedPayload {
+  type: "account_deletion_confirmed";
+  to: string;
+  name?: string;
+  scheduled_for?: string;
+}
+
+interface AccountDeletedPayload {
+  type: "account_deleted";
+  to: string;
+  name?: string;
+  deleted_at?: string;
+}
+
+type Payload =
+  | WelcomePayload
+  | ReceiptPayload
+  | PasswordResetPayload
+  | DeletionRequestPayload
+  | DeletionConfirmedPayload
+  | AccountDeletedPayload;
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
@@ -228,6 +259,63 @@ const passwordResetHtml = (b: Branding, t: TemplateCopy, p: PasswordResetPayload
   );
 };
 
+const deletionRequestHtml = (b: Branding, t: TemplateCopy, p: DeletionRequestPayload) =>
+  shell(
+    b,
+    "Account deletion requested",
+    `
+    <p style="font-size:15px;line-height:1.6;">${escape(t.intro)}</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0;background:#f8fafc;border-radius:8px;">
+      <tr><td style="padding:12px 16px;color:#64748b;font-size:14px;">Name</td><td style="padding:12px 16px;text-align:right;font-weight:600;font-size:14px;">${escape(p.name || "—")}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748b;font-size:14px;border-top:1px solid #e2e8f0;">Email</td><td style="padding:12px 16px;text-align:right;font-weight:600;font-size:14px;border-top:1px solid #e2e8f0;">${escape(p.user_email || "—")}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748b;font-size:14px;border-top:1px solid #e2e8f0;">Phone</td><td style="padding:12px 16px;text-align:right;font-weight:600;font-size:14px;border-top:1px solid #e2e8f0;">${escape(p.phone_number || "—")}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748b;font-size:14px;border-top:1px solid #e2e8f0;">User ID</td><td style="padding:12px 16px;text-align:right;font-family:monospace;font-size:12px;border-top:1px solid #e2e8f0;">${escape(p.user_id || "—")}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748b;font-size:14px;border-top:1px solid #e2e8f0;">Deletes on</td><td style="padding:12px 16px;text-align:right;font-weight:600;font-size:14px;border-top:1px solid #e2e8f0;">${escape(p.scheduled_for ? formatDateNG(new Date(p.scheduled_for)) : "—")}</td></tr>
+      <tr><td style="padding:12px 16px;color:#64748b;font-size:14px;border-top:1px solid #e2e8f0;">Reason</td><td style="padding:12px 16px;text-align:right;font-size:14px;border-top:1px solid #e2e8f0;">${escape(p.reason || "User requested deletion")}</td></tr>
+    </table>
+    <p style="font-size:14px;line-height:1.6;color:#475569;">${escape(t.outro)}</p>
+  `,
+  );
+
+const deletionConfirmedHtml = (b: Branding, t: TemplateCopy, p: DeletionConfirmedPayload) =>
+  shell(
+    b,
+    "We received your account deletion request",
+    `
+    <p style="font-size:15px;line-height:1.6;">Hi <strong>${escape(p.name || "there")}</strong>,</p>
+    <p style="font-size:15px;line-height:1.6;">${escape(t.intro)}</p>
+    <div style="background:#fffbeb;border-left:4px solid #f59e0b;padding:14px 16px;border-radius:6px;margin:18px 0;">
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#92400e;">
+        Your account is scheduled for permanent deletion on
+        <strong>${escape(p.scheduled_for ? formatDateNG(new Date(p.scheduled_for)) : "the 7th day from now")}</strong>.
+        You can cancel by simply logging back in before then.
+      </p>
+    </div>
+    <p style="font-size:14px;line-height:1.6;color:#475569;">${escape(t.outro)}</p>
+    <p style="font-size:14px;">Didn't request this? Contact <a href="mailto:${b.support_email}" style="color:${b.primary_color};">${escape(b.support_email)}</a> immediately.</p>
+  `,
+  );
+
+const accountDeletedHtml = (b: Branding, t: TemplateCopy, p: AccountDeletedPayload) =>
+  shell(
+    b,
+    "Your account has been deleted",
+    `
+    <p style="font-size:15px;line-height:1.6;">Hi <strong>${escape(p.name || "there")}</strong>,</p>
+    <p style="font-size:15px;line-height:1.6;">${escape(t.intro)}</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0;background:#f8fafc;border-radius:8px;">
+      <tr><td style="padding:12px 16px;color:#64748b;font-size:14px;">Deleted on</td><td style="padding:12px 16px;text-align:right;font-weight:600;font-size:14px;">${escape(formatDateNG(p.deleted_at ? new Date(p.deleted_at) : new Date()))}</td></tr>
+    </table>
+    <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:14px 16px;border-radius:6px;">
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#991b1b;">
+        This action is permanent — your profile, transactions, wallet balance and referral data cannot be recovered.
+        If you did <strong>not</strong> request this, contact <a href="mailto:${b.support_email}" style="color:#991b1b;">${escape(b.support_email)}</a> right away.
+      </p>
+    </div>
+    <p style="margin-top:20px;font-size:14px;">${escape(t.outro)}<br/><br/>— <strong>${escape(b.brand_name)} Team</strong></p>
+  `,
+  );
+
 async function sendResend(from: string, to: string, subject: string, html: string) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -278,6 +366,27 @@ function fallbackTemplate(type: string): TemplateCopy {
       subject: "Your HARMIC RECHARGE Receipt",
       intro: "Your transaction was processed.",
       outro: "Keep this email as proof of payment.",
+      enabled: true,
+    };
+  if (type === "account_deletion_request")
+    return {
+      subject: "⚠️ Account deletion requested",
+      intro: "A user has requested deletion of their HARMIC RECHARGE account.",
+      outro: "The account and all related data will be permanently removed after the 7-day grace period unless the user logs back in.",
+      enabled: true,
+    };
+  if (type === "account_deletion_confirmed")
+    return {
+      subject: "Your HARMIC RECHARGE account deletion request",
+      intro: "We have received your request to delete your HARMIC RECHARGE account.",
+      outro: "After deletion, your data cannot be recovered.",
+      enabled: true,
+    };
+  if (type === "account_deleted")
+    return {
+      subject: "Your HARMIC RECHARGE account has been deleted",
+      intro: "As requested, your HARMIC RECHARGE account and all associated data have now been permanently deleted.",
+      outro: "Thank you for using HARMIC RECHARGE.",
       enabled: true,
     };
   return {
@@ -426,6 +535,12 @@ Deno.serve(async (req) => {
       reference = payload.reference;
     } else if (payload.type === "password_reset") {
       html = passwordResetHtml(branding, tpl, payload);
+    } else if (payload.type === "account_deletion_request") {
+      html = deletionRequestHtml(branding, tpl, payload);
+    } else if (payload.type === "account_deletion_confirmed") {
+      html = deletionConfirmedHtml(branding, tpl, payload);
+    } else if (payload.type === "account_deleted") {
+      html = accountDeletedHtml(branding, tpl, payload);
     } else {
       return new Response(JSON.stringify({ error: "Unknown email type" }), {
         status: 400,
