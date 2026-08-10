@@ -56,3 +56,6 @@ verify_jwt = false
 
 [functions.migrate-legacy-emails]
 verify_jwt = false
+
+[functions.change-email]
+verify_jwt = false
