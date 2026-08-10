@@ -61,8 +61,13 @@ const EmailVerificationCard = ({ onVerified }: { onVerified?: () => void }) => {
     return () => clearTimeout(t);
   }, [cooldown]);
 
-  const sendCode = async (action: "send" | "resend") => {
-    const target = action === "resend" ? status?.pending?.new_email ?? newEmail : newEmail.trim();
+  const sendCode = async (action: "send" | "resend", explicit?: string) => {
+    const target = (
+      explicit ??
+      (action === "resend"
+        ? status?.pending?.new_email ?? newEmail
+        : newEmail.trim() || status?.email || "")
+    ).trim();
     if (!isValidEmail(target)) {
       toast({ title: "Invalid email", description: "Enter a valid email address.", variant: "destructive" });
       return;
@@ -140,7 +145,7 @@ const EmailVerificationCard = ({ onVerified }: { onVerified?: () => void }) => {
                 variant="outline"
                 className="w-full"
                 disabled={busy || cooldown > 0}
-                onClick={() => sendCode("send")}
+                onClick={() => sendCode("send", status.email ?? undefined)}
               >
                 {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend verification email"}
               </Button>
