@@ -114,13 +114,22 @@ interface AccountDeletedPayload {
   deleted_at?: string;
 }
 
+interface EmailVerificationPayload {
+  type: "email_verification";
+  to: string;
+  name?: string;
+  code: string;
+  expires_minutes?: number;
+}
+
 type Payload =
   | WelcomePayload
   | ReceiptPayload
   | PasswordResetPayload
   | DeletionRequestPayload
   | DeletionConfirmedPayload
-  | AccountDeletedPayload;
+  | AccountDeletedPayload
+  | EmailVerificationPayload;
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
@@ -316,6 +325,28 @@ const accountDeletedHtml = (b: Branding, t: TemplateCopy, p: AccountDeletedPaylo
   `,
   );
 
+const emailVerificationHtml = (b: Branding, t: TemplateCopy, p: EmailVerificationPayload) =>
+  shell(
+    b,
+    "Verify your email address",
+    `
+    <p style="font-size:15px;line-height:1.6;">Hi <strong>${escape(p.name || "there")}</strong>,</p>
+    <p style="font-size:15px;line-height:1.6;">${escape(t.intro)}</p>
+    <div style="background:#f8fafc;border-radius:10px;padding:22px;margin:20px 0;text-align:center;">
+      <div style="font-size:13px;color:#64748b;letter-spacing:0.5px;text-transform:uppercase;">Verification code</div>
+      <div style="font-size:34px;font-weight:700;letter-spacing:8px;color:${b.primary_color};margin-top:8px;font-family:monospace;">${escape(p.code)}</div>
+      <div style="font-size:12px;color:#94a3b8;margin-top:10px;">Expires in ${escape(p.expires_minutes ?? 15)} minutes</div>
+    </div>
+    <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:14px 16px;border-radius:6px;">
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#991b1b;">
+        Never share this code. If you did not request an email change, contact
+        <a href="mailto:${b.support_email}" style="color:#991b1b;">${escape(b.support_email)}</a>.
+      </p>
+    </div>
+    <p style="margin-top:20px;font-size:14px;">${escape(t.outro)}<br/><br/>— <strong>${escape(b.brand_name)} Team</strong></p>
+  `,
+  );
+
 async function sendResend(from: string, to: string, subject: string, html: string) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
@@ -387,6 +418,13 @@ function fallbackTemplate(type: string): TemplateCopy {
       subject: "Your HARMIC RECHARGE account has been deleted",
       intro: "As requested, your HARMIC RECHARGE account and all associated data have now been permanently deleted.",
       outro: "Thank you for using HARMIC RECHARGE.",
+      enabled: true,
+    };
+  if (type === "email_verification")
+    return {
+      subject: "Verify your HARMIC RECHARGE email",
+      intro: "Use the code below to confirm this email address for your HARMIC RECHARGE account.",
+      outro: "Once verified, receipts and account notices will be sent to this address.",
       enabled: true,
     };
   return {
@@ -541,6 +579,8 @@ Deno.serve(async (req) => {
       html = deletionConfirmedHtml(branding, tpl, payload);
     } else if (payload.type === "account_deleted") {
       html = accountDeletedHtml(branding, tpl, payload);
+    } else if (payload.type === "email_verification") {
+      html = emailVerificationHtml(branding, tpl, payload);
     } else {
       return new Response(JSON.stringify({ error: "Unknown email type" }), {
         status: 400,

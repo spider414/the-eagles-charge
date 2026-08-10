@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import BrandLogo from "@/components/BrandLogo";
+import EmailVerificationCard from "@/components/EmailVerificationCard";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -437,6 +438,8 @@ const Profile = () => {
             </Button>
           </CardContent>
         </Card>
+
+        <EmailVerificationCard onVerified={refreshProfile} />
 
         {/* Account Info */}
         <Card className="mt-4">
