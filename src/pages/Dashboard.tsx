@@ -12,6 +12,7 @@ import PageTransition from "@/components/PageTransition";
 import PullToRefresh from "@/components/PullToRefresh";
 import NotificationCenter from "@/components/NotificationCenter";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import harmicLogo from "@/assets/harmic-logo.jpg.asset.json";
 
 interface DVADetails {
   account_number: string;
