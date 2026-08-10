@@ -5,7 +5,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // load the bundled web assets from `dist/` instead of the sandbox.
 const config: CapacitorConfig = {
   appId: 'app.lovable.theeaglescharge',
-  appName: 'The Eagles Charge',
+  appName: 'HARMIC RECHARGE',
   webDir: 'dist',
   ios: {
     contentInset: 'always',

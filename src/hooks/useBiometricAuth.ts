@@ -113,7 +113,7 @@ export const useBiometricAuth = () => {
       const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
         challenge: challenge.buffer as ArrayBuffer,
         rp: {
-          name: "THE EAGLES VTU",
+          name: "HARMIC RECHARGE",
           id: rpId,
         },
         user: {

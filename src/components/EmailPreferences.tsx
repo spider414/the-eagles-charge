@@ -13,7 +13,7 @@ type Prefs = {
 };
 
 const ROWS: { key: keyof Prefs; title: string; desc: string }[] = [
-  { key: "email_marketing_opt_in", title: "Welcome & marketing", desc: "Onboarding tips and news about The Eagles Charge." },
+  { key: "email_marketing_opt_in", title: "Welcome & marketing", desc: "Onboarding tips and news about HARMIC RECHARGE." },
   { key: "email_promotions_opt_in", title: "Promotions & offers", desc: "Discounts, cashback and referral campaigns." },
   { key: "email_product_updates_opt_in", title: "Product updates", desc: "New features, service outages and improvements." },
 ];

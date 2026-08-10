@@ -1,6 +1,6 @@
 {
-  "name": "The Eagles Charge",
-  "short_name": "Eagles Charge",
+  "name": "HARMIC RECHARGE",
+  "short_name": "HARMIC",
   "description": "Fast, reliable airtime & data top-up for MTN, Glo, Airtel, and 9mobile",
   "start_url": "/",
   "display": "browser",
@@ -34,19 +34,32 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["finance", "utilities"],
+  "categories": [
+    "finance",
+    "utilities"
+  ],
   "shortcuts": [
     {
       "name": "Buy Airtime",
       "short_name": "Airtime",
       "url": "/dashboard?tab=airtime",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/pwa-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "Buy Data",
       "short_name": "Data",
       "url": "/dashboard?tab=data",
-      "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
+      "icons": [
+        {
+          "src": "/pwa-192x192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

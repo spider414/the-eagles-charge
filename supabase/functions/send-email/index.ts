@@ -6,11 +6,11 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-const DEFAULT_FROM = "The Eagles Charge <noreply@harmicglobal.com>";
+const DEFAULT_FROM = "HARMIC RECHARGE <noreply@harmicglobal.com>";
 const DEFAULT_SUPPORT = "support@harmicglobal.com";
 const DEFAULT_PRIMARY = "#16a34a";
 const DEFAULT_DARK = "#0f172a";
-const DEFAULT_BRAND = "The Eagles Charge";
+const DEFAULT_BRAND = "HARMIC RECHARGE";
 const DEFAULT_EMOJI = "🦅";
 
 interface Branding {
@@ -268,20 +268,20 @@ function fallbackBranding(): Branding {
 function fallbackTemplate(type: string): TemplateCopy {
   if (type === "welcome")
     return {
-      subject: "Welcome to The Eagles Charge 🦅",
-      intro: "Your Eagles Charge account is ready.",
+      subject: "Welcome to HARMIC RECHARGE 🦅",
+      intro: "Your HARMIC RECHARGE account is ready.",
       outro: "Log in anytime and fund your wallet to get started.",
       enabled: true,
     };
   if (type === "receipt")
     return {
-      subject: "Your Eagles Charge Receipt",
+      subject: "Your HARMIC RECHARGE Receipt",
       intro: "Your transaction was processed.",
       outro: "Keep this email as proof of payment.",
       enabled: true,
     };
   return {
-    subject: "Your Eagles Charge password was reset",
+    subject: "Your HARMIC RECHARGE password was reset",
     intro: "The password for your account was just reset successfully.",
     outro: "If you did not do this, contact support immediately.",
     enabled: true,

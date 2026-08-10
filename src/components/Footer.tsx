@@ -11,7 +11,7 @@ const Footer = () => {
               <Bird className="h-6 w-6 text-secondary-foreground" />
             </div>
             <span className="text-xl font-bold text-primary-foreground">
-              THE <span className="text-gradient-gold">EAGLES</span>
+              HARMIC <span className="text-gradient-gold">RECHARGE</span>
             </span>
           </div>
 
@@ -31,7 +31,7 @@ const Footer = () => {
           </div>
 
           <p className="text-sm text-primary-foreground/50">
-            © 2026 The Eagles. All rights reserved.
+            © 2026 HARMIC RECHARGE. All rights reserved.
           </p>
         </div>
       </div>

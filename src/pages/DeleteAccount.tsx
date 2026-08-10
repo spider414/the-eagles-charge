@@ -13,7 +13,7 @@ const DeleteAccount = () => {
             <div className="flex h-8 w-8 items-center justify-center rounded-lg gradient-gold">
               <Bird className="h-5 w-5 text-secondary-foreground" />
             </div>
-            <span className="font-semibold">THE EAGLES VTU</span>
+            <span className="font-semibold">HARMIC RECHARGE</span>
           </Link>
         </div>
       </header>
@@ -27,7 +27,7 @@ const DeleteAccount = () => {
           </div>
           <h1 className="text-3xl font-bold mb-2">Account Deletion Policy</h1>
           <p className="text-muted-foreground">
-            Information about how to delete your Eagles VTU account
+            Information about how to delete your HARMIC RECHARGE account
           </p>
         </div>
 
@@ -45,7 +45,7 @@ const DeleteAccount = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <ol className="list-decimal list-inside space-y-3 text-muted-foreground">
-                <li>Log in to your Eagles VTU account</li>
+                <li>Log in to your HARMIC RECHARGE account</li>
                 <li>Navigate to <strong>Settings</strong> from the menu</li>
                 <li>Scroll down to the <strong>Account</strong> section</li>
                 <li>Click on <strong>"Delete Account"</strong></li>
@@ -179,7 +179,7 @@ const DeleteAccount = () => {
 
         {/* Footer */}
         <div className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
-          <p>© {new Date().getFullYear()} THE EAGLES VTU. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} HARMIC RECHARGE. All rights reserved.</p>
           <div className="flex justify-center gap-4 mt-2">
             <Link to="/privacy" className="hover:text-primary">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-primary">Terms of Service</Link>

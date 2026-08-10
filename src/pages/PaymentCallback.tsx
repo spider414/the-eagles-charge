@@ -45,7 +45,7 @@ const PaymentCallback = () => {
             <Bird className="h-7 w-7 text-secondary-foreground" />
           </div>
           <span className="text-2xl font-bold text-foreground">
-            THE <span className="text-gradient-gold">EAGLES</span>
+            HARMIC <span className="text-gradient-gold">RECHARGE</span>
           </span>
         </div>
 

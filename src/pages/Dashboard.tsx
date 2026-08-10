@@ -99,7 +99,7 @@ const Dashboard = () => {
               <Bird className="h-5 w-5 text-secondary-foreground" />
             </div>
             <span className="text-lg font-bold text-foreground">
-              THE <span className="text-gradient-gold">EAGLES</span>
+              HARMIC <span className="text-gradient-gold">RECHARGE</span>
             </span>
           </Link>
 
