@@ -86,6 +86,14 @@ const ELECTRICITY_PROVIDER_IDS: Record<string, number> = {
   bedc: 10,
 };
 
+// Platform service fee: 2% on every service EXCEPT airtime (recharge card) and wallet top-ups.
+const SERVICE_FEE_RATE = 0.02;
+const FEE_EXEMPT_TYPES = new Set(["airtime", "wallet_topup"]);
+const computeServiceFee = (transactionType: string, baseAmount: number): number => {
+  if (FEE_EXEMPT_TYPES.has(transactionType)) return 0;
+  return Math.ceil(baseAmount * SERVICE_FEE_RATE);
+};
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
