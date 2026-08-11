@@ -508,7 +508,7 @@ const WalletTopUp = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone">Phone Number (linked to BVN) *</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -516,6 +516,9 @@ const WalletTopUp = () => {
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 11))}
                     placeholder="08012345678"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Names and phone number must match your BVN record exactly.
+                  </p>
                 </div>
                 
                 <div className="space-y-2">
