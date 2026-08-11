@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint, ScanFace, Loader2, Mail } from "lucide-react";
+import { Phone, Lock, User, Gift, Shield, KeyRound, ArrowLeft, CheckCircle, Fingerprint, ScanFace, Loader2, Mail, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +22,17 @@ const phoneSchema = z.string()
   .regex(/^[0-9+]+$/, "Please enter a valid phone number");
 const passwordSchema = z.string().min(6, "Password must be at least 6 characters");
 
+const PasswordToggle = ({ shown, onToggle }: { shown: boolean; onToggle: () => void }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    aria-label={shown ? "Hide password" : "Show password"}
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+  >
+    {shown ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+  </button>
+);
+
 type AuthStep = "login" | "signup-phone" | "signup-otp" | "signup-nin" | "signup-details" | "forgot-phone" | "forgot-otp" | "forgot-security" | "forgot-reset";
 
 const Auth = () => {
@@ -38,6 +49,8 @@ const Auth = () => {
   // Login state
   const [loginPhone, setLoginPhone] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
+  const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
+  const togglePassword = (key: string) => setShowPasswords((p) => ({ ...p, [key]: !p[key] }));
   
   // Signup state
   const [signupPhone, setSignupPhone] = useState("");
@@ -728,13 +741,14 @@ const Auth = () => {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="login-password"
-                          type="password"
+                          type={showPasswords.login ? "text" : "password"}
                           placeholder="••••••••"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
-                          className="pl-10"
+                          className="pl-10 pr-10"
                           required
                         />
+                        <PasswordToggle shown={!!showPasswords.login} onToggle={() => togglePassword("login")} />
                       </div>
                     </div>
 
@@ -1000,13 +1014,14 @@ const Auth = () => {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="signup-password"
-                      type="password"
+                      type={showPasswords.signup ? "text" : "password"}
                       placeholder="••••••••"
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 pr-10"
                       required
                     />
+                    <PasswordToggle shown={!!showPasswords.signup} onToggle={() => togglePassword("signup")} />
                   </div>
                 </div>
 
@@ -1281,13 +1296,14 @@ const Auth = () => {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="new-password"
-                      type="password"
+                      type={showPasswords.newPass ? "text" : "password"}
                       placeholder="••••••••"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 pr-10"
                       required
                     />
+                    <PasswordToggle shown={!!showPasswords.newPass} onToggle={() => togglePassword("newPass")} />
                   </div>
                 </div>
 
@@ -1297,13 +1313,14 @@ const Auth = () => {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="confirm-password"
-                      type="password"
+                      type={showPasswords.confirmPass ? "text" : "password"}
                       placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10"
+                      className="pl-10 pr-10"
                       required
                     />
+                    <PasswordToggle shown={!!showPasswords.confirmPass} onToggle={() => togglePassword("confirmPass")} />
                   </div>
                 </div>
 
