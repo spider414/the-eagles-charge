@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { WalletNotificationProvider } from "@/components/WalletNotificationProvider";
 import FloatingChatButton from "@/components/FloatingChatButton";
 import { SessionLockProvider } from "@/components/SessionLockProvider";
@@ -45,6 +46,7 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <LanguageProvider>
       <AuthProvider>
         <WalletNotificationProvider>
           <TooltipProvider>
@@ -93,6 +95,7 @@ const App = () => {
           </TooltipProvider>
         </WalletNotificationProvider>
       </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 };

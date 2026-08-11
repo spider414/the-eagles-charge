@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, LogOut, ChevronRight, Smartphone, Fingerprint, Vibrate, Volume2, Zap, Wallet, Phone, Wifi, Receipt, Trash2, UserX, KeyRound, Clock, Lock } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, LogOut, ChevronRight, Smartphone, Fingerprint, Vibrate, Volume2, Zap, Wallet, Phone, Wifi, Receipt, Trash2, UserX, KeyRound, Clock, Lock, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -16,6 +16,8 @@ import { PinSetupDialog } from "@/components/PinSetupDialog";
 import EmailPreferences from "@/components/EmailPreferences";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 import BrandLogo from "@/components/BrandLogo";
+import { useLanguage } from "@/contexts/LanguageContext";
+import type { LanguageCode } from "@/i18n/translations";
 
 interface SettingItem {
   icon: React.ElementType;
@@ -35,6 +37,15 @@ const Settings = () => {
   const { checkBiometricSupport, registerBiometric, disableBiometric, isBiometricEnabled } = useBiometricAuth();
   const { isPinEnabled, disablePin } = usePinAuth();
   const { testSound, playToggle } = useSoundEffects();
+  const { t, language, setLanguage, languages } = useLanguage();
+
+  const handleLanguageChange = (value: string) => {
+    setLanguage(value as LanguageCode);
+    toast({
+      title: t("settings.languageUpdated"),
+      description: t("settings.languageUpdatedDesc"),
+    });
+  };
   
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -293,32 +304,32 @@ const Settings = () => {
   const appSettings: SettingItem[] = [
     {
       icon: settings.darkMode ? Moon : Sun,
-      label: "Dark Mode",
-      description: "Switch between light and dark themes",
+      label: t("settings.darkMode"),
+      description: t("settings.darkModeDesc"),
       type: "toggle",
       value: settings.darkMode,
       onChange: (value) => updateSetting("darkMode", value),
     },
     {
       icon: Bell,
-      label: "Push Notifications",
-      description: "Receive transaction alerts",
+      label: t("settings.push"),
+      description: t("settings.pushDesc"),
       type: "toggle",
       value: settings.notifications,
       onChange: (value) => updateSetting("notifications", value),
     },
     {
       icon: Volume2,
-      label: "Sound Effects",
-      description: "Audio feedback on actions",
+      label: t("settings.sound"),
+      description: t("settings.soundDesc"),
       type: "toggle",
       value: settings.soundEffects,
       onChange: (value) => updateSetting("soundEffects", value),
     },
     {
       icon: Vibrate,
-      label: "Haptic Feedback",
-      description: "Vibration on button press",
+      label: t("settings.haptic"),
+      description: t("settings.hapticDesc"),
       type: "toggle",
       value: settings.hapticFeedback,
       onChange: (value) => updateSetting("hapticFeedback", value),
@@ -328,8 +339,8 @@ const Settings = () => {
   const notificationTypes: SettingItem[] = [
     {
       icon: Phone,
-      label: "Airtime",
-      description: "Airtime purchase alerts",
+      label: t("service.airtime"),
+      description: t("settings.airtimeAlerts"),
       type: "toggle",
       value: notificationPrefs.airtime,
       onChange: (value) => updateNotificationPref("airtime", value),
@@ -337,8 +348,8 @@ const Settings = () => {
     },
     {
       icon: Wifi,
-      label: "Data",
-      description: "Data bundle alerts",
+      label: t("service.data"),
+      description: t("settings.dataAlerts"),
       type: "toggle",
       value: notificationPrefs.data,
       onChange: (value) => updateNotificationPref("data", value),
@@ -346,8 +357,8 @@ const Settings = () => {
     },
     {
       icon: Receipt,
-      label: "Bills",
-      description: "Electricity & cable TV alerts",
+      label: t("settings.bills"),
+      description: t("settings.billsAlerts"),
       type: "toggle",
       value: notificationPrefs.bills,
       onChange: (value) => updateNotificationPref("bills", value),
@@ -355,8 +366,8 @@ const Settings = () => {
     },
     {
       icon: Wallet,
-      label: "Wallet",
-      description: "Wallet top-up & transfer alerts",
+      label: t("settings.wallet"),
+      description: t("settings.walletAlerts"),
       type: "toggle",
       value: notificationPrefs.wallet,
       onChange: (value) => updateNotificationPref("wallet", value),
@@ -372,10 +383,10 @@ const Settings = () => {
   const securitySettings: SettingItem[] = [
     {
       icon: Fingerprint,
-      label: "Biometric Login",
+      label: t("settings.biometric"),
       description: biometricSupported 
-        ? "Use fingerprint or face ID" 
-        : "Not available on this device",
+        ? t("settings.biometricYes")
+        : t("settings.biometricNo"),
       type: "toggle",
       value: settings.biometric,
       onChange: (value) => updateSetting("biometric", value),
@@ -383,10 +394,10 @@ const Settings = () => {
     },
     {
       icon: KeyRound,
-      label: "PIN Lock",
+      label: t("settings.pinLock"),
       description: settings.pinLock 
-        ? "PIN is enabled - tap to manage" 
-        : "Set up a PIN for app unlock",
+        ? t("settings.pinOn")
+        : t("settings.pinOff"),
       type: settings.pinLock ? "link" : "toggle",
       value: settings.pinLock,
       onChange: (value) => updateSetting("pinLock", value),
@@ -397,10 +408,10 @@ const Settings = () => {
     },
     {
       icon: Lock,
-      label: "Session Lock",
+      label: t("settings.sessionLock"),
       description: settings.sessionLock 
-        ? "App locks after inactivity" 
-        : "Enable auto-lock for security",
+        ? t("settings.sessionLockOn")
+        : t("settings.sessionLockOff"),
       type: "toggle",
       value: settings.sessionLock,
       onChange: (value) => updateSetting("sessionLock", value),
@@ -408,8 +419,8 @@ const Settings = () => {
     },
     {
       icon: Shield,
-      label: "Change Password",
-      description: "Update your account password",
+      label: t("settings.changePassword"),
+      description: t("settings.changePasswordDesc"),
       type: "link",
       onClick: () => setChangePasswordOpen(true),
     },
@@ -418,22 +429,22 @@ const Settings = () => {
   const supportSettings: SettingItem[] = [
     {
       icon: HelpCircle,
-      label: "Help & Support",
-      description: "Get help with the app",
+      label: t("settings.help"),
+      description: t("settings.helpDesc"),
       type: "link",
       onClick: () => navigate("/support"),
     },
     {
       icon: FileText,
-      label: "Terms & Conditions",
-      description: "Read our terms of service",
+      label: t("settings.terms"),
+      description: t("settings.termsDesc"),
       type: "link",
       onClick: () => navigate("/terms"),
     },
     {
       icon: FileText,
-      label: "Privacy Policy",
-      description: "Read our privacy policy",
+      label: t("settings.privacy"),
+      description: t("settings.privacyDesc"),
       type: "link",
       onClick: () => navigate("/privacy"),
     },
@@ -481,7 +492,7 @@ const Settings = () => {
           </Button>
           <div className="flex items-center gap-2">
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
-            <span className="font-semibold">Settings</span>
+            <span className="font-semibold">{t("settings.title")}</span>
           </div>
         </div>
       </header>
@@ -492,11 +503,35 @@ const Settings = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Smartphone className="h-5 w-5" />
-              App Settings
+              {t("settings.app")}
             </CardTitle>
-            <CardDescription>Customize your app experience</CardDescription>
+            <CardDescription>{t("settings.appDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Language selector */}
+            <div className="flex items-center justify-between py-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-muted">
+                  <Languages className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-medium">{t("settings.language")}</p>
+                  <p className="text-sm text-muted-foreground">{t("settings.languageDesc")}</p>
+                </div>
+              </div>
+              <Select value={language} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-36">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {languages.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      {lang.native}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {appSettings.map((item, index) => renderSettingItem(item, index))}
           </CardContent>
         </Card>
@@ -507,9 +542,9 @@ const Settings = () => {
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <Bell className="h-5 w-5" />
-                Notification Types
+              {t("settings.notificationTypes")}
               </CardTitle>
-              <CardDescription>Choose which transactions trigger alerts</CardDescription>
+            <CardDescription>{t("settings.notificationTypesDesc")}</CardDescription>
             </CardHeader>
             <CardContent>
               <PushNotificationToggle />
@@ -525,9 +560,9 @@ const Settings = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Security
+              {t("settings.security")}
             </CardTitle>
-            <CardDescription>Protect your account</CardDescription>
+            <CardDescription>{t("settings.securityDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             {securitySettings.map((item, index) => renderSettingItem(item, index))}
@@ -540,8 +575,8 @@ const Settings = () => {
                     <Clock className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <p className="font-medium">Auto-Lock Timer</p>
-                    <p className="text-sm text-muted-foreground">Lock after inactivity</p>
+                    <p className="font-medium">{t("settings.autoLock")}</p>
+                    <p className="text-sm text-muted-foreground">{t("settings.autoLockDesc")}</p>
                   </div>
                 </div>
                 <Select value={autoLockTimeout} onValueChange={handleAutoLockTimeoutChange}>
@@ -568,7 +603,7 @@ const Settings = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <HelpCircle className="h-5 w-5" />
-              Support
+              {t("settings.support")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -584,9 +619,9 @@ const Settings = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <UserX className="h-5 w-5" />
-              Account
+              {t("settings.account")}
             </CardTitle>
-            <CardDescription>Manage your account</CardDescription>
+            <CardDescription>{t("settings.accountDesc")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div
@@ -599,8 +634,8 @@ const Settings = () => {
                   <Trash2 className="h-5 w-5 text-destructive" />
                 </div>
                 <div>
-                  <p className="font-medium text-destructive">Delete Account</p>
-                  <p className="text-sm text-muted-foreground">Permanently delete your account</p>
+                  <p className="font-medium text-destructive">{t("settings.deleteAccount")}</p>
+                  <p className="text-sm text-muted-foreground">{t("settings.deleteAccountDesc")}</p>
                 </div>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground" />
@@ -615,7 +650,7 @@ const Settings = () => {
           onClick={handleSignOut}
         >
           <LogOut className="h-5 w-5 mr-2" />
-          Sign Out
+          {t("common.signOut")}
         </Button>
 
         {/* App Version */}
