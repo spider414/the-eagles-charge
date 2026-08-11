@@ -495,7 +495,7 @@ const DataForm = () => {
               selected={paymentMethod}
               onSelect={setPaymentMethod}
               walletBalance={walletBalance}
-              amount={selectedPlan.price}
+              amount={chargeTotal("data", selectedPlan.price)}
             />
           )}
 
@@ -504,8 +504,8 @@ const DataForm = () => {
               ? "Processing..."
               : selectedPlan
               ? user && paymentMethod === "wallet"
-                ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
-                : `Pay ₦${selectedPlan.price.toLocaleString()}`
+                ? `Pay ₦${chargeTotal("data", selectedPlan.price).toLocaleString()} from Wallet`
+                : `Pay ₦${chargeTotal("data", selectedPlan.price).toLocaleString()}`
               : "Select a Plan"}
           </Button>
         </form>
