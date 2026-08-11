@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
 interface SupportChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,17 +42,9 @@ const SupportChatDialog = ({ open, onOpenChange }: SupportChatDialogProps) => {
     let assistantContent = "";
 
     try {
-      // Get the current session to use the actual user token
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session?.access_token) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in to use the AI assistant.",
-          variant: "destructive",
-        });
-        throw new Error("Not authenticated");
-      }
+      // Support chat is available to everyone; use the session token when signed in
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-chat`,
@@ -58,20 +52,12 @@ const SupportChatDialog = ({ open, onOpenChange }: SupportChatDialogProps) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
+            Authorization: `Bearer ${token}`,
+            apikey: SUPABASE_ANON_KEY,
           },
           body: JSON.stringify({ messages: [...messages, userMessage] }),
         }
       );
-
-      if (response.status === 401) {
-        toast({
-          title: "Session Expired",
-          description: "Please log in again to continue.",
-          variant: "destructive",
-        });
-        throw new Error("Unauthorized");
-      }
 
       if (response.status === 429) {
         toast({
