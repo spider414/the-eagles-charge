@@ -449,6 +449,11 @@ Deno.serve(async (req) => {
     if (body.action === "wallet_payment") {
       const { amount, metadata } = body;
 
+      // Server-authoritative 2% service fee (not applied to airtime / wallet top-ups).
+      // `amount` stays the base value sent to the VTU provider; `chargeAmount` is what the user pays.
+      const serviceFee = computeServiceFee(metadata.transaction_type, amount);
+      const chargeAmount = amount + serviceFee;
+
       // Get user's profile ID first
       const { data: userProfile, error: profileError } = await supabase
         .from("profiles")
@@ -472,7 +477,8 @@ Deno.serve(async (req) => {
           user_id: userId,
           transaction_type: metadata.transaction_type,
           status: "processing",
-          amount: amount,
+          amount: chargeAmount,
+          description: serviceFee > 0 ? `Includes ₦${serviceFee.toLocaleString()} service fee (2%)` : null,
           phone_number: metadata.phone_number || null,
           network: metadata.network || null,
           data_plan: metadata.data_plan || null,
@@ -501,7 +507,7 @@ Deno.serve(async (req) => {
 
         const { data: debitResult, error: debitError } = await supabaseAdmin.rpc('debit_wallet', {
           p_profile_id: userProfile.id,
-          p_amount: amount
+          p_amount: chargeAmount
         });
 
         if (debitError) {
@@ -516,7 +522,7 @@ Deno.serve(async (req) => {
         }
 
         const newBalance = debitRow.new_balance;
-        console.log(`Wallet payment: Atomically deducted ₦${amount} from wallet. New balance: ₦${newBalance}`);
+        console.log(`Wallet payment: Atomically deducted ₦${chargeAmount} (base ₦${amount} + fee ₦${serviceFee}). New balance: ₦${newBalance}`);
 
         // Call VTU service for real transaction processing
         let vtuResult: any = null;
