@@ -86,6 +86,14 @@ const ELECTRICITY_PROVIDER_IDS: Record<string, number> = {
   bedc: 10,
 };
 
+// Platform service fee: 2% on every service EXCEPT airtime (recharge card) and wallet top-ups.
+const SERVICE_FEE_RATE = 0.02;
+const FEE_EXEMPT_TYPES = new Set(["airtime", "wallet_topup"]);
+const computeServiceFee = (transactionType: string, baseAmount: number): number => {
+  if (FEE_EXEMPT_TYPES.has(transactionType)) return 0;
+  return Math.ceil(baseAmount * SERVICE_FEE_RATE);
+};
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -128,8 +136,12 @@ Deno.serve(async (req) => {
 
     if (body.action === "initialize") {
       const { amount, email, metadata } = body;
-      
-      // Generate unique reference
+
+      // Server-authoritative 2% service fee (not applied to airtime / wallet top-ups)
+      const serviceFee = computeServiceFee(metadata.transaction_type, amount);
+      const chargeAmount = amount + serviceFee;
+
+      // Generate unique reference (strict HARMIC- prefix)
       const reference = `HARMIC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       // Create transaction record
@@ -139,7 +151,8 @@ Deno.serve(async (req) => {
           user_id: userId,
           transaction_type: metadata.transaction_type,
           status: "pending",
-          amount: amount,
+          amount: chargeAmount,
+          description: serviceFee > 0 ? `Includes ₦${serviceFee.toLocaleString()} service fee (2%)` : null,
           phone_number: metadata.phone_number || null,
           network: metadata.network || null,
           data_plan: metadata.data_plan || null,
@@ -170,11 +183,13 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           email,
-          amount: amount * 100, // Paystack uses kobo
+          amount: chargeAmount * 100, // Paystack uses kobo
           reference,
           callback_url: callbackUrl,
           metadata: {
             ...metadata,
+            base_amount: amount,
+            service_fee: serviceFee,
             transaction_id: transaction.id,
             user_id: userId,
           },
@@ -209,6 +224,8 @@ Deno.serve(async (req) => {
           authorization_url: paystackData.data.authorization_url,
           access_code: paystackData.data.access_code,
           reference,
+          amount: chargeAmount,
+          service_fee: serviceFee,
           public_key: paystackPublicKey,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -432,6 +449,11 @@ Deno.serve(async (req) => {
     if (body.action === "wallet_payment") {
       const { amount, metadata } = body;
 
+      // Server-authoritative 2% service fee (not applied to airtime / wallet top-ups).
+      // `amount` stays the base value sent to the VTU provider; `chargeAmount` is what the user pays.
+      const serviceFee = computeServiceFee(metadata.transaction_type, amount);
+      const chargeAmount = amount + serviceFee;
+
       // Get user's profile ID first
       const { data: userProfile, error: profileError } = await supabase
         .from("profiles")
@@ -455,7 +477,8 @@ Deno.serve(async (req) => {
           user_id: userId,
           transaction_type: metadata.transaction_type,
           status: "processing",
-          amount: amount,
+          amount: chargeAmount,
+          description: serviceFee > 0 ? `Includes ₦${serviceFee.toLocaleString()} service fee (2%)` : null,
           phone_number: metadata.phone_number || null,
           network: metadata.network || null,
           data_plan: metadata.data_plan || null,
@@ -484,7 +507,7 @@ Deno.serve(async (req) => {
 
         const { data: debitResult, error: debitError } = await supabaseAdmin.rpc('debit_wallet', {
           p_profile_id: userProfile.id,
-          p_amount: amount
+          p_amount: chargeAmount
         });
 
         if (debitError) {
@@ -499,7 +522,7 @@ Deno.serve(async (req) => {
         }
 
         const newBalance = debitRow.new_balance;
-        console.log(`Wallet payment: Atomically deducted ₦${amount} from wallet. New balance: ₦${newBalance}`);
+        console.log(`Wallet payment: Atomically deducted ₦${chargeAmount} (base ₦${amount} + fee ₦${serviceFee}). New balance: ₦${newBalance}`);
 
         // Call VTU service for real transaction processing
         let vtuResult: any = null;
@@ -729,7 +752,7 @@ Deno.serve(async (req) => {
                 to: receiptEmail,
                 name: prof?.full_name ?? null,
                 reference,
-                amount,
+                amount: chargeAmount,
                 transaction_type: metadata.transaction_type,
                 paid_at: new Date().toISOString(),
                 status: "successful",
@@ -754,9 +777,10 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: vtuResult?.message || vtuResult?.details?.api_response || `Payment successful! ₦${amount.toLocaleString()} deducted from wallet.`,
+            message: vtuResult?.message || vtuResult?.details?.api_response || `Payment successful! ₦${chargeAmount.toLocaleString()} deducted from wallet.`,
             transaction_id: transaction.id,
             reference: reference,
+            service_fee: serviceFee,
             new_balance: newBalance,
             balance_before: walletBalance,
             balance_after: newBalance,
@@ -777,13 +801,13 @@ Deno.serve(async (req) => {
         
         const { data: refundedBalance, error: refundError } = await supabaseAdminRefund.rpc('credit_wallet', {
           p_profile_id: userProfile.id,
-          p_amount: amount
+          p_amount: chargeAmount
         });
 
         if (refundError) {
           console.error("Failed to refund wallet:", refundError);
         } else {
-          console.log(`Wallet atomically refunded: ₦${amount}. Balance restored to: ₦${refundedBalance}`);
+          console.log(`Wallet atomically refunded: ₦${chargeAmount}. Balance restored to: ₦${refundedBalance}`);
         }
 
         await supabase

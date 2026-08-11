@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { chargeTotal } from "@/lib/pricing";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Globe, Check, Mail, AlertCircle, Loader2, User, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -364,7 +365,7 @@ const Internet = () => {
                   selected={paymentMethod}
                   onSelect={setPaymentMethod}
                   walletBalance={walletBalance}
-                  amount={selectedPlan?.price || 0}
+                  amount={chargeTotal("internet", selectedPlan?.price || 0)}
                 />
               )}
 
@@ -380,8 +381,8 @@ const Internet = () => {
                   ? "Verify Account First"
                   : selectedPlan
                   ? paymentMethod === "wallet"
-                    ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
-                    : `Pay ₦${selectedPlan.price.toLocaleString()}`
+                    ? `Pay ₦${chargeTotal("internet", selectedPlan.price).toLocaleString()} from Wallet`
+                    : `Pay ₦${chargeTotal("internet", selectedPlan.price).toLocaleString()}`
                   : "Select a Plan"}
               </Button>
             </form>

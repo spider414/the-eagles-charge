@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { chargeTotal } from "@/lib/pricing";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Loader2, ShoppingCart, CheckCircle2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -82,6 +83,7 @@ const ExamPin = () => {
   };
 
   const totalAmount = selectedProduct ? selectedProduct.price * quantity : 0;
+  const payableAmount = chargeTotal("exam_pin", totalAmount);
 
   const handlePurchase = async () => {
     if (!selectedProduct) return;
@@ -250,9 +252,13 @@ const ExamPin = () => {
                         <span className="text-muted-foreground">Quantity</span>
                         <span>{quantity}</span>
                       </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Service fee (2%)</span>
+                        <span>₦{(payableAmount - totalAmount).toLocaleString()}</span>
+                      </div>
                       <div className="border-t border-border pt-2 flex justify-between font-semibold">
                         <span>Total</span>
-                        <span className="text-primary">₦{totalAmount.toLocaleString()}</span>
+                        <span className="text-primary">₦{payableAmount.toLocaleString()}</span>
                       </div>
                     </div>
                   )}
@@ -261,7 +267,7 @@ const ExamPin = () => {
                   <Button
                     className="w-full"
                     size="lg"
-                    disabled={!selectedProduct || walletLoading || walletBalance < totalAmount}
+                    disabled={!selectedProduct || walletLoading || walletBalance < payableAmount}
                     onClick={handlePurchase}
                   >
                     {walletLoading ? (
@@ -272,12 +278,12 @@ const ExamPin = () => {
                     ) : (
                       <>
                         <ShoppingCart className="h-4 w-4 mr-2" />
-                        Pay ₦{totalAmount.toLocaleString()} from Wallet
+                        Pay ₦{payableAmount.toLocaleString()} from Wallet
                       </>
                     )}
                   </Button>
 
-                  {selectedProduct && walletBalance < totalAmount && (
+                  {selectedProduct && walletBalance < payableAmount && (
                     <p className="text-xs text-destructive text-center">
                       Insufficient wallet balance. Please top up first.
                     </p>

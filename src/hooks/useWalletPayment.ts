@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { chargeTotal } from "@/lib/pricing";
 
 interface WalletPaymentMetadata {
   transaction_type: "airtime" | "data" | "electricity" | "cable_tv" | "internet" | "exam_pin";
@@ -42,11 +43,12 @@ export const useWalletPayment = () => {
     }
 
     const walletBalance = profile.wallet_balance || 0;
-    
-    if (walletBalance < amount) {
+    const total = chargeTotal(metadata.transaction_type, amount);
+
+    if (walletBalance < total) {
       toast({
         title: "Insufficient Balance",
-        description: `Your wallet balance (₦${walletBalance.toLocaleString()}) is less than ₦${amount.toLocaleString()}`,
+        description: `Your wallet balance (₦${walletBalance.toLocaleString()}) is less than ₦${total.toLocaleString()}`,
         variant: "destructive",
       });
       return false;
@@ -76,7 +78,7 @@ export const useWalletPayment = () => {
 
       toast({
         title: "Payment Successful",
-        description: data.message || `₦${amount.toLocaleString()} has been deducted from your wallet`,
+        description: data.message || `₦${total.toLocaleString()} has been deducted from your wallet`,
       });
 
       return true;

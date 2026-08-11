@@ -15,6 +15,7 @@ import { usePaystackPopup } from "@/hooks/usePaystackPopup";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
+import { chargeTotal } from "@/lib/pricing";
 import { detectNetwork } from "@/utils/phoneUtils";
 import { useDataPlans, DataPlan } from "@/hooks/useDataPlans";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
@@ -495,7 +496,7 @@ const DataForm = () => {
               selected={paymentMethod}
               onSelect={setPaymentMethod}
               walletBalance={walletBalance}
-              amount={selectedPlan.price}
+              amount={chargeTotal("data", selectedPlan.price)}
             />
           )}
 
@@ -504,8 +505,8 @@ const DataForm = () => {
               ? "Processing..."
               : selectedPlan
               ? user && paymentMethod === "wallet"
-                ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
-                : `Pay ₦${selectedPlan.price.toLocaleString()}`
+                ? `Pay ₦${chargeTotal("data", selectedPlan.price).toLocaleString()} from Wallet`
+                : `Pay ₦${chargeTotal("data", selectedPlan.price).toLocaleString()}`
               : "Select a Plan"}
           </Button>
         </form>
