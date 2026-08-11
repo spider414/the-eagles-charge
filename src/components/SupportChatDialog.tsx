@@ -9,6 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 
 type Message = { role: "user" | "assistant"; content: string };
 
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
 interface SupportChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
