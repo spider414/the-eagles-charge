@@ -187,6 +187,25 @@ const WalletTopUp = () => {
       return;
     }
 
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (!/^0\d{10}$/.test(phoneDigits)) {
+      toast({
+        title: "Invalid Phone Number",
+        description: "Enter the 11-digit phone number linked to your BVN (e.g. 08012345678)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!/^[a-zA-Z][a-zA-Z' -]{1,}$/.test(firstName.trim()) || !/^[a-zA-Z][a-zA-Z' -]{1,}$/.test(lastName.trim())) {
+      toast({
+        title: "Check Your Names",
+        description: "Enter your first and last name exactly as registered on your BVN",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCreatingDVA(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -198,9 +217,9 @@ const WalletTopUp = () => {
         body: {
           action: "create_dva",
           email: dvaEmail,
-          first_name: firstName,
-          last_name: lastName,
-          phone: phone,
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phoneDigits,
           bvn: bvn,
         },
         headers: {
