@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
       const { amount, email, metadata } = body;
       
       // Generate unique reference
-      const reference = `EAGLE-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const reference = `HARMIC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       // Create transaction record
       const { data: transaction, error: txError } = await supabase
