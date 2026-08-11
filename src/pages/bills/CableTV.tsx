@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { chargeTotal } from "@/lib/pricing";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tv, Check, Mail, AlertCircle, Loader2, User, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -415,8 +416,8 @@ const CableTV = () => {
                   ? "Processing..."
                   : selectedPlan
                   ? paymentMethod === "wallet"
-                    ? `Pay ₦${selectedPlan.price.toLocaleString()} from Wallet`
-                    : `Pay ₦${selectedPlan.price.toLocaleString()}`
+                    ? `Pay ₦${chargeTotal("cable_tv", selectedPlan.price).toLocaleString()} from Wallet`
+                    : `Pay ₦${chargeTotal("cable_tv", selectedPlan.price).toLocaleString()}`
                   : "Select a Package"}
               </Button>
             </form>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { chargeTotal } from "@/lib/pricing";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Loader2, ShoppingCart, CheckCircle2, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";

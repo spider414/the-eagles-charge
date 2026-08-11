@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { chargeTotal } from "@/lib/pricing";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Zap, Mail, AlertCircle, Loader2, User, MapPin, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -393,8 +394,8 @@ const Electricity = () => {
                 {isLoading 
                   ? "Processing..." 
                   : paymentMethod === "wallet"
-                  ? `Pay ₦${Number(amount || 0).toLocaleString()} from Wallet`
-                  : `Pay ₦${Number(amount || 0).toLocaleString()}`
+                  ? `Pay ₦${chargeTotal("electricity", Number(amount || 0)).toLocaleString()} from Wallet`
+                  : `Pay ₦${chargeTotal("electricity", Number(amount || 0)).toLocaleString()}`
                 }
               </Button>
             </form>
