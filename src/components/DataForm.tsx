@@ -15,6 +15,7 @@ import { usePaystackPopup } from "@/hooks/usePaystackPopup";
 import { useWalletPayment } from "@/hooks/useWalletPayment";
 import { useFavoriteNumbers } from "@/hooks/useFavoriteNumbers";
 import { useAuth } from "@/contexts/AuthContext";
+import { chargeTotal } from "@/lib/pricing";
 import { detectNetwork } from "@/utils/phoneUtils";
 import { useDataPlans, DataPlan } from "@/hooks/useDataPlans";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
