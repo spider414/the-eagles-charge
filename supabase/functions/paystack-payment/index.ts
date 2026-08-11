@@ -752,7 +752,7 @@ Deno.serve(async (req) => {
                 to: receiptEmail,
                 name: prof?.full_name ?? null,
                 reference,
-                amount,
+                amount: chargeAmount,
                 transaction_type: metadata.transaction_type,
                 paid_at: new Date().toISOString(),
                 status: "successful",
@@ -777,9 +777,10 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({
             success: true,
-            message: vtuResult?.message || vtuResult?.details?.api_response || `Payment successful! ₦${amount.toLocaleString()} deducted from wallet.`,
+            message: vtuResult?.message || vtuResult?.details?.api_response || `Payment successful! ₦${chargeAmount.toLocaleString()} deducted from wallet.`,
             transaction_id: transaction.id,
             reference: reference,
+            service_fee: serviceFee,
             new_balance: newBalance,
             balance_before: walletBalance,
             balance_after: newBalance,
@@ -800,13 +801,13 @@ Deno.serve(async (req) => {
         
         const { data: refundedBalance, error: refundError } = await supabaseAdminRefund.rpc('credit_wallet', {
           p_profile_id: userProfile.id,
-          p_amount: amount
+          p_amount: chargeAmount
         });
 
         if (refundError) {
           console.error("Failed to refund wallet:", refundError);
         } else {
-          console.log(`Wallet atomically refunded: ₦${amount}. Balance restored to: ₦${refundedBalance}`);
+          console.log(`Wallet atomically refunded: ₦${chargeAmount}. Balance restored to: ₦${refundedBalance}`);
         }
 
         await supabase
