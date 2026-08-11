@@ -128,7 +128,9 @@ export const usePaystackPopup = () => {
         const handler = window.PaystackPop.setup({
           key: data.public_key,
           email,
-          amount: amount * 100, // Paystack expects amount in kobo
+          // Use the server-computed charge (base + service fee) so the popup always
+          // matches the amount the backend initialised with Paystack.
+          amount: Math.round((data.amount ?? amount) * 100), // kobo
           ref: data.reference,
           channels: ["card"], // Only show card payment option
           label: "HARMIC RECHARGE",
