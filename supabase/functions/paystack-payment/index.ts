@@ -925,6 +925,10 @@ Deno.serve(async (req) => {
         throw new Error("Missing required fields: email, first_name, last_name, and bvn are required");
       }
 
+      if (!/^\d{11}$/.test(String(bvn))) {
+        throw new Error("BVN must be exactly 11 digits");
+      }
+
       // Format phone number for Paystack (Nigerian format with country code)
       let formattedPhone = phone?.replace(/\D/g, "") || "";
       if (formattedPhone.startsWith("0")) {
@@ -933,6 +937,55 @@ Deno.serve(async (req) => {
         formattedPhone = "+" + formattedPhone;
       } else if (!formattedPhone.startsWith("+")) {
         formattedPhone = "+234" + formattedPhone;
+      }
+
+      if (!/^\+234\d{10}$/.test(formattedPhone)) {
+        throw new Error("Please enter a valid Nigerian phone number (e.g. 08012345678)");
+      }
+
+      // Step 0: Make sure the BVN actually belongs to the name + phone provided.
+      // Paystack's BVN resolution returns the record on file; if it is not
+      // enabled on the integration we fall back to Paystack's identification
+      // step below, which also validates the names against the BVN.
+      const norm = (v: unknown) =>
+        String(v ?? "")
+          .toLowerCase()
+          .replace(/[^a-z]/g, "");
+      const lastTen = (v: unknown) => String(v ?? "").replace(/\D/g, "").slice(-10);
+
+      try {
+        const bvnLookup = await fetch(`https://api.paystack.co/bank/resolve_bvn/${bvn}`, {
+          headers: { Authorization: `Bearer ${paystackSecretKey}` },
+        });
+        const bvnData = await bvnLookup.json();
+        console.log("BVN resolve response:", JSON.stringify(bvnData).slice(0, 400));
+
+        if (bvnData?.status && bvnData?.data) {
+          const record = bvnData.data;
+          const recordNames = [record.first_name, record.middle_name, record.last_name].map(norm).filter(Boolean);
+
+          const firstOk = recordNames.includes(norm(first_name));
+          const lastOk = recordNames.includes(norm(last_name));
+          if (!firstOk || !lastOk) {
+            throw new Error(
+              "The names you entered do not match the BVN record. Please enter your names exactly as registered on your BVN.",
+            );
+          }
+
+          const recordPhone = lastTen(record.mobile ?? record.phone_number);
+          if (recordPhone && lastTen(formattedPhone) !== recordPhone) {
+            throw new Error(
+              "The phone number you entered is not the one linked to this BVN. Please use your BVN-registered phone number.",
+            );
+          }
+        }
+      } catch (bvnErr) {
+        const msg = bvnErr instanceof Error ? bvnErr.message : "";
+        // Only surface our own mismatch messages; network/plan issues fall through.
+        if (msg.includes("do not match the BVN") || msg.includes("linked to this BVN")) {
+          throw bvnErr;
+        }
+        console.warn("BVN pre-check skipped:", msg);
       }
 
       console.log("Creating DVA with phone:", formattedPhone, "email:", email);
