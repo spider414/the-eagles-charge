@@ -1256,7 +1256,7 @@ Deno.serve(async (req) => {
     if (body.action === "reconcile_dva") {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("id, paystack_customer_code")
+        .select("id, paystack_customer_code, created_at")
         .eq("user_id", userId)
         .single();
 
@@ -1292,9 +1292,16 @@ Deno.serve(async (req) => {
         { headers: { Authorization: `Bearer ${paystackSecretKey}` } }
       );
       const txnData = await txnRes.json();
+      // Only reconcile transfers that happened after this account was created.
+      // Older Paystack history (e.g. from a previous platform/backend) must
+      // never be credited again.
+      const cutoff = new Date(profile.created_at as string).getTime();
       const transfers = (txnData?.data ?? []).filter(
-        (t: { channel?: string; amount?: number }) =>
-          t.channel === "dedicated_nuban" && (t.amount ?? 0) > 0
+        (t: { channel?: string; amount?: number; paid_at?: string; created_at?: string }) => {
+          if (t.channel !== "dedicated_nuban" || (t.amount ?? 0) <= 0) return false;
+          const paidAt = new Date(t.paid_at ?? t.created_at ?? 0).getTime();
+          return Number.isFinite(paidAt) && paidAt >= cutoff;
+        }
       );
 
       let credited = 0;
