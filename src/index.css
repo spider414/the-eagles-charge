@@ -109,6 +109,12 @@
     background: var(--gradient-hero);
   }
 
+  /* In dark mode the hero gradient is very dark, so text inside it must stay light */
+  .dark .gradient-hero {
+    --primary-foreground: 0 0% 98%;
+    color: hsl(var(--primary-foreground));
+  }
+
   .gradient-gold {
     background: var(--gradient-gold);
   }
