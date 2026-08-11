@@ -183,7 +183,7 @@ Deno.serve(async (req) => {
       }
 
       // Handle regular card/bank payments (existing transactions)
-      if (channel !== "dedicated_nuban" && reference?.startsWith("EAGLE-")) {
+      if (channel !== "dedicated_nuban" && (reference?.startsWith("HARMIC-") || reference?.startsWith("EAGLE-"))) {
         const { data: existingTx } = await supabase
           .from("transactions")
           .select("id, user_id, transaction_type, status, created_at")
