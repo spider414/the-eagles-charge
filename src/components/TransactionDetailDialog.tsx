@@ -93,7 +93,7 @@ const TransactionDetailDialog = ({ transaction, open, onOpenChange }: Transactio
   if (!transaction) return null;
 
   const receiptText = [
-    "Eagle Recharge Receipt",
+    "HARMIC RECHARGE Receipt",
     "-------------------",
     `Transaction: ${formatTransactionType(transaction.transaction_type)}`,
     `Amount: ₦${transaction.amount.toLocaleString()}`,
@@ -108,7 +108,7 @@ const TransactionDetailDialog = ({ transaction, open, onOpenChange }: Transactio
     transaction.token && `Token: ${transaction.token}`,
     `Reference: ${transaction.id}`,
     "-------------------",
-    "Thank you for using Eagle Recharge!",
+    "Thank you for using HARMIC RECHARGE!",
   ].filter(Boolean).join("\n");
 
   const handleCopy = async () => {
@@ -160,7 +160,7 @@ const TransactionDetailDialog = ({ transaction, open, onOpenChange }: Transactio
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
               <div className="flex flex-col items-center gap-0.5 opacity-[0.05] rotate-[-20deg]">
                 <Bird className="h-14 w-14" />
-                <span className="text-lg font-black tracking-widest uppercase whitespace-nowrap">Eagle Recharge</span>
+                <span className="text-lg font-black tracking-widest uppercase whitespace-nowrap">HARMIC RECHARGE</span>
               </div>
             </div>
 

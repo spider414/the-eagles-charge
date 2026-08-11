@@ -257,7 +257,7 @@ Deno.serve(async (req) => {
                 JSON.stringify({ title, body, type, data }),
                 vapidPrivateKey,
                 vapidPublicKey,
-                "mailto:support@theeaglescharge.com"
+                "mailto:harmicrecharge@harmicglobal.com"
               );
 
               // Remove expired subscriptions
