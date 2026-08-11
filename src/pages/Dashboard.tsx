@@ -21,6 +21,13 @@ interface DVADetails {
   bank_name: string;
 }
 
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "Good morning";
+  if (hour >= 12 && hour < 17) return "Good afternoon";
+  return "Good evening";
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const {
@@ -164,7 +171,7 @@ const Dashboard = () => {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
                   <h1 className="text-base font-semibold mb-0.5">
-                    Welcome, {profile?.full_name || user.email?.split("@")[0]}! 👋
+                    {getGreeting()}, {profile?.full_name || user.email?.split("@")[0]}! 👋
                   </h1>
                   <p className="text-[10px] text-primary-foreground/80">
                     Ready to recharge? Let's get you connected.
