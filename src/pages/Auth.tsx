@@ -1063,7 +1063,7 @@ const Auth = () => {
                     <Input
                       id="referral-code"
                       type="text"
-                      placeholder="EAGLE123ABC"
+                      placeholder="HARMIC123ABC"
                       value={referralCode}
                       onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                       className="pl-10"

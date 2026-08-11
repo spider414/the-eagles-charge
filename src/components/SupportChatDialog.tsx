@@ -16,7 +16,7 @@ interface SupportChatDialogProps {
 
 const SupportChatDialog = ({ open, onOpenChange }: SupportChatDialogProps) => {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm Harry, your Eagles support assistant. How can I help you today? 🦅" }
+    { role: "assistant", content: "Hi! I'm Harry, your HARMIC RECHARGE support assistant. How can I help you today? 🦅" }
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
