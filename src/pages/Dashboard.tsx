@@ -14,6 +14,7 @@ import PullToRefresh from "@/components/PullToRefresh";
 import NotificationCenter from "@/components/NotificationCenter";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import BrandLogo from "@/components/BrandLogo";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DVADetails {
   account_number: string;
@@ -21,11 +22,11 @@ interface DVADetails {
   bank_name: string;
 }
 
-const getGreeting = () => {
+const getGreetingKey = () => {
   const hour = new Date().getHours();
-  if (hour >= 5 && hour < 12) return "Good morning";
-  if (hour >= 12 && hour < 17) return "Good afternoon";
-  return "Good evening";
+  if (hour >= 5 && hour < 12) return "greeting.morning" as const;
+  if (hour >= 12 && hour < 17) return "greeting.afternoon" as const;
+  return "greeting.evening" as const;
 };
 
 const Dashboard = () => {
@@ -38,6 +39,7 @@ const Dashboard = () => {
     refreshProfile
   } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { t } = useLanguage();
   const {
     toast
   } = useToast();
@@ -108,7 +110,7 @@ const Dashboard = () => {
   }, [refreshProfile, toast]);
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse-soft text-primary">Loading...</div>
+        <div className="animate-pulse-soft text-primary">{t("common.loading")}</div>
       </div>;
   }
   if (!user) {
@@ -134,16 +136,16 @@ const Dashboard = () => {
                 aria-label="Admin panel"
               >
                 <ShieldCheck className="h-4 w-4" />
-                <span className="hidden md:inline">Admin</span>
+                <span className="hidden md:inline">{t("common.admin")}</span>
               </Link>
             )}
             <Link to="/history" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <History className="h-4 w-4" />
-              History
+              {t("common.history")}
             </Link>
             <Link to="/referrals" className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-3 py-2">
               <Users className="h-4 w-4" />
-              Referrals
+              {t("common.referrals")}
             </Link>
             <Link to="/profile" className="hidden md:flex">
               <Button variant="ghost" size="icon">
@@ -157,7 +159,7 @@ const Dashboard = () => {
             </Link>
             <Button variant="ghost" size="sm" onClick={handleSignOut} className="hidden md:flex">
               <LogOut className="h-4 w-4 mr-2" />
-              Logout
+              {t("common.logout")}
             </Button>
           </nav>
         </div>
@@ -171,16 +173,16 @@ const Dashboard = () => {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                 <div>
                   <h1 className="text-base font-semibold mb-0.5">
-                    {getGreeting()}, {profile?.full_name || user.email?.split("@")[0]}! 👋
+                    {t(getGreetingKey())}, {profile?.full_name || user.email?.split("@")[0]}! 👋
                   </h1>
                   <p className="text-[10px] text-primary-foreground/80">
-                    Ready to recharge? Let's get you connected.
+                    {t("dashboard.tagline")}
                   </p>
                 </div>
                 <Link to="/wallet/topup" className="flex items-center gap-2 bg-primary-foreground/10 rounded-lg px-2.5 py-1.5 hover:bg-primary-foreground/20 transition-colors cursor-pointer group">
                   <Wallet className="h-4 w-4" />
                   <div className="flex-1">
-                    <p className="text-[10px] text-primary-foreground/80">Wallet Balance</p>
+                    <p className="text-[10px] text-primary-foreground/80">{t("dashboard.walletBalance")}</p>
                     <p className="text-xs font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
                   </div>
                   <div className="p-1 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
@@ -193,7 +195,7 @@ const Dashboard = () => {
               {dvaDetails ? <div className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-3 py-2 border border-primary-foreground/20">
                   <Building2 className="h-4 w-4 text-primary-foreground/70" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[10px] text-primary-foreground/60">Your Account</p>
+                    <p className="text-[10px] text-primary-foreground/60">{t("dashboard.yourAccount")}</p>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-sm font-bold">{dvaDetails.account_number}</span>
                       <span className="text-xs text-primary-foreground/70">• {dvaDetails.bank_name}</span>
@@ -205,7 +207,7 @@ const Dashboard = () => {
                 </div> : <Link to="/wallet/topup" className="flex items-center gap-3 bg-primary-foreground/5 rounded-xl px-3 py-2 border border-dashed border-primary-foreground/30 hover:bg-primary-foreground/10 transition-colors">
                   <Building2 className="h-4 w-4 text-primary-foreground/50" />
                   <div className="flex-1">
-                    <p className="text-xs text-primary-foreground/70">Get a dedicated bank account for instant wallet funding</p>
+                    <p className="text-xs text-primary-foreground/70">{t("dashboard.getAccount")}</p>
                   </div>
                   <Plus className="h-3.5 w-3.5 text-primary-foreground/50" />
                 </Link>}
@@ -218,19 +220,19 @@ const Dashboard = () => {
           <Link to="/wallet/topup">
             <Button variant="default" size="sm" className="whitespace-nowrap gradient-gold text-secondary-foreground h-7 px-2.5 text-xs">
               <Plus className="h-3.5 w-3.5 mr-1.5" />
-              Fund Wallet
+              {t("dashboard.fundWallet")}
             </Button>
           </Link>
           <Link to="/history">
             <Button variant="outline" size="sm" className="whitespace-nowrap h-7 px-2.5 text-xs">
               <History className="h-3.5 w-3.5 mr-1.5" />
-              History
+              {t("common.history")}
             </Button>
           </Link>
           <Link to="/referrals">
             <Button variant="outline" size="sm" className="whitespace-nowrap h-7 px-2.5 text-xs">
               <Users className="h-3.5 w-3.5 mr-1.5" />
-              Referrals
+              {t("common.referrals")}
             </Button>
           </Link>
         </div>
@@ -240,7 +242,7 @@ const Dashboard = () => {
 
         {/* Quick Services Grid */}
         <div className="mb-5">
-          <h2 className="text-base font-semibold mb-2">Services</h2>
+          <h2 className="text-base font-semibold mb-2">{t("dashboard.services")}</h2>
           <div className="grid grid-cols-2 gap-2">
             {/* Airtime */}
             <Link to="/airtime">
@@ -249,7 +251,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center mb-1.5">
                     <Phone className="h-4 w-4 text-primary-foreground" />
                   </div>
-                  <span className="text-[10px] font-semibold">Airtime</span>
+                  <span className="text-[10px] font-semibold">{t("service.airtime")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -261,7 +263,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center mb-1.5">
                     <Wifi className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-[10px] font-semibold">Data</span>
+                  <span className="text-[10px] font-semibold">{t("service.data")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -273,7 +275,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-purple-500 flex items-center justify-center mb-1.5">
                     <Gift className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-[10px] font-semibold">Refer & Earn</span>
+                  <span className="text-[10px] font-semibold">{t("service.refer")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -285,7 +287,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-yellow-500 flex items-center justify-center mb-1.5">
                     <Zap className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-[10px] font-semibold">Electricity</span>
+                  <span className="text-[10px] font-semibold">{t("service.electricity")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -297,7 +299,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-blue-500 flex items-center justify-center mb-1.5">
                     <Tv className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-[10px] font-semibold">Cable TV</span>
+                  <span className="text-[10px] font-semibold">{t("service.cable")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -309,7 +311,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-violet-500 flex items-center justify-center mb-1.5">
                     <Globe className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-[10px] font-semibold">Internet</span>
+                  <span className="text-[10px] font-semibold">{t("service.internet")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -321,7 +323,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center mb-1.5">
                     <BookOpen className="h-4 w-4 text-white" />
                   </div>
-                  <span className="text-[10px] font-semibold">Exam PINs</span>
+                  <span className="text-[10px] font-semibold">{t("service.examPin")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -333,7 +335,7 @@ const Dashboard = () => {
                   <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center mb-1.5">
                     <Wallet className="h-4 w-4 text-accent-foreground" />
                   </div>
-                  <span className="text-[10px] font-semibold">Top Up</span>
+                  <span className="text-[10px] font-semibold">{t("service.topup")}</span>
                 </CardContent>
               </Card>
             </Link>
@@ -350,23 +352,23 @@ const Dashboard = () => {
         <div className="flex items-center justify-around py-1.5 px-2">
           <Link to="/dashboard" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-primary">
             <Wallet className="h-4 w-4" />
-            <span className="text-[10px] font-medium">Home</span>
+            <span className="text-[10px] font-medium">{t("common.home")}</span>
           </Link>
           <Link to="/history" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
             <History className="h-4 w-4" />
-            <span className="text-[10px] font-medium">History</span>
+            <span className="text-[10px] font-medium">{t("common.history")}</span>
           </Link>
           <Link to="/referrals" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
             <Users className="h-4 w-4" />
-            <span className="text-[10px] font-medium">Referrals</span>
+            <span className="text-[10px] font-medium">{t("common.referrals")}</span>
           </Link>
           <Link to="/profile" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
             <User className="h-4 w-4" />
-            <span className="text-[10px] font-medium">Profile</span>
+            <span className="text-[10px] font-medium">{t("common.profile")}</span>
           </Link>
           <Link to="/settings" className="flex flex-col items-center gap-0.5 py-1.5 px-2 text-muted-foreground hover:text-foreground transition-colors">
             <Settings className="h-4 w-4" />
-            <span className="text-[10px] font-medium">Settings</span>
+            <span className="text-[10px] font-medium">{t("common.settings")}</span>
           </Link>
         </div>
       </nav>, document.body)}
