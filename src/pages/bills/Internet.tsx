@@ -365,7 +365,7 @@ const Internet = () => {
                   selected={paymentMethod}
                   onSelect={setPaymentMethod}
                   walletBalance={walletBalance}
-                  amount={selectedPlan?.price || 0}
+                  amount={chargeTotal("internet", selectedPlan?.price || 0)}
                 />
               )}
 

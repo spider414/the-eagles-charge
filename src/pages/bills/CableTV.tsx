@@ -407,7 +407,7 @@ const CableTV = () => {
                   selected={paymentMethod}
                   onSelect={setPaymentMethod}
                   walletBalance={walletBalance}
-                  amount={selectedPlan?.price || 0}
+                  amount={chargeTotal("cable_tv", selectedPlan?.price || 0)}
                 />
               )}
 

@@ -386,7 +386,7 @@ const Electricity = () => {
                   selected={paymentMethod}
                   onSelect={setPaymentMethod}
                   walletBalance={walletBalance}
-                  amount={Number(amount) || 0}
+                  amount={chargeTotal("electricity", Number(amount) || 0)}
                 />
               )}
 
