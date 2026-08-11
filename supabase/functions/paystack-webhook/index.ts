@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         // Find user by customer code
         const { data: profile, error: profileError } = await supabase
           .from("profiles")
-          .select("id, user_id, wallet_balance, email")
+          .select("id, user_id, wallet_balance, email, created_at")
           .eq("paystack_customer_code", customerCode)
           .single();
 
@@ -112,12 +112,26 @@ Deno.serve(async (req) => {
           return new Response("OK", { status: 200 });
         }
 
+        // Never credit payments that happened before this account existed
+        const paidAt = new Date(data.paid_at ?? data.paidAt ?? data.created_at ?? Date.now()).getTime();
+        const accountCreated = new Date(profile.created_at as string).getTime();
+        if (Number.isFinite(paidAt) && paidAt < accountCreated) {
+          console.log("Ignoring historical payment predating account creation:", reference);
+          return new Response("OK", { status: 200 });
+        }
+
+        // Ignore stale events (older than 7 days) to avoid replaying old history
+        if (Number.isFinite(paidAt) && Date.now() - paidAt > 7 * 24 * 60 * 60 * 1000) {
+          console.log("Ignoring stale charge event:", reference, data.paid_at);
+          return new Response("OK", { status: 200 });
+        }
+
         // Check if transaction already processed (idempotency)
         const { data: existingTx } = await supabase
           .from("transactions")
           .select("id")
           .eq("paystack_reference", reference)
-          .single();
+          .maybeSingle();
 
         if (existingTx) {
           console.log("Transaction already processed:", reference);
@@ -134,6 +148,7 @@ Deno.serve(async (req) => {
             amount: amount,
             paystack_reference: reference,
             api_response: data,
+            description: "Bank transfer top-up",
           })
           .select()
           .single();
@@ -158,6 +173,12 @@ Deno.serve(async (req) => {
             .eq("id", transaction.id);
         } else {
           console.log(`Wallet atomically credited: ₦${amount} for user ${profile.user_id}. New balance: ₦${newBalance}`);
+          await supabase.from("notifications").insert({
+            user_id: profile.user_id,
+            title: "Wallet funded 🎉",
+            body: `₦${amount.toLocaleString()} bank transfer has been credited to your wallet.`,
+            type: "wallet",
+          });
         }
       }
 
@@ -165,11 +186,18 @@ Deno.serve(async (req) => {
       if (channel !== "dedicated_nuban" && reference?.startsWith("EAGLE-")) {
         const { data: existingTx } = await supabase
           .from("transactions")
-          .select("id, user_id, transaction_type, status")
+          .select("id, user_id, transaction_type, status, created_at")
           .eq("paystack_reference", reference)
-          .single();
+          .maybeSingle();
 
         if (existingTx && existingTx.status === "pending") {
+          // Guard: never complete a top-up whose record is older than 24h
+          const txAge = Date.now() - new Date(existingTx.created_at as string).getTime();
+          if (txAge > 24 * 60 * 60 * 1000) {
+            console.log("Ignoring stale pending transaction:", reference);
+            return new Response("OK", { status: 200 });
+          }
+
           // Update transaction to completed
           await supabase
             .from("transactions")
