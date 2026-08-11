@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, LogOut, ChevronRight, Smartphone, Fingerprint, Vibrate, Volume2, Zap, Wallet, Phone, Wifi, Receipt, Trash2, UserX, KeyRound, Clock, Lock } from "lucide-react";
+import { ArrowLeft, Moon, Sun, Bell, Shield, HelpCircle, FileText, LogOut, ChevronRight, Smartphone, Fingerprint, Vibrate, Volume2, Zap, Wallet, Phone, Wifi, Receipt, Trash2, UserX, KeyRound, Clock, Lock, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
