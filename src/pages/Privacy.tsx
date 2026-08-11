@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const Privacy = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Privacy = () => {
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">Privacy Policy</span>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 

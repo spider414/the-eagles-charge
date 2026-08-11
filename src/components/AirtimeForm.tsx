@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ const quickAmounts = [100, 200, 500, 1000, 2000, 5000];
 
 const AirtimeForm = () => {
   const navigate = useNavigate();
+  const { formatCurrency } = useLanguage();
   const [network, setNetwork] = useState<NetworkType | null>(null);
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
@@ -234,7 +236,7 @@ const AirtimeForm = () => {
                       : "border-border hover:border-primary/50"
                   }`}
                 >
-                  ₦{amt.toLocaleString()}
+                  {formatCurrency(amt)}
                 </button>
               ))}
             </div>
@@ -289,8 +291,8 @@ const AirtimeForm = () => {
             {isLoading 
               ? "Processing..." 
               : user && paymentMethod === "wallet"
-              ? `Pay ₦${Number(amount || 0).toLocaleString()} from Wallet`
-              : `Pay ₦${Number(amount || 0).toLocaleString()}`
+              ? `Pay ${formatCurrency(Number(amount || 0))} from Wallet`
+              : `Pay ${formatCurrency(Number(amount || 0))}`
             }
           </Button>
         </form>

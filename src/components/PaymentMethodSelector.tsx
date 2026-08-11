@@ -1,6 +1,7 @@
 import React from "react";
 import { Wallet, CreditCard } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export type PaymentMethod = "wallet" | "paystack";
 
@@ -17,11 +18,12 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   walletBalance,
   amount,
 }) => {
+  const { t, formatCurrency } = useLanguage();
   const canUseWallet = walletBalance >= amount && amount > 0;
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium">Payment Method</p>
+      <p className="text-sm font-medium">{t("pay.method")}</p>
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
@@ -38,9 +40,9 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         >
           <Wallet className={cn("h-6 w-6", selected === "wallet" && canUseWallet ? "text-primary" : "text-muted-foreground")} />
           <div className="text-center">
-            <p className="text-sm font-medium">Wallet</p>
+            <p className="text-sm font-medium">{t("pay.wallet")}</p>
             <p className="text-xs text-muted-foreground">
-              ₦{walletBalance.toLocaleString()}
+              {formatCurrency(walletBalance)}
             </p>
           </div>
         </button>
@@ -57,7 +59,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         >
           <CreditCard className={cn("h-6 w-6", selected === "paystack" ? "text-primary" : "text-muted-foreground")} />
           <div className="text-center">
-            <p className="text-sm font-medium">pay with card</p>
+            <p className="text-sm font-medium">{t("pay.card")}</p>
             <p className="text-xs text-muted-foreground"></p>
           </div>
         </button>
@@ -65,7 +67,7 @@ const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       
       {!canUseWallet && amount > 0 && (
         <p className="text-xs text-muted-foreground text-center">
-          Insufficient wallet balance. Fund your wallet or pay with card.
+          {t("pay.insufficient")}
         </p>
       )}
     </div>

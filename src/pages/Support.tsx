@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, MessageCircle, Mail, ExternalLink } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import SupportChatDialog from "@/components/SupportChatDialog";
@@ -81,6 +82,7 @@ const Support = () => {
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold truncate">Help & Support</span>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 

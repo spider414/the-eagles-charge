@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { chargeTotal } from "@/lib/pricing";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, BookOpen, Loader2, ShoppingCart, CheckCircle2, Copy, Check } from "lucide-react";
@@ -27,6 +28,7 @@ interface PurchaseResult {
 
 const ExamPin = () => {
   const navigate = useNavigate();
+  const { formatCurrency } = useLanguage();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const { payWithWallet, isLoading: walletLoading, walletBalance } = useWalletPayment();
@@ -148,7 +150,7 @@ const ExamPin = () => {
               </div>
             </div>
             <Badge variant="outline" className="text-xs">
-              Bal: ₦{walletBalance.toLocaleString()}
+              Bal: {formatCurrency(walletBalance)}
             </Badge>
           </div>
         </header>
@@ -212,7 +214,7 @@ const ExamPin = () => {
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={product.id} value={product.id.toString()}>
-                            {product.name} — ₦{product.price.toLocaleString()}
+                            {product.name} — {formatCurrency(product.price)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -246,7 +248,7 @@ const ExamPin = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Price per PIN</span>
-                        <span>₦{selectedProduct.price.toLocaleString()}</span>
+                        <span>{formatCurrency(selectedProduct.price)}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Quantity</span>
@@ -254,11 +256,11 @@ const ExamPin = () => {
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Service fee (2%)</span>
-                        <span>₦{(payableAmount - totalAmount).toLocaleString()}</span>
+                        <span>{formatCurrency((payableAmount - totalAmount))}</span>
                       </div>
                       <div className="border-t border-border pt-2 flex justify-between font-semibold">
                         <span>Total</span>
-                        <span className="text-primary">₦{payableAmount.toLocaleString()}</span>
+                        <span className="text-primary">{formatCurrency(payableAmount)}</span>
                       </div>
                     </div>
                   )}
@@ -278,7 +280,7 @@ const ExamPin = () => {
                     ) : (
                       <>
                         <ShoppingCart className="h-4 w-4 mr-2" />
-                        Pay ₦{payableAmount.toLocaleString()} from Wallet
+                        Pay {formatCurrency(payableAmount)} from Wallet
                       </>
                     )}
                   </Button>

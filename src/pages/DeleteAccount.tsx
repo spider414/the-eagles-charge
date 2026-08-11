@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const DeleteAccount = () => {
   return (
@@ -14,6 +15,7 @@ const DeleteAccount = () => {
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">HARMIC RECHARGE</span>
           </Link>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,8 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
   }, [plans]);
 
   // Get count for each tab
+  const { formatCurrency } = useLanguage();
+
   const tabCounts = useMemo(() => ({
     hot: categorizedPlans.hot.length,
     daily: categorizedPlans.daily.length,
@@ -164,7 +167,7 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
           </div>
           <div className="text-xs text-muted-foreground mb-1">{plan.validity}</div>
           <div className="text-lg font-extrabold text-primary">
-            ₦{plan.price.toLocaleString()}
+            {formatCurrency(plan.price)}
           </div>
         </button>
       ))}
@@ -242,6 +245,7 @@ const DataPlanSelector = ({ plans, selectedPlan, onSelectPlan, isLoading }: Data
 
 const DataForm = () => {
   const navigate = useNavigate();
+  const { formatCurrency } = useLanguage();
   const [network, setNetwork] = useState<NetworkType | null>(null);
   const [phone, setPhone] = useState("");
   const [selectedPlan, setSelectedPlan] = useState<DataPlan | null>(null);
@@ -505,8 +509,8 @@ const DataForm = () => {
               ? "Processing..."
               : selectedPlan
               ? user && paymentMethod === "wallet"
-                ? `Pay ₦${chargeTotal("data", selectedPlan.price).toLocaleString()} from Wallet`
-                : `Pay ₦${chargeTotal("data", selectedPlan.price).toLocaleString()}`
+                ? `Pay ${formatCurrency(chargeTotal("data", selectedPlan.price))} from Wallet`
+                : `Pay ${formatCurrency(chargeTotal("data", selectedPlan.price))}`
               : "Select a Plan"}
           </Button>
         </form>

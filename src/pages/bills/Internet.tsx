@@ -18,6 +18,8 @@ import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethod
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const internetProviders = [
   { id: "smile", name: "Smile" },
@@ -29,6 +31,7 @@ const internetProviders = [
 
 const Internet = () => {
   const navigate = useNavigate();
+  const { t, formatCurrency } = useLanguage();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { initializePayment, isLoading: paystackLoading } = usePaystackPopup();
@@ -187,10 +190,11 @@ const Internet = () => {
             <div className="flex items-center gap-2">
               <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
               <span className="text-xl font-bold text-foreground">
-                Internet <span className="text-gradient-gold">Subscription</span>
+                <span className="text-gradient-gold">{t("net.header")}</span>
               </span>
             </div>
           </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -199,20 +203,20 @@ const Internet = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Globe className="h-5 w-5 text-primary" />
-              Internet Subscription
+              {t("net.header")}
             </CardTitle>
             <CardDescription>
-              Subscribe to Smile, Spectranet, iPNX, Swift 4G, ntel & more
+              {t("net.desc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Provider Selection */}
               <div className="space-y-3">
-                <Label>Internet Provider</Label>
+                <Label>{t("net.provider")}</Label>
                 <Select value={provider} onValueChange={setProvider}>
                   <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Select provider" />
+                    <SelectValue placeholder={t("net.selectProvider")} />
                   </SelectTrigger>
                   <SelectContent>
                     {internetProviders.map((p) => (
@@ -260,7 +264,7 @@ const Internet = () => {
                 {isVerifying && (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    Verifying account...
+                    {t("net.verifying")}
                   </div>
                 )}
                 {customerInfo && (
@@ -285,13 +289,13 @@ const Internet = () => {
               {provider && (
                 <div className="space-y-3">
                   <Label className="flex items-center gap-2">
-                    Select Plan
+                    {t("net.selectPlan")}
                     {plansLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                   </Label>
                   {plansLoading ? (
                     <div className="flex items-center justify-center py-8 text-muted-foreground">
                       <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                      Loading plans...
+                      {t("net.loadingPlans")}
                     </div>
                   ) : currentPlans.length > 0 ? (
                     <div className="grid grid-cols-2 gap-3">
@@ -311,7 +315,7 @@ const Internet = () => {
                           )}
                           <div className="text-sm font-medium text-foreground">{plan.name}</div>
                           <div className="text-lg font-bold text-primary">
-                            ₦{plan.price.toLocaleString()}
+                            {formatCurrency(plan.price)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {plan.data} • {plan.validity}
@@ -321,7 +325,7 @@ const Internet = () => {
                     </div>
                   ) : (
                     <div className="text-center py-6 text-muted-foreground text-sm">
-                      No plans available for this provider
+                      {t("net.noPlans")}
                     </div>
                   )}
                 </div>
@@ -331,12 +335,12 @@ const Internet = () => {
                 <div className="space-y-2">
                   <Label htmlFor="internet-email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    Email for Payment Receipt
+                    {t("wallet.emailReceipt")}
                   </Label>
                   <Input
                     id="internet-email"
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder={t("wallet.emailReceipt")}
                     value={paymentEmail}
                     onChange={(e) => setPaymentEmail(e.target.value)}
                     className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
@@ -348,13 +352,13 @@ const Internet = () => {
                       className="flex items-center gap-1 text-xs text-primary hover:underline"
                     >
                       <AlertCircle className="h-3 w-3" />
-                      Did you mean {emailSuggestion}?
+                      {t("wallet.didYouMean")} {emailSuggestion}?
                     </button>
                   )}
                   {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
                     <p className="text-xs text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
-                      Please enter a valid email address
+                      {t("wallet.emailInvalid")}
                     </p>
                   )}
                 </div>
@@ -376,14 +380,14 @@ const Internet = () => {
                 disabled={isLoading || !selectedPlan || !isAccountVerified}
               >
                 {isLoading
-                  ? "Processing..."
+                  ? t("wallet.processing")
                   : !isAccountVerified
-                  ? "Verify Account First"
+                  ? t("net.verifyFirst")
                   : selectedPlan
                   ? paymentMethod === "wallet"
-                    ? `Pay ₦${chargeTotal("internet", selectedPlan.price).toLocaleString()} from Wallet`
-                    : `Pay ₦${chargeTotal("internet", selectedPlan.price).toLocaleString()}`
-                  : "Select a Plan"}
+                    ? `${t("wallet.pay")} ${formatCurrency(chargeTotal("internet", selectedPlan.price))} ${t("pay.fromWallet")}`
+                    : `${t("wallet.pay")} ${formatCurrency(chargeTotal("internet", selectedPlan.price))}`
+                  : t("net.selectPlanCta")}
               </Button>
             </form>
           </CardContent>

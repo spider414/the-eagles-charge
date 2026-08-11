@@ -11,6 +11,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
@@ -27,6 +29,7 @@ const WalletTopUp = () => {
   const { user, profile, isLoading, refreshProfile } = useAuth();
   const { initializePayment, isLoading: isPaymentLoading } = usePaystackPopup();
   const { toast } = useToast();
+  const { t, formatCurrency } = useLanguage();
   const [amount, setAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [dvaDetails, setDvaDetails] = useState<DVADetails | null>(null);
@@ -383,8 +386,9 @@ const WalletTopUp = () => {
           </Button>
           <div className="flex items-center gap-2">
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
-            <span className="font-semibold">Fund Wallet</span>
+            <span className="font-semibold">{t("wallet.title")}</span>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 
@@ -394,9 +398,9 @@ const WalletTopUp = () => {
           <CardContent className="p-6 text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Wallet className="h-6 w-6" />
-              <span className="text-sm text-primary-foreground/80">Current Balance</span>
+              <span className="text-sm text-primary-foreground/80">{t("wallet.currentBalance")}</span>
             </div>
-            <p className="text-3xl font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
+            <p className="text-3xl font-bold">{formatCurrency(profile?.wallet_balance ?? 0)}</p>
           </CardContent>
         </Card>
 
@@ -405,12 +409,12 @@ const WalletTopUp = () => {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Building2 className="h-5 w-5 text-primary" />
-              Bank Transfer
+              {t("wallet.bankTransfer")}
             </CardTitle>
             <CardDescription>
               {dvaDetails 
-                ? "Transfer any amount from your bank app to the account below"
-                : "Get a dedicated account number and fund your wallet by bank transfer"
+                ? t("wallet.bankTransferHas")
+                : t("wallet.bankTransferNone")
               }
             </CardDescription>
           </CardHeader>
@@ -422,11 +426,11 @@ const WalletTopUp = () => {
             ) : dvaDetails ? (
               <div className="space-y-3 p-4 bg-muted rounded-lg">
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Bank Name</span>
+                  <span className="text-sm text-muted-foreground">{t("wallet.bankName")}</span>
                   <span className="font-medium">{dvaDetails.bank_name}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Account Number</span>
+                  <span className="text-sm text-muted-foreground">{t("wallet.accountNumber")}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-bold text-lg">{dvaDetails.account_number}</span>
                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={handleCopyAccountNumber}>
@@ -435,20 +439,20 @@ const WalletTopUp = () => {
                   </div>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm text-muted-foreground">Account Name</span>
+                  <span className="text-sm text-muted-foreground">{t("wallet.accountName")}</span>
                   <span className="font-medium text-sm">{dvaDetails.account_name}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-t border-border">
-                  <span className="text-sm text-muted-foreground">Payment Reference</span>
+                  <span className="text-sm text-muted-foreground">{t("wallet.paymentReference")}</span>
                   <span className="font-mono text-sm">{dvaDetails.account_number}</span>
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <Clock className="h-3 w-3 text-primary" />
-                  Estimated credit time: 1–5 minutes (up to 15 minutes at peak hours)
+                  {t("wallet.creditTime")}
                 </p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <ShieldCheck className="h-3 w-3 text-green-500" />
-                  No narration needed — your account number is the reference. Paystack settles automatically.
+                  {t("wallet.noNarration")}
                 </p>
                 <Button
                   variant="outline"
@@ -459,10 +463,10 @@ const WalletTopUp = () => {
                   {isReconciling ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Checking transfers...
+                      {t("wallet.checkingTransfers")}
                     </>
                   ) : (
-                    "I've sent money — refresh balance"
+                    t("wallet.sentMoney")
                   )}
                 </Button>
               </div>
@@ -470,45 +474,45 @@ const WalletTopUp = () => {
               <div className="text-center py-6 space-y-4">
                 <div className="flex items-center justify-center gap-2 text-yellow-600">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="font-medium">Verification in Progress</span>
+                  <span className="font-medium">{t("wallet.verifying")}</span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Your BVN is being verified. This usually takes a few minutes.
+                  {t("wallet.verifyingDesc")}
                 </p>
                 <Button variant="outline" onClick={fetchDVA}>
-                  Check Status
+                  {t("wallet.checkStatus")}
                 </Button>
               </div>
             ) : showBVNForm ? (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 p-3 bg-blue-500/10 rounded-lg text-sm text-blue-600 dark:text-blue-400">
                   <ShieldCheck className="h-4 w-4 flex-shrink-0" />
-                  <span>Your BVN is securely processed by Paystack and never stored on our servers.</span>
+                  <span>{t("wallet.bvnSafe")}</span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name *</Label>
+                    <Label htmlFor="firstName">{t("wallet.firstName")} *</Label>
                     <Input
                       id="firstName"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="As on BVN"
+                      placeholder={t("wallet.asOnBvn")}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Label htmlFor="lastName">{t("wallet.lastName")} *</Label>
                     <Input
                       id="lastName"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="As on BVN"
+                      placeholder={t("wallet.asOnBvn")}
                     />
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number (linked to BVN) *</Label>
+                  <Label htmlFor="phone">{t("wallet.phoneBvn")} *</Label>
                   <Input
                     id="phone"
                     type="tel"
@@ -517,29 +521,29 @@ const WalletTopUp = () => {
                     placeholder="08012345678"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Names and phone number must match your BVN record exactly.
+                    {t("wallet.mustMatch")}
                   </p>
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="bvn">BVN (Bank Verification Number) *</Label>
+                  <Label htmlFor="bvn">{t("wallet.bvnLabel")} *</Label>
                   <Input
                     id="bvn"
                     type="text"
                     inputMode="numeric"
                     value={bvn}
                     onChange={(e) => setBvn(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                    placeholder="11-digit BVN"
+                    placeholder={t("wallet.bvnPlaceholder")}
                     maxLength={11}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Dial *565*0# to get your BVN
+                    {t("wallet.bvnDial")}
                   </p>
                 </div>
 
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" className="flex-1" onClick={() => setShowBVNForm(false)}>
-                    Cancel
+                    {t("wallet.cancel")}
                   </Button>
                   <Button 
                     className="flex-1" 
@@ -549,10 +553,10 @@ const WalletTopUp = () => {
                     {isCreatingDVA ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Verifying...
+                        {t("wallet.processing")}
                       </>
                     ) : (
-                      "Create Account"
+                      t("wallet.createAccount")
                     )}
                   </Button>
                 </div>
@@ -563,15 +567,14 @@ const WalletTopUp = () => {
                   <Building2 className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium mb-1">Get Your Dedicated Account</p>
+                  <p className="font-medium mb-1">{t("wallet.getDedicated")}</p>
                   <p className="text-sm text-muted-foreground">
-                    Create a unique bank account number, then transfer from any Nigerian bank.
-                    Funds land in your wallet in about 1–5 minutes.
+                    {t("wallet.getDedicatedDesc")}
                   </p>
                 </div>
                 <Button onClick={() => setShowBVNForm(true)}>
                   <ShieldCheck className="h-4 w-4 mr-2" />
-                  Verify with BVN
+                  {t("wallet.verifyBvn")}
                 </Button>
               </div>
             )}
@@ -581,13 +584,13 @@ const WalletTopUp = () => {
         {/* Quick Top-up Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Quick Top-up</CardTitle>
-            <CardDescription>Pay with card or USSD for instant funding</CardDescription>
+            <CardTitle className="text-lg">{t("wallet.quickTopup")}</CardTitle>
+            <CardDescription>{t("wallet.quickTopupDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Amount Input */}
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount (₦)</Label>
+              <Label htmlFor="amount">{t("wallet.amount")} (₦)</Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₦</span>
                 <Input
@@ -600,7 +603,7 @@ const WalletTopUp = () => {
                   min={100}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Minimum amount: ₦100</p>
+              <p className="text-xs text-muted-foreground">{t("wallet.minimum")}: {formatCurrency(100)}</p>
             </div>
 
             {/* Email Input for phone-based accounts */}
@@ -608,7 +611,7 @@ const WalletTopUp = () => {
               <div className="space-y-2">
                 <Label htmlFor="paymentEmail" className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  Email for Payment Receipt
+                  {t("wallet.emailReceipt")}
                 </Label>
                 <Input
                   id="paymentEmail"
@@ -625,17 +628,17 @@ const WalletTopUp = () => {
                     className="flex items-center gap-1 text-xs text-primary hover:underline"
                   >
                     <AlertCircle className="h-3 w-3" />
-                    Did you mean {emailSuggestion}?
+                    {t("wallet.didYouMean")} {emailSuggestion}?
                   </button>
                 )}
                 {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
                   <p className="text-xs text-destructive flex items-center gap-1">
                     <AlertCircle className="h-3 w-3" />
-                    Please enter a valid email address
+                    {t("wallet.emailInvalid")}
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  Enter a valid email to receive your payment receipt
+                  {t("wallet.emailValid")}
                 </p>
               </div>
             )}
@@ -650,7 +653,7 @@ const WalletTopUp = () => {
                   onClick={() => handleQuickAmount(quickAmount)}
                   className="h-10"
                 >
-                  ₦{quickAmount.toLocaleString()}
+                  {formatCurrency(quickAmount)}
                 </Button>
               ))}
             </div>
@@ -664,18 +667,18 @@ const WalletTopUp = () => {
               {isPaymentLoading ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Processing...
+                  {t("wallet.processing")}
                 </>
               ) : (
                 <>
                   <CreditCard className="h-5 w-5 mr-2" />
-                  Pay ₦{amount ? parseFloat(amount).toLocaleString() : "0"}
+                  {t("wallet.pay")} {formatCurrency(amount ? parseFloat(amount) : 0)}
                 </>
               )}
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              Secured by Paystack. Your payment information is encrypted.
+              {t("wallet.securedBy")}
             </p>
           </CardContent>
         </Card>
@@ -685,14 +688,14 @@ const WalletTopUp = () => {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Gift className="h-5 w-5 text-primary" />
-              Referral bonus
+              {t("wallet.referralBonus")}
             </CardTitle>
-            <CardDescription>How the ₦1,000 referrer reward is triggered</CardDescription>
+            <CardDescription>{t("wallet.referralBonusDesc")}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1 text-xs text-muted-foreground">
-            <p>• If you signed up with a referral code, your <span className="text-foreground font-medium">first</span> completed wallet funding pays your referrer ₦1,000.</p>
-            <p>• The ₦2,000 welcome bonus does <span className="text-foreground font-medium">not</span> count — it is excluded from eligibility.</p>
-            <p>• Card payments and bank transfers both qualify; the reward is paid once per referred user.</p>
+            <p>• {t("wallet.referralRule1")}</p>
+            <p>• {t("wallet.referralRule2")}</p>
+            <p>• {t("wallet.referralRule3")}</p>
           </CardContent>
         </Card>
       </main>

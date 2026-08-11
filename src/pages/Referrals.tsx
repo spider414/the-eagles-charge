@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Gift, Users, Copy, Share2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 interface ReferralStats {
   totalReferrals: number;
@@ -16,6 +18,7 @@ interface ReferralStats {
 
 const Referrals = () => {
   const navigate = useNavigate();
+  const { formatCurrency } = useLanguage();
   const { user, profile, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<ReferralStats>({ totalReferrals: 0, totalEarnings: 0 });
@@ -101,6 +104,7 @@ const Referrals = () => {
               </span>
             </div>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 
@@ -164,7 +168,7 @@ const Referrals = () => {
             <CardContent className="p-6 text-center">
               <Wallet className="h-8 w-8 mx-auto text-primary mb-2" />
               <p className="text-3xl font-bold text-foreground">
-                ₦{isLoading ? "..." : stats.totalEarnings.toLocaleString()}
+                {isLoading ? "..." : formatCurrency(stats.totalEarnings)}
               </p>
               <p className="text-sm text-muted-foreground">Total Earnings</p>
             </CardContent>

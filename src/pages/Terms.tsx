@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const Terms = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const Terms = () => {
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">Terms & Conditions</span>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 

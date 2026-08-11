@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { chargeTotal } from "@/lib/pricing";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Zap, Mail, AlertCircle, Loader2, User, MapPin, CheckCircle2, XCircle } from "lucide-react";
@@ -18,6 +19,7 @@ import PaymentMethodSelector, { PaymentMethod } from "@/components/PaymentMethod
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const discos = [
   { id: "ekedc", name: "Eko Electricity (EKEDC)" },
@@ -35,6 +37,7 @@ const discos = [
 
 const Electricity = () => {
   const navigate = useNavigate();
+  const { formatCurrency } = useLanguage();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { initializePayment, isLoading: paystackLoading } = usePaystackPopup();
@@ -200,6 +203,7 @@ const Electricity = () => {
               </span>
             </div>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 
@@ -394,8 +398,8 @@ const Electricity = () => {
                 {isLoading 
                   ? "Processing..." 
                   : paymentMethod === "wallet"
-                  ? `Pay ₦${chargeTotal("electricity", Number(amount || 0)).toLocaleString()} from Wallet`
-                  : `Pay ₦${chargeTotal("electricity", Number(amount || 0)).toLocaleString()}`
+                  ? `Pay ${formatCurrency(chargeTotal("electricity", Number(amount || 0)))} from Wallet`
+                  : `Pay ${formatCurrency(chargeTotal("electricity", Number(amount || 0)))}`
                 }
               </Button>
             </form>

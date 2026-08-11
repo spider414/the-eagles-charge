@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, User, Mail, Phone, Save, Camera, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,10 +12,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import EmailVerificationCard from "@/components/EmailVerificationCard";
 
 const Profile = () => {
   const navigate = useNavigate();
+  const { formatCurrency, formatDate } = useLanguage();
   const { user, profile, isLoading, refreshProfile } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
@@ -294,6 +297,7 @@ const Profile = () => {
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">Profile</span>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 
@@ -453,16 +457,16 @@ const Profile = () => {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-border">
               <span className="text-muted-foreground">Wallet Balance</span>
-              <span className="font-semibold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</span>
+              <span className="font-semibold">{formatCurrency(profile?.wallet_balance ?? 0)}</span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-border">
               <span className="text-muted-foreground">Referral Earnings</span>
-              <span className="font-semibold text-primary">₦{profile?.total_referral_earnings?.toLocaleString() || "0.00"}</span>
+              <span className="font-semibold text-primary">{formatCurrency(profile?.total_referral_earnings ?? 0)}</span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-muted-foreground">Member Since</span>
               <span className="font-semibold">
-                {profile?.created_at ? new Date(profile.created_at).toLocaleDateString() : "N/A"}
+                {profile?.created_at ? formatDate(profile.created_at) : "N/A"}
               </span>
             </div>
           </CardContent>

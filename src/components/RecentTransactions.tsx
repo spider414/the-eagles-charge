@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "react-router-dom";
 import { Phone, Wifi, Zap, Tv, Globe, Wallet, ChevronRight, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -92,7 +93,8 @@ const formatTransactionType = (type: string) => {
 
 const RecentTransactions = () => {
   const { user } = useAuth();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  const { formatCurrency } = useLanguage();  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -204,7 +206,7 @@ const RecentTransactions = () => {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm font-semibold">₦{tx.amount.toLocaleString()}</p>
+                <p className="text-sm font-semibold">{formatCurrency(tx.amount)}</p>
                 {getStatusBadge(tx.status)}
               </div>
             </div>
