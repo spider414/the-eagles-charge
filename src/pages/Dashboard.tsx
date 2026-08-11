@@ -14,6 +14,7 @@ import PullToRefresh from "@/components/PullToRefresh";
 import NotificationCenter from "@/components/NotificationCenter";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DVADetails {
@@ -39,7 +40,7 @@ const Dashboard = () => {
     refreshProfile
   } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { t } = useLanguage();
+  const { t, formatCurrency } = useLanguage();
   const {
     toast
   } = useToast();
@@ -88,7 +89,7 @@ const Dashboard = () => {
         if (data?.credited > 0) {
           toast({
             title: "Deposit found 🎉",
-            description: `₦${Number(data.amount).toLocaleString()} has been added to your wallet`,
+            description: `${formatCurrency(Number(data.amount))} has been added to your wallet`,
           });
         }
       } catch (e) {
@@ -128,6 +129,7 @@ const Dashboard = () => {
           </Link>
 
           <nav className="flex items-center gap-1">
+            <LanguageSwitcher showCode={false} />
             <NotificationCenter />
             {isAdmin && (
               <Link
@@ -183,7 +185,7 @@ const Dashboard = () => {
                   <Wallet className="h-4 w-4" />
                   <div className="flex-1">
                     <p className="text-[10px] text-primary-foreground/80">{t("dashboard.walletBalance")}</p>
-                    <p className="text-xs font-bold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
+                    <p className="text-xs font-bold">{formatCurrency(profile?.wallet_balance ?? 0)}</p>
                   </div>
                   <div className="p-1 rounded-full bg-primary-foreground/20 group-hover:bg-primary-foreground/30 transition-colors">
                     <Plus className="h-3 w-3" />

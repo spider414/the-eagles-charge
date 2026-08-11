@@ -7,9 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
 import TransactionDetailDialog from "@/components/TransactionDetailDialog";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Transaction {
   id: string;
@@ -61,6 +62,7 @@ const getStatusColor = (status: string) => {
 
 const History = () => {
   const navigate = useNavigate();
+  const { t, formatCurrency, formatDateTime } = useLanguage();
   const { user, isLoading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,7 +106,7 @@ const History = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse-soft text-primary">Loading...</div>
+        <div className="animate-pulse-soft text-primary">{t("common.loading")}</div>
       </div>
     );
   }
@@ -121,10 +123,11 @@ const History = () => {
             <div className="flex items-center gap-2">
               <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
               <span className="text-xl font-bold text-foreground">
-                Transaction <span className="text-gradient-gold">History</span>
+                <span className="text-gradient-gold">{t("history.title")}</span>
               </span>
             </div>
           </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -135,15 +138,15 @@ const History = () => {
             <Filter className="h-5 w-5 text-muted-foreground" />
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by type" />
+                <SelectValue placeholder={t("history.filter")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Transactions</SelectItem>
-                <SelectItem value="airtime">Airtime</SelectItem>
-                <SelectItem value="data">Data</SelectItem>
-                <SelectItem value="electricity">Electricity</SelectItem>
-                <SelectItem value="cable_tv">Cable TV</SelectItem>
-                <SelectItem value="internet">Internet</SelectItem>
+                <SelectItem value="all">{t("history.all")}</SelectItem>
+                <SelectItem value="airtime">{t("service.airtime")}</SelectItem>
+                <SelectItem value="data">{t("service.data")}</SelectItem>
+                <SelectItem value="electricity">{t("service.electricity")}</SelectItem>
+                <SelectItem value="cable_tv">{t("service.cable")}</SelectItem>
+                <SelectItem value="internet">{t("service.internet")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -152,18 +155,18 @@ const History = () => {
         {/* Transactions List */}
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-pulse-soft text-primary">Loading transactions...</div>
+            <div className="animate-pulse-soft text-primary">{t("history.loading")}</div>
           </div>
         ) : transactions.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium mb-2">No transactions yet</h3>
+              <h3 className="text-lg font-medium mb-2">{t("history.empty")}</h3>
               <p className="text-muted-foreground mb-4">
-                Your transaction history will appear here once you make a purchase.
+                {t("history.emptyDesc")}
               </p>
               <Link to="/dashboard">
-                <Button>Make Your First Purchase</Button>
+                <Button>{t("history.firstPurchase")}</Button>
               </Link>
             </CardContent>
           </Card>
@@ -190,7 +193,7 @@ const History = () => {
                                 {tx.transaction_type.replace("_", " ")}
                               </span>
                               <Badge variant="secondary" className={getStatusColor(tx.status)}>
-                                {tx.status}
+                                {t(`status.${tx.status}` as const)}
                               </Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
@@ -201,18 +204,18 @@ const History = () => {
                               {tx.electricity_provider && `${tx.electricity_provider.toUpperCase()}`}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              {format(new Date(tx.created_at), "MMM dd, yyyy 'at' h:mm a")}
+                              {formatDateTime(tx.created_at)}
                             </p>
                             {tx.paystack_reference && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                Ref: {tx.paystack_reference}
+                                {t("history.ref")}: {tx.paystack_reference}
                               </p>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="text-lg font-bold text-foreground">
-                            ₦{tx.amount.toLocaleString()}
+                            {formatCurrency(tx.amount)}
                           </p>
                         </div>
                       </div>

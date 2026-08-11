@@ -15,6 +15,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { ToastAction } from "@/components/ui/toast";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 
 const phoneSchema = z.string()
   .min(10, "Phone number must be at least 10 digits")
@@ -692,6 +693,9 @@ const Auth = () => {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher />
+        </div>
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <BrandLogo className="h-12 w-12" rounded="rounded-xl" />

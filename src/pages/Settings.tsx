@@ -16,6 +16,7 @@ import { PinSetupDialog } from "@/components/PinSetupDialog";
 import EmailPreferences from "@/components/EmailPreferences";
 import PushNotificationToggle from "@/components/PushNotificationToggle";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { LanguageCode } from "@/i18n/translations";
 
@@ -494,6 +495,7 @@ const Settings = () => {
             <BrandLogo className="h-8 w-8" rounded="rounded-lg" />
             <span className="font-semibold">{t("settings.title")}</span>
           </div>
+          <LanguageSwitcher className="ml-auto" />
         </div>
       </header>
 

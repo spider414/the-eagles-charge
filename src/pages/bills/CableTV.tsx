@@ -16,6 +16,8 @@ import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import { supabase } from "@/integrations/supabase/client";
 import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
 import BrandLogo from "@/components/BrandLogo";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface CablePlan {
   id: string;
@@ -57,6 +59,7 @@ const providers = [
 
 const CableTV = () => {
   const navigate = useNavigate();
+  const { t, formatCurrency } = useLanguage();
   const { user, profile, refreshProfile } = useAuth();
   const { toast } = useToast();
   const { initializePayment, isLoading: paystackLoading } = usePaystackPopup();
@@ -210,10 +213,11 @@ const CableTV = () => {
             <div className="flex items-center gap-2">
               <BrandLogo className="h-10 w-10" rounded="rounded-xl" />
               <span className="text-xl font-bold text-foreground">
-                Cable <span className="text-gradient-gold">TV</span>
+                <span className="text-gradient-gold">{t("cable.header")}</span>
               </span>
             </div>
           </div>
+          <LanguageSwitcher />
         </div>
       </header>
 
@@ -222,17 +226,17 @@ const CableTV = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Tv className="h-5 w-5 text-blue-600" />
-              Cable TV Subscription
+              {t("cable.subscription")}
             </CardTitle>
             <CardDescription>
-              Renew DStv, GOtv, or StarTimes subscriptions
+              {t("cable.subscriptionDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Provider Selection */}
               <div className="space-y-3">
-                <Label>Select Provider</Label>
+                <Label>{t("cable.selectProvider")}</Label>
                 <div className="grid grid-cols-3 gap-3">
                   {providers.map((provider) => (
                     <button
@@ -262,12 +266,12 @@ const CableTV = () => {
 
               {/* Smartcard Number */}
               <div className="space-y-3">
-                <Label htmlFor="smartcard">Smartcard / IUC Number</Label>
+                <Label htmlFor="smartcard">{t("cable.smartcard")}</Label>
                 <div className="relative">
                   <Input
                     id="smartcard"
                     type="text"
-                    placeholder="Enter smartcard number"
+                    placeholder={t("cable.smartcardPlaceholder")}
                     value={smartcardNumber}
                     onChange={(e) => {
                       setSmartcardNumber(e.target.value.replace(/\D/g, ""));
@@ -319,13 +323,13 @@ const CableTV = () => {
                           <div className="flex items-center gap-2">
                             <Tv className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm text-muted-foreground">
-                              Current: {customerInfo.current_package}
+                              {t("cable.current")}: {customerInfo.current_package}
                             </span>
                           </div>
                         )}
                         {customerInfo.due_date && (
                           <p className="text-xs text-muted-foreground">
-                            Due: {customerInfo.due_date}
+                            {t("cable.due")}: {customerInfo.due_date}
                           </p>
                         )}
                       </div>
@@ -335,7 +339,7 @@ const CableTV = () => {
 
                 {!selectedProvider && smartcardNumber.length >= 10 && (
                   <p className="text-xs text-muted-foreground">
-                    Please select a provider to verify your smartcard
+                    {t("cable.selectProviderFirst")}
                   </p>
                 )}
               </div>
@@ -343,7 +347,7 @@ const CableTV = () => {
               {/* Plan Selection */}
               {selectedProvider && (
                 <div className="space-y-3 animate-fade-in">
-                  <Label>Select Package</Label>
+                  <Label>{t("cable.selectPackage")}</Label>
                   <div className="grid grid-cols-2 gap-3">
                     {currentPlans.map((plan) => (
                       <button
@@ -361,7 +365,7 @@ const CableTV = () => {
                         )}
                         <div className="text-sm font-medium text-foreground">{plan.name}</div>
                         <div className="text-lg font-bold text-primary">
-                          ₦{plan.price.toLocaleString()}
+                          {formatCurrency(plan.price)}
                         </div>
                       </button>
                     ))}
@@ -373,12 +377,12 @@ const CableTV = () => {
                 <div className="space-y-2">
                   <Label htmlFor="cable-email" className="flex items-center gap-2">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    Email for Payment Receipt
+                    {t("wallet.emailReceipt")}
                   </Label>
                   <Input
                     id="cable-email"
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder={t("wallet.emailReceipt")}
                     value={paymentEmail}
                     onChange={(e) => setPaymentEmail(e.target.value)}
                     className={`h-12 ${paymentEmail && !isValidEmail(paymentEmail) ? 'border-destructive' : ''}`}
@@ -390,13 +394,13 @@ const CableTV = () => {
                       className="flex items-center gap-1 text-xs text-primary hover:underline"
                     >
                       <AlertCircle className="h-3 w-3" />
-                      Did you mean {emailSuggestion}?
+                      {t("wallet.didYouMean")} {emailSuggestion}?
                     </button>
                   )}
                   {paymentEmail && !isValidEmail(paymentEmail) && !emailSuggestion && (
                     <p className="text-xs text-destructive flex items-center gap-1">
                       <AlertCircle className="h-3 w-3" />
-                      Please enter a valid email address
+                      {t("wallet.emailInvalid")}
                     </p>
                   )}
                 </div>
@@ -413,12 +417,12 @@ const CableTV = () => {
 
               <Button type="submit" size="lg" className="w-full" disabled={isLoading || !selectedPlan}>
                 {isLoading
-                  ? "Processing..."
+                  ? t("wallet.processing")
                   : selectedPlan
                   ? paymentMethod === "wallet"
-                    ? `Pay ₦${chargeTotal("cable_tv", selectedPlan.price).toLocaleString()} from Wallet`
-                    : `Pay ₦${chargeTotal("cable_tv", selectedPlan.price).toLocaleString()}`
-                  : "Select a Package"}
+                    ? `${t("wallet.pay")} ${formatCurrency(chargeTotal("cable_tv", selectedPlan.price))} ${t("pay.fromWallet")}`
+                    : `${t("wallet.pay")} ${formatCurrency(chargeTotal("cable_tv", selectedPlan.price))}`
+                  : t("cable.selectPackageCta")}
               </Button>
             </form>
           </CardContent>

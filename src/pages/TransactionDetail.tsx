@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -188,6 +189,7 @@ const isMoneyIn = (tx: TransactionData) => tx.transaction_type === "wallet_topup
 
 const TransactionDetail = () => {
   const navigate = useNavigate();
+  const { formatCurrency, formatDateTime } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const { user, profile, isLoading } = useAuth();
   const { toast } = useToast();
@@ -363,7 +365,7 @@ const TransactionDetail = () => {
             </div>
             <div className="flex items-center gap-2 bg-muted rounded-xl px-3 py-2">
               <Wallet className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-semibold">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</span>
+              <span className="text-sm font-semibold">{formatCurrency(profile?.wallet_balance ?? 0)}</span>
             </div>
           </div>
         </header>
@@ -385,7 +387,7 @@ const TransactionDetail = () => {
                 </div>
                 <div className="text-right">
                   <p className={`text-xl font-bold ${moneyIn ? "text-green-600" : "text-foreground"}`}>
-                    {moneyIn ? "+" : "-"}₦{transaction.amount.toLocaleString()}
+                    {moneyIn ? "+" : "-"}{formatCurrency(transaction.amount)}
                   </p>
                 </div>
               </div>
@@ -445,21 +447,21 @@ const TransactionDetail = () => {
                 label="Amount"
                 value={
                   <span className={`font-bold ${moneyIn ? "text-green-600" : "text-foreground"}`}>
-                    {moneyIn ? "+" : "-"}₦{transaction.amount.toLocaleString()}
+                    {moneyIn ? "+" : "-"}{formatCurrency(transaction.amount)}
                   </span>
                 }
               />
               {transaction.balance_before != null && (
-                <InfoRow label="Balance Before" value={`₦${transaction.balance_before.toLocaleString()}`} />
+                <InfoRow label="Balance Before" value={`${formatCurrency(transaction.balance_before)}`} />
               )}
               {transaction.balance_after != null && (
-                <InfoRow label="Balance After" value={`₦${transaction.balance_after.toLocaleString()}`} />
+                <InfoRow label="Balance After" value={`${formatCurrency(transaction.balance_after)}`} />
               )}
               <InfoRow label="Status" value={getStatusBadge(transaction.status)} />
               <InfoRow label="Method" value={transaction.paystack_reference ? "Paystack" : "Wallet"} />
               <InfoRow
                 label="Date"
-                value={format(new Date(transaction.created_at), "MMMM dd, yyyy 'at' HH:mm:ss")}
+                value={formatDateTime(transaction.created_at)}
               />
               {transaction.description && (
                 <InfoRow label="Description" value={transaction.description} />
@@ -592,7 +594,7 @@ const TransactionDetail = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Current Wallet Balance</p>
-                  <p className="text-xl font-bold text-foreground">₦{profile?.wallet_balance?.toLocaleString() || "0.00"}</p>
+                  <p className="text-xl font-bold text-foreground">{formatCurrency(profile?.wallet_balance ?? 0)}</p>
                   <p className="text-[10px] text-muted-foreground">Available for services</p>
                 </div>
               </div>

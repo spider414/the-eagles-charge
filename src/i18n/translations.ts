@@ -1,3 +1,5 @@
+import { extra } from "./translations.extra";
+
 export type LanguageCode = "en" | "pcm" | "yo" | "ig" | "ha";
 
 export const LANGUAGES: { code: LanguageCode; label: string; native: string }[] = [
@@ -8,7 +10,7 @@ export const LANGUAGES: { code: LanguageCode; label: string; native: string }[] 
   { code: "ha", label: "Hausa", native: "Hausa" },
 ];
 
-export const translations = {
+const base = {
   en: {
     "greeting.morning": "Good morning",
     "greeting.afternoon": "Good afternoon",
@@ -394,6 +396,14 @@ export const translations = {
     "settings.deleteAccount": "Share Asusu",
     "settings.deleteAccountDesc": "Share asusunka gaba ɗaya",
   },
+} as const;
+
+export const translations = {
+  en: { ...base.en, ...extra.en },
+  pcm: { ...base.pcm, ...extra.pcm },
+  yo: { ...base.yo, ...extra.yo },
+  ig: { ...base.ig, ...extra.ig },
+  ha: { ...base.ha, ...extra.ha },
 } as const;
 
 export type TranslationKey = keyof typeof translations.en;
