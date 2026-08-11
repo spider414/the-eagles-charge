@@ -136,8 +136,12 @@ Deno.serve(async (req) => {
 
     if (body.action === "initialize") {
       const { amount, email, metadata } = body;
-      
-      // Generate unique reference
+
+      // Server-authoritative 2% service fee (not applied to airtime / wallet top-ups)
+      const serviceFee = computeServiceFee(metadata.transaction_type, amount);
+      const chargeAmount = amount + serviceFee;
+
+      // Generate unique reference (strict HARMIC- prefix)
       const reference = `HARMIC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
       // Create transaction record
@@ -147,7 +151,8 @@ Deno.serve(async (req) => {
           user_id: userId,
           transaction_type: metadata.transaction_type,
           status: "pending",
-          amount: amount,
+          amount: chargeAmount,
+          description: serviceFee > 0 ? `Includes ₦${serviceFee.toLocaleString()} service fee (2%)` : null,
           phone_number: metadata.phone_number || null,
           network: metadata.network || null,
           data_plan: metadata.data_plan || null,
@@ -178,11 +183,13 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({
           email,
-          amount: amount * 100, // Paystack uses kobo
+          amount: chargeAmount * 100, // Paystack uses kobo
           reference,
           callback_url: callbackUrl,
           metadata: {
             ...metadata,
+            base_amount: amount,
+            service_fee: serviceFee,
             transaction_id: transaction.id,
             user_id: userId,
           },
@@ -217,6 +224,8 @@ Deno.serve(async (req) => {
           authorization_url: paystackData.data.authorization_url,
           access_code: paystackData.data.access_code,
           reference,
+          amount: chargeAmount,
+          service_fee: serviceFee,
           public_key: paystackPublicKey,
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
