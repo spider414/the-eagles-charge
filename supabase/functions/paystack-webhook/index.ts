@@ -154,7 +154,12 @@ Deno.serve(async (req) => {
           .single();
 
         if (txError) {
-          console.error("Failed to create transaction:", txError);
+          // 23505 = unique violation on paystack_reference → Paystack retried an event we already credited.
+          if ((txError as { code?: string }).code === "23505") {
+            console.log("Duplicate webhook delivery ignored (reference already credited):", reference);
+          } else {
+            console.error("Failed to create transaction:", txError);
+          }
           return new Response("OK", { status: 200 });
         }
 
@@ -198,11 +203,19 @@ Deno.serve(async (req) => {
             return new Response("OK", { status: 200 });
           }
 
-          // Update transaction to completed
-          await supabase
+          // Idempotent state transition: only the delivery that flips pending → completed may credit.
+          const { data: claimed } = await supabase
             .from("transactions")
             .update({ status: "completed", api_response: data })
-            .eq("id", existingTx.id);
+            .eq("id", existingTx.id)
+            .eq("status", "pending")
+            .select("id")
+            .maybeSingle();
+
+          if (!claimed) {
+            console.log("Duplicate webhook delivery ignored (already completed):", reference);
+            return new Response("OK", { status: 200 });
+          }
 
           // If wallet topup, credit the wallet using atomic function
           if (existingTx.transaction_type === "wallet_topup") {
