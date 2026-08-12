@@ -9,7 +9,11 @@ export const usePushNotifications = () => {
   const [permission, setPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
-    const supported = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+    // Native Capacitor WebViews have no service worker registration, so
+    // `serviceWorker.ready` would hang forever. Treat push as unsupported there.
+    const isNative = Boolean((window as any).Capacitor?.isNativePlatform?.());
+    const supported =
+      !isNative && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
     setIsSupported(supported);
     if (supported) {
       setPermission(Notification.permission);
