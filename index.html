@@ -10,6 +10,25 @@
     <meta name="google-site-verification" content="DTeK-l_yKSZWCcw-A5v8uRSh8r8xfppaSPqa1DFCjqM" />
     <meta name="google-site-verification" content="u0HcH-l6wQhG4lehNjFfzo__3K_cxewUou5GusSD-Vc" />
     
+    <link rel="canonical" href="https://recharge.harmicglobal.com" />
+
+    <!-- Legacy domain redirect: any old *.lovable.app published URL -> canonical domain.
+         The Lovable editor preview (id-preview--*) and sandbox hosts are excluded. -->
+    <script>
+      (function () {
+        try {
+          var h = window.location.hostname;
+          var isLegacy = /(^|\.)the-eagles-charge\.lovable\.app$/i.test(h);
+          var isPreview = /^id-preview--/i.test(h) || /lovableproject\.com$/i.test(h);
+          if (isLegacy && !isPreview) {
+            window.location.replace(
+              'https://recharge.harmicglobal.com' + window.location.pathname + window.location.search + window.location.hash
+            );
+          }
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#1a6b47" />
     <meta name="msapplication-TileColor" content="#1a6b47" />
