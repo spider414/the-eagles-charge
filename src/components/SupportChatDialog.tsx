@@ -6,10 +6,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/supabaseEnv";
 
 type Message = { role: "user" | "assistant"; content: string };
-
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 interface SupportChatDialogProps {
   open: boolean;
@@ -50,7 +49,7 @@ const SupportChatDialog = ({ open, onOpenChange }: SupportChatDialogProps) => {
       const token = session?.access_token ?? SUPABASE_ANON_KEY;
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/support-chat`,
+        `${SUPABASE_URL}/functions/v1/support-chat`,
         {
           method: "POST",
           headers: {
