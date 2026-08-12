@@ -1,8 +1,12 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
 import { ActivitySquare, ArrowLeft, CreditCard, LayoutDashboard, Loader2, Mail, ShieldAlert, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   Sidebar,
   SidebarContent,
@@ -61,6 +65,38 @@ function AdminSidebar() {
 export default function AdminLayout() {
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin !== false || !user) return;
+    let cancelled = false;
+    supabase.rpc("admin_exists").then(({ data }) => {
+      if (!cancelled) setClaimOpen(data === false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAdmin, user]);
+
+  const claim = async () => {
+    setClaiming(true);
+    const { data, error } = await supabase.rpc("claim_admin");
+    setClaiming(false);
+    if (error || !data) {
+      setClaimOpen(false);
+      toast({
+        title: "Admin registration closed",
+        description: error?.message ?? "An admin already exists for this app.",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({ title: "You are now the admin", description: "Admin registration is now closed." });
+    window.location.reload();
+  };
 
   if (isAdmin === null) {
     return (
@@ -76,8 +112,18 @@ export default function AdminLayout() {
         <Card className="w-full max-w-sm">
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <ShieldAlert className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">You don't have access to this page.</p>
-            <Button size="sm" onClick={() => navigate("/dashboard", { replace: true })}>
+            <p className="text-sm text-muted-foreground">
+              {claimOpen
+                ? "No admin has been registered yet. You can claim admin access once — after that this is permanently closed."
+                : "You don't have access to this page."}
+            </p>
+            {claimOpen && (
+              <Button size="sm" onClick={claim} disabled={claiming}>
+                {claiming ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-1 h-4 w-4" />}
+                Register me as admin
+              </Button>
+            )}
+            <Button size="sm" variant="outline" onClick={() => navigate("/dashboard", { replace: true })}>
               Back to dashboard
             </Button>
           </CardContent>
