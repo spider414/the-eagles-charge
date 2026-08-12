@@ -1,0 +1,1 @@
+UPDATE public.email_settings SET logo_url = replace(logo_url, 'https://the-eagles-charge.lovable.app', 'https://recharge.harmicglobal.com') WHERE logo_url LIKE '%lovable.app%';
