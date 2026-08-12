@@ -440,7 +440,7 @@ const Settings = () => {
       label: t("settings.terms"),
       description: t("settings.termsDesc"),
       type: "link",
-      onClick: () => navigate("/terms"),
+      onClick: () => window.open("https://recharge.harmicglobal.com/terms", "_blank"),
     },
     {
       icon: FileText,

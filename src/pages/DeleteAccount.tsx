@@ -183,7 +183,7 @@ const DeleteAccount = () => {
           <p>© {new Date().getFullYear()} HARMIC RECHARGE. All rights reserved.</p>
           <div className="flex justify-center gap-4 mt-2">
             <a href="https://recharge.harmicglobal.com/privacy" className="hover:text-primary">Privacy Policy</a>
-            <Link to="/terms" className="hover:text-primary">Terms of Service</Link>
+            <a href="https://recharge.harmicglobal.com/terms" className="hover:text-primary">Terms of Service</a>
           </div>
         </div>
       </main>
