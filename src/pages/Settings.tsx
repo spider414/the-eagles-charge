@@ -440,14 +440,14 @@ const Settings = () => {
       label: t("settings.terms"),
       description: t("settings.termsDesc"),
       type: "link",
-      onClick: () => window.open("https://recharge.harmicglobal.com/terms", "_blank"),
+      onClick: () => navigate("/terms"),
     },
     {
       icon: FileText,
       label: t("settings.privacy"),
       description: t("settings.privacyDesc"),
       type: "link",
-      onClick: () => window.open("https://recharge.harmicglobal.com/privacy", "_blank"),
+      onClick: () => navigate("/privacy"),
     },
   ];
 
