@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
-import { ActivitySquare, ArrowLeft, CreditCard, LayoutDashboard, Loader2, Mail, ShieldAlert, ShieldCheck, Users } from "lucide-react";
+import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, LayoutDashboard, Loader2, LogIn, LogOut, Mail, ShieldAlert, ShieldCheck, Users, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -65,10 +66,11 @@ function AdminSidebar() {
 export default function AdminLayout() {
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const [claimOpen, setClaimOpen] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [claimResult, setClaimResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   useEffect(() => {
     if (isAdmin !== false || !user) return;
@@ -83,25 +85,57 @@ export default function AdminLayout() {
 
   const claim = async () => {
     setClaiming(true);
+    setClaimResult(null);
     const { data, error } = await supabase.rpc("claim_admin");
     setClaiming(false);
     if (error || !data) {
       setClaimOpen(false);
+      const message = error
+        ? error.message.toLowerCase().includes("not authenticated")
+          ? "Your session has expired. Please sign in again."
+          : error.message
+        : "Admin registration is already closed — an admin exists for this app. Ask them to grant you access.";
+      setClaimResult({ ok: false, message });
       toast({
         title: "Admin registration closed",
-        description: error?.message ?? "An admin already exists for this app.",
+        description: message,
         variant: "destructive",
       });
       return;
     }
+    setClaimResult({ ok: true, message: "You are now the admin. Loading the admin dashboard…" });
     toast({ title: "You are now the admin", description: "Admin registration is now closed." });
-    window.location.reload();
+    setTimeout(() => window.location.reload(), 1200);
   };
 
-  if (isAdmin === null) {
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth", { replace: true });
+  };
+
+  if (isAdmin === null || authLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm">
+          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
+            <BrandLogo className="h-10 w-10" rounded="rounded-lg" />
+            <p className="text-sm font-medium">Admin sign in required</p>
+            <p className="text-xs text-muted-foreground">
+              Sign in with an admin account to open the admin dashboard.
+            </p>
+            <Button size="sm" onClick={() => navigate("/auth", { state: { from: "/admin" } })}>
+              <LogIn className="mr-1 h-4 w-4" /> Go to login
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -117,14 +151,29 @@ export default function AdminLayout() {
                 ? "No admin has been registered yet. You can claim admin access once — after that this is permanently closed."
                 : "You don't have access to this page."}
             </p>
+            {claimResult && (
+              <Alert variant={claimResult.ok ? "default" : "destructive"} className="text-left">
+                {claimResult.ok ? (
+                  <CheckCircle2 className="h-4 w-4" />
+                ) : (
+                  <XCircle className="h-4 w-4" />
+                )}
+                <AlertTitle>{claimResult.ok ? "Admin access granted" : "Could not claim admin"}</AlertTitle>
+                <AlertDescription className="text-xs">{claimResult.message}</AlertDescription>
+              </Alert>
+            )}
             {claimOpen && (
               <Button size="sm" onClick={claim} disabled={claiming}>
                 {claiming ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <ShieldCheck className="mr-1 h-4 w-4" />}
-                Register me as admin
+                {claiming ? "Registering…" : "Register me as admin"}
               </Button>
             )}
+            <p className="text-[11px] text-muted-foreground">Signed in as {user.email}</p>
             <Button size="sm" variant="outline" onClick={() => navigate("/dashboard", { replace: true })}>
               Back to dashboard
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleSignOut}>
+              <LogOut className="mr-1 h-4 w-4" /> Sign out
             </Button>
           </CardContent>
         </Card>
@@ -144,6 +193,14 @@ export default function AdminLayout() {
             </Button>
             <BrandLogo className="h-7 w-7" rounded="rounded-md" />
             <h1 className="text-base font-semibold">Admin</h1>
+            <div className="ml-auto flex items-center gap-2">
+              <span className="hidden max-w-[180px] truncate text-xs text-muted-foreground sm:inline">
+                {user.email}
+              </span>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                <LogOut className="mr-1 h-4 w-4" /> Log out
+              </Button>
+            </div>
           </header>
           <main className="flex-1 space-y-4 p-4">
             <Outlet />
