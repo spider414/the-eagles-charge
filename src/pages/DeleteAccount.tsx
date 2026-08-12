@@ -182,8 +182,8 @@ const DeleteAccount = () => {
         <div className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
           <p>© {new Date().getFullYear()} HARMIC RECHARGE. All rights reserved.</p>
           <div className="flex justify-center gap-4 mt-2">
-            <a href="https://recharge.harmicglobal.com/privacy" className="hover:text-primary">Privacy Policy</a>
-            <a href="https://recharge.harmicglobal.com/terms" className="hover:text-primary">Terms of Service</a>
+            <a href="/privacy" className="hover:text-primary">Privacy Policy</a>
+            <a href="/terms" className="hover:text-primary">Terms of Service</a>
           </div>
         </div>
       </main>
