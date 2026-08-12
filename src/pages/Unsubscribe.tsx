@@ -4,9 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, MailX, Check } from "lucide-react";
+import { SUPABASE_PROJECT_ID } from "@/lib/supabaseEnv";
 
-const PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-const FN_URL = `https://${PROJECT_ID}.supabase.co/functions/v1/email-unsubscribe`;
+const FN_URL = `https://${SUPABASE_PROJECT_ID}.supabase.co/functions/v1/email-unsubscribe`;
 
 type Prefs = {
   email_marketing_opt_in: boolean;
