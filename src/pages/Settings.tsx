@@ -447,7 +447,7 @@ const Settings = () => {
       label: t("settings.privacy"),
       description: t("settings.privacyDesc"),
       type: "link",
-      onClick: () => navigate("/privacy"),
+      onClick: () => window.open("https://recharge.harmicglobal.com/privacy", "_blank"),
     },
   ];
 

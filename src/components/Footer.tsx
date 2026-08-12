@@ -18,9 +18,9 @@ const Footer = () => {
             <Link to="/terms" className="hover:text-primary-foreground transition-colors">
               Terms of Service
             </Link>
-            <Link to="/privacy" className="hover:text-primary-foreground transition-colors">
+            <a href="https://recharge.harmicglobal.com/privacy" className="hover:text-primary-foreground transition-colors">
               Privacy Policy
-            </Link>
+            </a>
             <Link to="/support" className="hover:text-primary-foreground transition-colors">
               Contact Us
             </Link>
