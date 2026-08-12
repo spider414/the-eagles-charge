@@ -76,11 +76,60 @@ export default function AdminRoles() {
         (v ?? "").toLowerCase().includes(term),
       ),
   );
+  const admins = rows.filter((r) => r.isAdmin);
 
   return (
+    <div className="space-y-3">
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Role management</CardTitle>
+        <CardTitle className="text-sm">Current admins ({admins.length})</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {loading ? (
+          <div className="flex justify-center py-6">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : admins.length === 0 ? (
+          <p className="py-4 text-center text-sm text-muted-foreground">No admins yet.</p>
+        ) : (
+          admins.map((r) => (
+            <div
+              key={r.user_id}
+              className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2.5 text-xs"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">
+                  {r.full_name || r.phone_number || "Unnamed user"}
+                  {r.user_id === user?.id && <span className="ml-1 text-muted-foreground">(you)</span>}
+                </p>
+                <p className="truncate text-muted-foreground">
+                  {r.contact_email || r.phone_number || r.user_id}
+                </p>
+              </div>
+              <Badge variant="secondary">Admin</Badge>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={r.user_id === user?.id || busy === r.user_id}
+                onClick={() => toggle(r)}
+                title={r.user_id === user?.id ? "You cannot change your own role" : undefined}
+              >
+                {busy === r.user_id ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <>
+                    <ShieldOff className="mr-1 h-3.5 w-3.5" /> Revoke
+                  </>
+                )}
+              </Button>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm">Grant or revoke access</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         <Input
@@ -140,5 +189,6 @@ export default function AdminRoles() {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 }
