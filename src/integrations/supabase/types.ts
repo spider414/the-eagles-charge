@@ -646,6 +646,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
+      claim_admin: { Args: never; Returns: boolean }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       credit_wallet: {
         Args: { p_amount: number; p_profile_id: string }
