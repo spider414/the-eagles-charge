@@ -4,7 +4,7 @@ crate an app for Nigeria that user can buy credit and fall data subscribe using 
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://the-eagles-charge.lovable.app
+**Live app**: https://recharge.harmicglobal.com
 
 ## Build with Lovable
 

@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://the-eagles-charge.lovable.app/sitemap.xml
+Sitemap: https://recharge.harmicglobal.com/sitemap.xml

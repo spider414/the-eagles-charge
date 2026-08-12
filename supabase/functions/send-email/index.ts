@@ -557,7 +557,7 @@ Deno.serve(async (req) => {
         });
       }
       if (profile?.unsubscribe_token) {
-        const base = Deno.env.get("APP_PUBLIC_URL") || "https://the-eagles-charge.lovable.app";
+        const base = Deno.env.get("APP_PUBLIC_URL") || "https://recharge.harmicglobal.com";
         unsubUrl = `${base}/unsubscribe?token=${profile.unsubscribe_token}`;
       }
     }
