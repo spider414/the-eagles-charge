@@ -1,67 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://the-eagles-charge.lovable.app/</loc>
+    <loc>https://recharge.harmicglobal.com/</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/auth</loc>
+    <loc>https://recharge.harmicglobal.com/auth</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/dashboard</loc>
+    <loc>https://recharge.harmicglobal.com/dashboard</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/bills/electricity</loc>
+    <loc>https://recharge.harmicglobal.com/bills/electricity</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/bills/cable</loc>
+    <loc>https://recharge.harmicglobal.com/bills/cable</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/bills/internet</loc>
+    <loc>https://recharge.harmicglobal.com/bills/internet</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/referrals</loc>
+    <loc>https://recharge.harmicglobal.com/referrals</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/support</loc>
+    <loc>https://recharge.harmicglobal.com/support</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/terms</loc>
+    <loc>https://recharge.harmicglobal.com/terms</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/privacy</loc>
+    <loc>https://recharge.harmicglobal.com/privacy</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://the-eagles-charge.lovable.app/delete-account</loc>
+    <loc>https://recharge.harmicglobal.com/delete-account</loc>
     <lastmod>2026-01-31</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>

@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
       }
 
       // Initialize Paystack payment
-      const callbackUrl = `${req.headers.get("origin") || "https://id-preview--01d5208d-dc13-49b3-a8ed-a8a5e2037792.lovable.app"}/payment/callback`;
+      const callbackUrl = `${req.headers.get("origin") || "https://recharge.harmicglobal.com"}/payment/callback`;
       
       const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
         method: "POST",
