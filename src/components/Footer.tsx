@@ -15,9 +15,9 @@ const Footer = () => {
           </div>
 
           <div className="flex flex-wrap justify-center gap-6 text-sm text-primary-foreground/70">
-            <Link to="/terms" className="hover:text-primary-foreground transition-colors">
+            <a href="https://recharge.harmicglobal.com/terms" className="hover:text-primary-foreground transition-colors">
               Terms of Service
-            </Link>
+            </a>
             <a href="https://recharge.harmicglobal.com/privacy" className="hover:text-primary-foreground transition-colors">
               Privacy Policy
             </a>
