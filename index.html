@@ -135,6 +135,20 @@
   </head>
 
   <body>
+    <script type="text/javascript">
+      // Restore the original path saved by public/404.html for GitHub Pages SPA fallback
+      (function () {
+        var savedPath = sessionStorage.getItem('gh-pages-spa-path');
+        if (savedPath) {
+          sessionStorage.removeItem('gh-pages-spa-path');
+          if (window.history && window.history.replaceState) {
+            window.history.replaceState(null, '', savedPath);
+          } else {
+            window.location.replace(savedPath);
+          }
+        }
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
