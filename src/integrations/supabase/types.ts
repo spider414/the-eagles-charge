@@ -44,6 +44,8 @@ export type Database = {
       app_settings: {
         Row: {
           created_at: string
+          deposit_fee_enabled: boolean
+          deposit_fee_percent: number
           id: string
           registration_bonus_amount: number
           registration_bonus_enabled: boolean
@@ -52,6 +54,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deposit_fee_enabled?: boolean
+          deposit_fee_percent?: number
           id?: string
           registration_bonus_amount?: number
           registration_bonus_enabled?: boolean
@@ -60,6 +64,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deposit_fee_enabled?: boolean
+          deposit_fee_percent?: number
           id?: string
           registration_bonus_amount?: number
           registration_bonus_enabled?: boolean
@@ -67,6 +73,56 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      deposit_fee_log: {
+        Row: {
+          balance_after: number | null
+          created_at: string
+          fee_amount: number
+          fee_percent: number
+          gross_amount: number
+          id: string
+          method: string
+          net_amount: number
+          reference: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          balance_after?: number | null
+          created_at?: string
+          fee_amount?: number
+          fee_percent?: number
+          gross_amount: number
+          id?: string
+          method: string
+          net_amount: number
+          reference?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          balance_after?: number | null
+          created_at?: string
+          fee_amount?: number
+          fee_percent?: number
+          gross_amount?: number
+          id?: string
+          method?: string
+          net_amount?: number
+          reference?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deposit_fee_log_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       email_change_requests: {
         Row: {
