@@ -12,3 +12,13 @@ export const chargeTotal = (transactionType: string, baseAmount: number): number
   (baseAmount || 0) + serviceFee(transactionType, baseAmount);
 
 export const formatNaira = (value: number): string => `₦${(value || 0).toLocaleString()}`;
+
+// Funding fee: 1% is deducted from every wallet deposit (bank transfer or card).
+// The server (paystack webhook / payment function) is authoritative.
+export const DEPOSIT_FEE_RATE = 0.01;
+
+export const depositFee = (amount: number): number =>
+  Math.ceil((amount || 0) * DEPOSIT_FEE_RATE);
+
+export const netDeposit = (amount: number): number =>
+  Math.max(0, (amount || 0) - depositFee(amount));
