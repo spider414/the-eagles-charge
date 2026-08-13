@@ -125,7 +125,7 @@ const Referrals = () => {
             <p className="text-sm text-primary-foreground/80 mb-4">
               Share your unique referral code. When a friend signs up with it and makes their
               first real wallet deposit (card or bank transfer), you get ₦1,000 credited
-              instantly. The ₦2,000 welcome bonus does not count as a deposit.
+              instantly. The welcome bonus{bonusSuffix} does not count as a deposit.
             </p>
           </CardContent>
         </Card>
