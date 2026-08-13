@@ -611,6 +611,14 @@ const WalletTopUp = () => {
                 />
               </div>
               <p className="text-xs text-muted-foreground">{t("wallet.minimum")}: {formatCurrency(100)}</p>
+              {amount && parseFloat(amount) >= 100 && (
+                <p className="text-xs text-muted-foreground">
+                  1% funding fee: {formatCurrency(depositFee(parseFloat(amount)))} — you receive{" "}
+                  <span className="font-semibold text-foreground">
+                    {formatCurrency(netDeposit(parseFloat(amount)))}
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* Email Input for phone-based accounts */}
