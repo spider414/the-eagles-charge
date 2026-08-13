@@ -15,6 +15,7 @@ import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSignupBonus } from "@/hooks/useSignupBonus";
 import { depositFee, netDeposit } from "@/lib/pricing";
+import { useDepositFee } from "@/hooks/useDepositFee";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
@@ -33,6 +34,7 @@ const WalletTopUp = () => {
   const { toast } = useToast();
   const { t, formatCurrency } = useLanguage();
   const signupBonus = useSignupBonus();
+  const feeConfig = useDepositFee();
   // Bonus amount comes from the backend so no screen hard-codes a figure.
   const bonusRule = t("wallet.referralRule2").replace(
     "{bonus}",
