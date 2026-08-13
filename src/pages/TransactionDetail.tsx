@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useDepositFee } from "@/hooks/useDepositFee";
+import { depositFee, netDeposit } from "@/lib/pricing";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -194,8 +196,39 @@ const TransactionDetail = () => {
   const { user, profile, isLoading } = useAuth();
   const { toast } = useToast();
   const [transaction, setTransaction] = useState<TransactionData | null>(null);
+  const [feeEntry, setFeeEntry] = useState<{
+    gross_amount: number;
+    fee_percent: number;
+    fee_amount: number;
+    net_amount: number;
+    method: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const feeConfig = useDepositFee();
+
+  // Prefer the recorded ledger entry; fall back to live settings for older deposits.
+  const feeBreakdown = (() => {
+    if (!transaction || transaction.transaction_type !== "wallet_topup") return null;
+    if (feeEntry) {
+      return {
+        gross: Number(feeEntry.gross_amount),
+        fee: Number(feeEntry.fee_amount),
+        percent: Number(feeEntry.fee_percent),
+        net: Number(feeEntry.net_amount),
+        logged: true,
+      };
+    }
+    if (feeConfig.loading || !feeConfig.enabled) return null;
+    const gross = Number(transaction.amount);
+    return {
+      gross,
+      fee: depositFee(gross, feeConfig),
+      percent: feeConfig.percent,
+      net: netDeposit(gross, feeConfig),
+      logged: false,
+    };
+  })();
 
   useEffect(() => {
     if (!isLoading && !user) navigate("/auth");
@@ -217,6 +250,17 @@ const TransactionDetail = () => {
 
       if (error) throw error;
       setTransaction(data as unknown as TransactionData);
+
+      if (data?.transaction_type === "wallet_topup") {
+        const { data: fee } = await supabase
+          .from("deposit_fee_log")
+          .select("gross_amount, fee_percent, fee_amount, net_amount, method")
+          .eq("transaction_id", data.id)
+          .maybeSingle();
+        setFeeEntry(fee ?? null);
+      } else {
+        setFeeEntry(null);
+      }
     } catch {
       toast({ title: "Error", description: "Transaction not found", variant: "destructive" });
       navigate("/history");
@@ -275,6 +319,13 @@ const TransactionDetail = () => {
       ["Balance Before", tx.balance_before != null ? naira(tx.balance_before) : ""],
       ["Balance After", tx.balance_after != null ? naira(tx.balance_after) : ""],
     ];
+    if (isMoneyIn(tx) && feeBreakdown) {
+      rows.push(
+        ["Amount Received", naira(feeBreakdown.gross)],
+        ["Funding Fee", `${naira(feeBreakdown.fee)} (${feeBreakdown.percent}%)`],
+        ["Credited to Wallet", naira(feeBreakdown.net)],
+      );
+    }
     return {
       title: `${getServiceName(tx)} Receipt`,
       reference: generateReference(tx),
@@ -451,6 +502,25 @@ const TransactionDetail = () => {
                   </span>
                 }
               />
+              {feeBreakdown && (
+                <>
+                  <InfoRow label="Amount Received" value={formatCurrency(feeBreakdown.gross)} />
+                  <InfoRow
+                    label={`Funding Fee (${feeBreakdown.percent}%)`}
+                    value={
+                      <span className="font-medium text-destructive">
+                        -{formatCurrency(feeBreakdown.fee)}
+                      </span>
+                    }
+                  />
+                  <InfoRow
+                    label="Credited to Wallet"
+                    value={
+                      <span className="font-bold text-green-600">{formatCurrency(feeBreakdown.net)}</span>
+                    }
+                  />
+                </>
+              )}
               {transaction.balance_before != null && (
                 <InfoRow label="Balance Before" value={`${formatCurrency(transaction.balance_before)}`} />
               )}

@@ -1,8 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const DEPOSIT_FEE_RATE = 0.01;
-const depositFee = (amount: number) => Math.ceil((amount || 0) * DEPOSIT_FEE_RATE);
-const netDeposit = (amount: number) => Math.max(0, (amount || 0) - depositFee(amount));
+import {
+  computeDepositFee,
+  computeNetDeposit,
+  getDepositFeeConfig,
+  logDepositFee,
+} from "../_shared/depositFee.ts";
 
 
 const corsHeaders = {
@@ -342,7 +345,9 @@ Deno.serve(async (req) => {
       // Handle wallet top-up - credit wallet after successful payment using atomic function
       if (transactionStatus === "completed" && existingTx?.transaction_type === "wallet_topup") {
         const grossAmount = paystackData.data.amount / 100; // Convert from kobo to naira
-        const amountToCredit = netDeposit(grossAmount); // 1% funding fee deducted
+        const feeCfg = await getDepositFeeConfig(supabase);
+        const depositFeeAmount = computeDepositFee(grossAmount, feeCfg);
+        const amountToCredit = computeNetDeposit(grossAmount, feeCfg); // funding fee deducted
         
         // Get current profile to get ID for credit function
         const { data: userProfile } = await supabase
@@ -366,7 +371,18 @@ Deno.serve(async (req) => {
           if (creditError) {
             console.error("Wallet credit error:", creditError);
           } else {
-            console.log(`Wallet atomically credited with ₦${amountToCredit}. New balance: ₦${newBalance}`);
+            console.log(`Wallet atomically credited with ₦${amountToCredit} (fee ₦${depositFeeAmount}). New balance: ₦${newBalance}`);
+            await logDepositFee(supabaseAdmin, {
+              user_id: userId,
+              transaction_id: existingTx?.id ?? null,
+              reference: paystackData.data.reference ?? null,
+              method: "card",
+              gross_amount: grossAmount,
+              fee_percent: feeCfg.enabled ? feeCfg.percent : 0,
+              fee_amount: depositFeeAmount,
+              net_amount: amountToCredit,
+              balance_after: Number(newBalance),
+            });
           }
         }
       }
@@ -1336,11 +1352,13 @@ Deno.serve(async (req) => {
 
       let credited = 0;
       let totalAmount = 0;
+      const reconcileFeeCfg = await getDepositFeeConfig(supabaseAdmin);
 
       for (const t of transfers) {
         const reference = String(t.reference);
         const amount = Number(t.amount) / 100;
-        const amountNet = netDeposit(amount);
+        const feeAmount = computeDepositFee(amount, reconcileFeeCfg);
+        const amountNet = computeNetDeposit(amount, reconcileFeeCfg);
 
         const { data: existing } = await supabaseAdmin
           .from("transactions")
@@ -1360,13 +1378,24 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        await supabaseAdmin.from("transactions").insert({
+        const { data: insertedTx } = await supabaseAdmin.from("transactions").insert({
           user_id: userId,
           transaction_type: "wallet_topup",
           status: "completed",
           amount,
           paystack_reference: reference,
           description: "Bank transfer to virtual account",
+        }).select("id").maybeSingle();
+
+        await logDepositFee(supabaseAdmin, {
+          user_id: userId,
+          transaction_id: insertedTx?.id ?? null,
+          reference,
+          method: "reconciliation",
+          gross_amount: amount,
+          fee_percent: reconcileFeeCfg.enabled ? reconcileFeeCfg.percent : 0,
+          fee_amount: feeAmount,
+          net_amount: amountNet,
         });
 
         credited += 1;
