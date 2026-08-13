@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { notifyAdminNewRegistration } from "../_shared/notify-admin.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,6 +76,13 @@ Deno.serve(async (req) => {
         { status: alreadyExists ? 409 : 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    // Alert the admin about the new registration (best-effort).
+    await notifyAdminNewRegistration(admin, {
+      user_id: data.user.id,
+      phone_number: digits,
+      full_name: full_name ?? null,
+    });
 
     return new Response(JSON.stringify({ success: true, user_id: data.user.id, email }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
