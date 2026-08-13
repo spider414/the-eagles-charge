@@ -1,8 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const DEPOSIT_FEE_RATE = 0.01;
-const depositFee = (amount: number) => Math.ceil((amount || 0) * DEPOSIT_FEE_RATE);
-const netDeposit = (amount: number) => Math.max(0, (amount || 0) - depositFee(amount));
+import {
+  computeDepositFee,
+  computeNetDeposit,
+  getDepositFeeConfig,
+  logDepositFee,
+} from "../_shared/depositFee.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -168,8 +170,9 @@ Deno.serve(async (req) => {
         }
 
         // Credit wallet using atomic function to prevent race conditions
-        const fee = depositFee(amount);
-        const creditAmount = netDeposit(amount);
+        const feeCfg = await getDepositFeeConfig(supabase);
+        const fee = computeDepositFee(amount, feeCfg);
+        const creditAmount = computeNetDeposit(amount, feeCfg);
         const { data: newBalance, error: walletError } = await supabase.rpc('credit_wallet', {
           p_profile_id: profile.id,
           p_amount: creditAmount
@@ -184,10 +187,23 @@ Deno.serve(async (req) => {
             .eq("id", transaction.id);
         } else {
           console.log(`Wallet atomically credited: ₦${creditAmount} (fee ₦${fee}) for user ${profile.user_id}. New balance: ₦${newBalance}`);
+          await logDepositFee(supabase, {
+            user_id: profile.user_id,
+            transaction_id: transaction.id,
+            reference,
+            method: "bank_transfer",
+            gross_amount: amount,
+            fee_percent: feeCfg.enabled ? feeCfg.percent : 0,
+            fee_amount: fee,
+            net_amount: creditAmount,
+            balance_after: Number(newBalance),
+          });
           await supabase.from("notifications").insert({
             user_id: profile.user_id,
             title: "Wallet funded 🎉",
-            body: `₦${creditAmount.toLocaleString()} credited to your wallet (₦${amount.toLocaleString()} received, ₦${fee.toLocaleString()} 1% funding fee).`,
+            body: fee > 0
+              ? `₦${creditAmount.toLocaleString()} credited to your wallet (₦${amount.toLocaleString()} received, ₦${fee.toLocaleString()} ${feeCfg.percent}% funding fee).`
+              : `₦${creditAmount.toLocaleString()} credited to your wallet.`,
             type: "wallet",
           });
         }
@@ -232,14 +248,27 @@ Deno.serve(async (req) => {
               .single();
 
             if (profile) {
-              const cardCredit = netDeposit(amount);
+              const cardFeeCfg = await getDepositFeeConfig(supabase);
+              const cardFee = computeDepositFee(amount, cardFeeCfg);
+              const cardCredit = computeNetDeposit(amount, cardFeeCfg);
               const { data: newBalance, error: creditError } = await supabase.rpc('credit_wallet', {
                 p_profile_id: profile.id,
                 p_amount: cardCredit
               });
 
               if (!creditError) {
-                console.log(`Card payment atomically credited: ₦${cardCredit} (fee ₦${depositFee(amount)}) for user ${existingTx.user_id}. New balance: ₦${newBalance}`);
+                console.log(`Card payment atomically credited: ₦${cardCredit} (fee ₦${cardFee}) for user ${existingTx.user_id}. New balance: ₦${newBalance}`);
+                await logDepositFee(supabase, {
+                  user_id: existingTx.user_id,
+                  transaction_id: existingTx.id,
+                  reference,
+                  method: "card",
+                  gross_amount: amount,
+                  fee_percent: cardFeeCfg.enabled ? cardFeeCfg.percent : 0,
+                  fee_amount: cardFee,
+                  net_amount: cardCredit,
+                  balance_after: Number(newBalance),
+                });
               }
             }
           }
