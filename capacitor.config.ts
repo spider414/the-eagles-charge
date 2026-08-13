@@ -1,12 +1,18 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 // Production Capacitor configuration.
-// The `server.url` hot-reload block has been removed so store builds
-// load the bundled web assets from `dist/` instead of the sandbox.
+// The app loads the live web build from the production domain, so content
+// and copy changes reach installed devices without a new Play Store release.
+// Only native changes (icons, plugins, permissions) require a rebuild.
 const config: CapacitorConfig = {
   appId: 'app.lovable.theeaglescharge',
   appName: 'HARMIC RECHARGE',
   webDir: 'dist',
+  server: {
+    url: 'https://recharge.harmicglobal.com',
+    cleartext: false,
+    androidScheme: 'https',
+  },
   ios: {
     contentInset: 'always',
   },
