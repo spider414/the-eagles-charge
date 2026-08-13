@@ -42,6 +42,7 @@ import AdminRoles from "./pages/admin/AdminRoles";
 import AdminBilling from "./pages/admin/AdminBilling";
 import AdminBonus from "./pages/admin/AdminBonus";
 import AdminBonusLog from "./pages/admin/AdminBonusLog";
+import AdminDepositFee from "./pages/admin/AdminDepositFee";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -90,6 +91,7 @@ const App = () => {
                     <Route path="billing" element={<AdminBilling />} />
                     <Route path="bonus" element={<AdminBonus />} />
                     <Route path="bonus-log" element={<AdminBonusLog />} />
+                    <Route path="deposit-fee" element={<AdminDepositFee />} />
                     <Route path="*" element={<AdminOverview />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />
