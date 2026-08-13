@@ -194,6 +194,13 @@ const TransactionDetail = () => {
   const { user, profile, isLoading } = useAuth();
   const { toast } = useToast();
   const [transaction, setTransaction] = useState<TransactionData | null>(null);
+  const [feeEntry, setFeeEntry] = useState<{
+    gross_amount: number;
+    fee_percent: number;
+    fee_amount: number;
+    net_amount: number;
+    method: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
@@ -217,6 +224,17 @@ const TransactionDetail = () => {
 
       if (error) throw error;
       setTransaction(data as unknown as TransactionData);
+
+      if (data?.transaction_type === "wallet_topup") {
+        const { data: fee } = await supabase
+          .from("deposit_fee_log")
+          .select("gross_amount, fee_percent, fee_amount, net_amount, method")
+          .eq("transaction_id", data.id)
+          .maybeSingle();
+        setFeeEntry(fee ?? null);
+      } else {
+        setFeeEntry(null);
+      }
     } catch {
       toast({ title: "Error", description: "Transaction not found", variant: "destructive" });
       navigate("/history");
