@@ -19,6 +19,23 @@ export const useDepositFee = (): DepositFeeConfig => {
   useEffect(() => {
     let active = true;
     (async () => {
+      // Public endpoint first (works for the Android shell without a rebuild),
+      // falling back to a direct settings read.
+      try {
+        const { data, error } = await supabase.functions.invoke("deposit-fee", { body: {} });
+        if (!error && data && typeof data.enabled === "boolean") {
+          if (!active) return;
+          setConfig({
+            enabled: data.enabled,
+            percent: Number.isFinite(Number(data.percent)) ? Number(data.percent) : DEFAULTS.percent,
+            loading: false,
+          });
+          return;
+        }
+      } catch (_e) {
+        // ignore and fall back
+      }
+
       const { data } = await supabase
         .from("app_settings")
         .select("deposit_fee_enabled, deposit_fee_percent")
