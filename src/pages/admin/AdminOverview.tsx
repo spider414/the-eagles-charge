@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ActivitySquare, CreditCard, Mail, ShieldCheck, Users } from "lucide-react";
+import { ActivitySquare, CreditCard, Gift, Mail, ShieldCheck, Users } from "lucide-react";
 
 export default function AdminOverview() {
   return (
@@ -52,6 +52,16 @@ export default function AdminOverview() {
         <CardContent className="text-sm text-muted-foreground">
           <Link to="/admin/billing" className="flex items-center gap-2 text-primary hover:underline">
             <CreditCard className="h-4 w-4" /> Paystack payments and credit purchases
+          </Link>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">New user registration bonus</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <Link to="/admin/bonus" className="flex items-center gap-2 text-primary hover:underline">
+            <Gift className="h-4 w-4" /> Turn the signup bonus on/off and set the amount
           </Link>
         </CardContent>
       </Card>

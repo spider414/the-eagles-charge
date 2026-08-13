@@ -40,6 +40,7 @@ import AdminOtp from "./pages/admin/AdminOtp";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminRoles from "./pages/admin/AdminRoles";
 import AdminBilling from "./pages/admin/AdminBilling";
+import AdminBonus from "./pages/admin/AdminBonus";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -86,6 +87,7 @@ const App = () => {
                     <Route path="activity" element={<AdminActivity />} />
                     <Route path="roles" element={<AdminRoles />} />
                     <Route path="billing" element={<AdminBilling />} />
+                    <Route path="bonus" element={<AdminBonus />} />
                     <Route path="*" element={<AdminOverview />} />
                   </Route>
                   <Route path="*" element={<NotFound />} />

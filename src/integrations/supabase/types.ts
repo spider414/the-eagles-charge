@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          created_at: string
+          id: string
+          registration_bonus_amount: number
+          registration_bonus_enabled: boolean
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          registration_bonus_amount?: number
+          registration_bonus_enabled?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          registration_bonus_amount?: number
+          registration_bonus_enabled?: boolean
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_change_requests: {
         Row: {
           attempts: number
