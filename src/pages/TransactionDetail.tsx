@@ -293,6 +293,13 @@ const TransactionDetail = () => {
       ["Balance Before", tx.balance_before != null ? naira(tx.balance_before) : ""],
       ["Balance After", tx.balance_after != null ? naira(tx.balance_after) : ""],
     ];
+    if (isMoneyIn(tx) && feeBreakdown) {
+      rows.push(
+        ["Amount Received", naira(feeBreakdown.gross)],
+        ["Funding Fee", `${naira(feeBreakdown.fee)} (${feeBreakdown.percent}%)`],
+        ["Credited to Wallet", naira(feeBreakdown.net)],
+      );
+    }
     return {
       title: `${getServiceName(tx)} Receipt`,
       reference: generateReference(tx),
