@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useDepositFee } from "@/hooks/useDepositFee";
+import { depositFee, netDeposit } from "@/lib/pricing";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
