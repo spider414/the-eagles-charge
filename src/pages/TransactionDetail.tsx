@@ -203,6 +203,30 @@ const TransactionDetail = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const feeConfig = useDepositFee();
+
+  // Prefer the recorded ledger entry; fall back to live settings for older deposits.
+  const feeBreakdown = (() => {
+    if (!transaction || transaction.transaction_type !== "wallet_topup") return null;
+    if (feeEntry) {
+      return {
+        gross: Number(feeEntry.gross_amount),
+        fee: Number(feeEntry.fee_amount),
+        percent: Number(feeEntry.fee_percent),
+        net: Number(feeEntry.net_amount),
+        logged: true,
+      };
+    }
+    if (feeConfig.loading || !feeConfig.enabled) return null;
+    const gross = Number(transaction.amount);
+    return {
+      gross,
+      fee: depositFee(gross, feeConfig),
+      percent: feeConfig.percent,
+      net: netDeposit(gross, feeConfig),
+      logged: false,
+    };
+  })();
 
   useEffect(() => {
     if (!isLoading && !user) navigate("/auth");
