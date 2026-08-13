@@ -31,6 +31,7 @@ const items = [
   { title: "Billing", url: "/admin/billing", icon: CreditCard },
   { title: "Registration bonus", url: "/admin/bonus", icon: Gift },
   { title: "Deposit fee", url: "/admin/deposit-fee", icon: Percent },
+  { title: "Deposit fee log", url: "/admin/deposit-fee-log", icon: History },
   { title: "Bonus change log", url: "/admin/bonus-log", icon: History },
 ];
 

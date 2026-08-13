@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.signup-bonus]
 verify_jwt = false
+
+[functions.deposit-fee]
+verify_jwt = false
