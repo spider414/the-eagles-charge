@@ -502,6 +502,25 @@ const TransactionDetail = () => {
                   </span>
                 }
               />
+              {feeBreakdown && (
+                <>
+                  <InfoRow label="Amount Received" value={formatCurrency(feeBreakdown.gross)} />
+                  <InfoRow
+                    label={`Funding Fee (${feeBreakdown.percent}%)`}
+                    value={
+                      <span className="font-medium text-destructive">
+                        -{formatCurrency(feeBreakdown.fee)}
+                      </span>
+                    }
+                  />
+                  <InfoRow
+                    label="Credited to Wallet"
+                    value={
+                      <span className="font-bold text-green-600">{formatCurrency(feeBreakdown.net)}</span>
+                    }
+                  />
+                </>
+              )}
               {transaction.balance_before != null && (
                 <InfoRow label="Balance Before" value={`${formatCurrency(transaction.balance_before)}`} />
               )}
