@@ -615,12 +615,26 @@ const WalletTopUp = () => {
               </div>
               <p className="text-xs text-muted-foreground">{t("wallet.minimum")}: {formatCurrency(100)}</p>
               {amount && parseFloat(amount) >= 100 && (
-                <p className="text-xs text-muted-foreground">
-                  1% funding fee: {formatCurrency(depositFee(parseFloat(amount)))} — you receive{" "}
-                  <span className="font-semibold text-foreground">
-                    {formatCurrency(netDeposit(parseFloat(amount)))}
-                  </span>
-                </p>
+                <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">You pay</span>
+                    <span className="font-medium">{formatCurrency(parseFloat(amount))}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">
+                      Funding fee ({feeConfig.enabled ? `${feeConfig.percent}%` : "waived"})
+                    </span>
+                    <span className="font-medium text-destructive">
+                      -{formatCurrency(depositFee(parseFloat(amount), feeConfig))}
+                    </span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-1.5">
+                    <span className="text-muted-foreground">Credited to wallet</span>
+                    <span className="font-bold text-foreground">
+                      {formatCurrency(netDeposit(parseFloat(amount), feeConfig))}
+                    </span>
+                  </div>
+                </div>
               )}
             </div>
 
