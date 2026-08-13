@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSignupBonus } from "@/hooks/useSignupBonus";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Gift, Users, Copy, Share2, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,8 @@ interface ReferralStats {
 const Referrals = () => {
   const navigate = useNavigate();
   const { formatCurrency } = useLanguage();
+  const signupBonus = useSignupBonus();
+  const bonusLabel = signupBonus.enabled ? formatCurrency(signupBonus.amount) : null;
   const { user, profile, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [stats, setStats] = useState<ReferralStats>({ totalReferrals: 0, totalEarnings: 0 });
@@ -125,7 +128,7 @@ const Referrals = () => {
             <p className="text-sm text-primary-foreground/80 mb-4">
               Share your unique referral code. When a friend signs up with it and makes their
               first real wallet deposit (card or bank transfer), you get ₦1,000 credited
-              instantly. The welcome bonus{bonusSuffix} does not count as a deposit.
+              instantly. The{bonusLabel ? ` ${bonusLabel}` : ""} welcome bonus does not count as a deposit.
             </p>
           </CardContent>
         </Card>
@@ -199,7 +202,7 @@ const Referrals = () => {
               <div>
                 <h4 className="font-medium">Friend Signs Up</h4>
                 <p className="text-sm text-muted-foreground">
-                  They create an account using your referral code and get their ₦2,000 welcome bonus
+                  They create an account using your referral code{bonusLabel ? ` and get their ${bonusLabel} welcome bonus` : ""}
                 </p>
               </div>
             </div>
@@ -217,7 +220,7 @@ const Referrals = () => {
             <div className="rounded-lg border border-border bg-muted/50 p-4 text-xs text-muted-foreground space-y-1">
               <p className="font-medium text-foreground">Eligibility rules</p>
               <p>• Paid once per referred friend — on their first qualifying deposit only.</p>
-              <p>• The ₦2,000 welcome bonus is excluded and never triggers a referral payout.</p>
+              <p>• The{bonusLabel ? ` ${bonusLabel}` : ""} welcome bonus is excluded and never triggers a referral payout.</p>
               <p>• The deposit must be a completed wallet top-up (card or virtual account transfer).</p>
               <p>• The referral code must be entered at sign-up; it cannot be added later.</p>
             </div>
