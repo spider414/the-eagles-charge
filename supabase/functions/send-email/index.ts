@@ -464,6 +464,20 @@ function fallbackBranding(): Branding {
 }
 
 function fallbackTemplate(type: string): TemplateCopy {
+  if (type === "admin_new_registration")
+    return {
+      subject: "🆕 New HARMIC RECHARGE registration",
+      intro: "A new user just created an account.",
+      outro: "Open the admin dashboard to review the account.",
+      enabled: true,
+    };
+  if (type === "admin_transaction_failed")
+    return {
+      subject: "❌ Failed transaction alert",
+      intro: "A customer transaction failed and may need attention.",
+      outro: "Check the provider wallet balance and the transaction log in the admin dashboard.",
+      enabled: true,
+    };
   if (type === "welcome")
     return {
       subject: "Welcome to HARMIC RECHARGE 🦅",
