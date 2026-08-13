@@ -1352,11 +1352,13 @@ Deno.serve(async (req) => {
 
       let credited = 0;
       let totalAmount = 0;
+      const reconcileFeeCfg = await getDepositFeeConfig(supabaseAdmin);
 
       for (const t of transfers) {
         const reference = String(t.reference);
         const amount = Number(t.amount) / 100;
-        const amountNet = netDeposit(amount);
+        const feeAmount = computeDepositFee(amount, reconcileFeeCfg);
+        const amountNet = computeNetDeposit(amount, reconcileFeeCfg);
 
         const { data: existing } = await supabaseAdmin
           .from("transactions")
@@ -1376,13 +1378,24 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        await supabaseAdmin.from("transactions").insert({
+        const { data: insertedTx } = await supabaseAdmin.from("transactions").insert({
           user_id: userId,
           transaction_type: "wallet_topup",
           status: "completed",
           amount,
           paystack_reference: reference,
           description: "Bank transfer to virtual account",
+        }).select("id").maybeSingle();
+
+        await logDepositFee(supabaseAdmin, {
+          user_id: userId,
+          transaction_id: insertedTx?.id ?? null,
+          reference,
+          method: "reconciliation",
+          gross_amount: amount,
+          fee_percent: reconcileFeeCfg.enabled ? reconcileFeeCfg.percent : 0,
+          fee_amount: feeAmount,
+          net_amount: amountNet,
         });
 
         credited += 1;
