@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency, formatDateTime } from "@/lib/format";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const ACTION = "registration_bonus_setting_changed";
 
@@ -30,6 +30,7 @@ const bool = (v: unknown) => (typeof v === "boolean" ? v : null);
 const num = (v: unknown) => (v === null || v === undefined || v === "" ? null : Number(v));
 
 export default function AdminBonusLog() {
+  const { formatCurrency, formatDateTime } = useLanguage();
   const [rows, setRows] = useState<Change[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
