@@ -4,11 +4,16 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { assertEquals, assert } from "https://deno.land/std@0.224.0/assert/mod.ts";
 
-const admin = createClient(
-  Deno.env.get("SUPABASE_URL")!,
-  Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  { auth: { persistSession: false } },
-);
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
+const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+// These tests write to the real project, so they only run where the service
+// role key is available (CI / `supabase functions test` with secrets loaded).
+const ignore = !SUPABASE_URL || !SERVICE_KEY;
+
+const admin = ignore
+  ? (null as never)
+  : createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
 const rnd = () => Math.random().toString(36).slice(2, 10);
 
@@ -72,7 +77,7 @@ async function cleanup(userIds: string[]) {
   }
 }
 
-Deno.test("registration bonus ON credits the configured amount exactly once", async () => {
+Deno.test({ ignore, name: "registration bonus ON credits the configured amount exactly once" }, async () => {
   const settings = await snapshotSettings();
   const user = await createUser();
   try {
@@ -89,7 +94,7 @@ Deno.test("registration bonus ON credits the configured amount exactly once", as
   }
 });
 
-Deno.test("registration bonus OFF credits nothing", async () => {
+Deno.test({ ignore, name: "registration bonus OFF credits nothing" }, async () => {
   const settings = await snapshotSettings();
   const user = await createUser();
   try {
@@ -104,7 +109,7 @@ Deno.test("registration bonus OFF credits nothing", async () => {
   }
 });
 
-Deno.test("bonus is idempotent - a second profile insert never pays twice", async () => {
+Deno.test({ ignore, name: "bonus is idempotent - a second profile insert never pays twice" }, async () => {
   const settings = await snapshotSettings();
   const user = await createUser();
   try {
@@ -124,7 +129,7 @@ Deno.test("bonus is idempotent - a second profile insert never pays twice", asyn
   }
 });
 
-Deno.test("referral system stays independent of the welcome bonus", async () => {
+Deno.test({ ignore, name: "referral system stays independent of the welcome bonus" }, async () => {
   const settings = await snapshotSettings();
   const referrer = await createUser();
   const referred = await createUser();
