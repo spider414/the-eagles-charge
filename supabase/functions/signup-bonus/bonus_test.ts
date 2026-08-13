@@ -163,7 +163,6 @@ Deno.test("referral system stays independent of the welcome bonus", async () => 
     assert((await balance(referrer.id)) === referrerStart + 1000);
   } finally {
     await setBonus(settings.id, settings.registration_bonus_enabled, settings.registration_bonus_amount);
-    await admin.from("referral_rewards").delete().in("referrer_id", []).catch?.(() => {});
     await cleanup([referred.id, referrer.id]);
   }
 });
