@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { logAdminActivity } from "../_shared/admin.ts";
+import { notifyAdminTransactionFailed } from "../_shared/notify-admin.ts";
+
+const serviceClient = () =>
+  createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -369,6 +373,12 @@ Deno.serve(async (req) => {
           })
           .eq("id", transaction_id);
 
+        await notifyAdminTransactionFailed(
+          serviceClient(),
+          transaction_id,
+          error instanceof Error ? error.message : "Unknown error",
+        );
+
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -429,6 +439,12 @@ Deno.serve(async (req) => {
             api_response: { error: error instanceof Error ? error.message : "Unknown error" },
           })
           .eq("id", transaction_id);
+
+        await notifyAdminTransactionFailed(
+          serviceClient(),
+          transaction_id,
+          error instanceof Error ? error.message : "Unknown error",
+        );
 
         return new Response(
           JSON.stringify({ 
@@ -494,6 +510,12 @@ Deno.serve(async (req) => {
           })
           .eq("id", transaction_id);
 
+        await notifyAdminTransactionFailed(
+          serviceClient(),
+          transaction_id,
+          error instanceof Error ? error.message : "Unknown error",
+        );
+
         return new Response(
           JSON.stringify({ 
             success: false, 
@@ -554,6 +576,12 @@ Deno.serve(async (req) => {
             api_response: { error: error instanceof Error ? error.message : "Unknown error" },
           })
           .eq("id", transaction_id);
+
+        await notifyAdminTransactionFailed(
+          serviceClient(),
+          transaction_id,
+          error instanceof Error ? error.message : "Unknown error",
+        );
 
         return new Response(
           JSON.stringify({ 
@@ -629,6 +657,12 @@ Deno.serve(async (req) => {
             api_response: { error: error instanceof Error ? error.message : "Unknown error" },
           })
           .eq("id", transaction_id);
+
+        await notifyAdminTransactionFailed(
+          serviceClient(),
+          transaction_id,
+          error instanceof Error ? error.message : "Unknown error",
+        );
 
         return new Response(
           JSON.stringify({

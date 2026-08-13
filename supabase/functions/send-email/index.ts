@@ -122,7 +122,33 @@ interface EmailVerificationPayload {
   expires_minutes?: number;
 }
 
+interface AdminNewRegistrationPayload {
+  type: "admin_new_registration";
+  to: string;
+  user_id: string;
+  phone_number?: string;
+  full_name?: string | null;
+  email?: string | null;
+  referral_code?: string | null;
+}
+
+interface AdminTransactionFailedPayload {
+  type: "admin_transaction_failed";
+  to: string;
+  transaction_id: string;
+  user_id: string;
+  user_name?: string | null;
+  user_phone?: string | null;
+  user_email?: string | null;
+  transaction_type: string;
+  amount: number;
+  network?: string | null;
+  reason?: string;
+}
+
 type Payload =
+  | AdminNewRegistrationPayload
+  | AdminTransactionFailedPayload
   | WelcomePayload
   | ReceiptPayload
   | PasswordResetPayload
@@ -183,6 +209,59 @@ const welcomeHtml = (b: Branding, t: TemplateCopy, name: string | undefined, uns
     <p style="margin-top:24px;font-size:15px;">Cheers,<br/><strong>${escape(b.brand_name)} Team</strong></p>
   `,
     unsubUrl,
+  );
+
+const kvTable = (rows: Array<[string, unknown]>) => `
+  <table style="width:100%;border-collapse:collapse;margin:16px 0;background:#f8fafc;border-radius:8px;">
+    ${rows
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(
+        ([k, v]) =>
+          `<tr><td style="padding:11px 16px;color:#64748b;font-size:14px;">${escape(k)}</td><td style="padding:11px 16px;text-align:right;font-weight:600;font-size:14px;word-break:break-all;">${escape(v)}</td></tr>`,
+      )
+      .join("")}
+  </table>`;
+
+const adminNewRegistrationHtml = (b: Branding, t: TemplateCopy, p: AdminNewRegistrationPayload) =>
+  shell(
+    b,
+    "New user registration",
+    `
+    <p style="font-size:15px;line-height:1.6;">${escape(t.intro)}</p>
+    ${kvTable([
+      ["Name", p.full_name || "—"],
+      ["Phone", p.phone_number || "—"],
+      ["Contact email", p.email || "—"],
+      ["Referral code used", p.referral_code || "—"],
+      ["User ID", p.user_id],
+      ["Registered", formatDateNG(new Date())],
+    ])}
+    <p style="font-size:14px;line-height:1.6;color:#475569;">${escape(t.outro)}</p>
+  `,
+  );
+
+const adminTransactionFailedHtml = (b: Branding, t: TemplateCopy, p: AdminTransactionFailedPayload) =>
+  shell(
+    b,
+    "Transaction failed",
+    `
+    <p style="font-size:15px;line-height:1.6;">${escape(t.intro)}</p>
+    <div style="background:#fef2f2;border-left:4px solid #dc2626;padding:14px 16px;border-radius:6px;margin:16px 0;">
+      <p style="margin:0;font-size:14px;line-height:1.6;color:#991b1b;"><strong>Reason:</strong> ${escape(p.reason || "Unknown error")}</p>
+    </div>
+    ${kvTable([
+      ["Service", prettyType(p.transaction_type)],
+      ["Amount", ngn(p.amount)],
+      ["Customer", p.user_name || "—"],
+      ["Phone", p.user_phone || "—"],
+      ["Email", p.user_email || "—"],
+      ["Network", p.network ? String(p.network).toUpperCase() : undefined],
+      ["Transaction ID", p.transaction_id],
+      ["User ID", p.user_id],
+      ["Failed at", formatDateNG(new Date())],
+    ])}
+    <p style="font-size:14px;line-height:1.6;color:#475569;">${escape(t.outro)}</p>
+  `,
   );
 
 const prettyType = (t: string) =>
@@ -385,6 +464,20 @@ function fallbackBranding(): Branding {
 }
 
 function fallbackTemplate(type: string): TemplateCopy {
+  if (type === "admin_new_registration")
+    return {
+      subject: "🆕 New HARMIC RECHARGE registration",
+      intro: "A new user just created an account.",
+      outro: "Open the admin dashboard to review the account.",
+      enabled: true,
+    };
+  if (type === "admin_transaction_failed")
+    return {
+      subject: "❌ Failed transaction alert",
+      intro: "A customer transaction failed and may need attention.",
+      outro: "Check the provider wallet balance and the transaction log in the admin dashboard.",
+      enabled: true,
+    };
   if (type === "welcome")
     return {
       subject: "Welcome to HARMIC RECHARGE 🦅",
@@ -565,7 +658,13 @@ Deno.serve(async (req) => {
     let subject = tpl.subject;
     let html = "";
     let reference: string | undefined;
-    if (payload.type === "welcome") {
+    if (payload.type === "admin_new_registration") {
+      html = adminNewRegistrationHtml(branding, tpl, payload);
+    } else if (payload.type === "admin_transaction_failed") {
+      subject = `${tpl.subject} • ${prettyType(payload.transaction_type)} • ${ngn(payload.amount)}`;
+      html = adminTransactionFailedHtml(branding, tpl, payload);
+      reference = payload.transaction_id;
+    } else if (payload.type === "welcome") {
       html = welcomeHtml(branding, tpl, payload.name, unsubUrl);
     } else if (payload.type === "receipt") {
       subject = `${tpl.subject} • ${prettyType(payload.transaction_type)} • ${ngn(payload.amount)}`;

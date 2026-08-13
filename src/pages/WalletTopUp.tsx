@@ -13,6 +13,7 @@ import { isValidEmail, getEmailSuggestion } from "@/utils/emailUtils";
 import BrandLogo from "@/components/BrandLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useSignupBonus } from "@/hooks/useSignupBonus";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
@@ -30,6 +31,12 @@ const WalletTopUp = () => {
   const { initializePayment, isLoading: isPaymentLoading } = usePaystackPopup();
   const { toast } = useToast();
   const { t, formatCurrency } = useLanguage();
+  const signupBonus = useSignupBonus();
+  // Bonus amount comes from the backend so no screen hard-codes a figure.
+  const bonusRule = t("wallet.referralRule2").replace(
+    "{bonus}",
+    signupBonus.enabled ? formatCurrency(signupBonus.amount) : "",
+  );
   const [amount, setAmount] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
   const [dvaDetails, setDvaDetails] = useState<DVADetails | null>(null);
@@ -694,7 +701,7 @@ const WalletTopUp = () => {
           </CardHeader>
           <CardContent className="space-y-1 text-xs text-muted-foreground">
             <p>• {t("wallet.referralRule1")}</p>
-            <p>• {t("wallet.referralRule2")}</p>
+            <p>• {bonusRule}</p>
             <p>• {t("wallet.referralRule3")}</p>
           </CardContent>
         </Card>
