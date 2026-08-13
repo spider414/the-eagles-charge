@@ -148,6 +148,7 @@ export type Database = {
       }
       email_settings: {
         Row: {
+          admin_notify_email: string
           brand_name: string
           created_at: string
           dark_color: string
@@ -162,6 +163,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          admin_notify_email?: string
           brand_name?: string
           created_at?: string
           dark_color?: string
@@ -176,6 +178,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          admin_notify_email?: string
           brand_name?: string
           created_at?: string
           dark_color?: string
