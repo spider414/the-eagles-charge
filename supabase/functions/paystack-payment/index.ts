@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const DEPOSIT_FEE_RATE = 0.01;
+const depositFee = (amount: number) => Math.ceil((amount || 0) * DEPOSIT_FEE_RATE);
+const netDeposit = (amount: number) => Math.max(0, (amount || 0) - depositFee(amount));
+
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -336,7 +341,8 @@ Deno.serve(async (req) => {
 
       // Handle wallet top-up - credit wallet after successful payment using atomic function
       if (transactionStatus === "completed" && existingTx?.transaction_type === "wallet_topup") {
-        const amountToCredit = paystackData.data.amount / 100; // Convert from kobo to naira
+        const grossAmount = paystackData.data.amount / 100; // Convert from kobo to naira
+        const amountToCredit = netDeposit(grossAmount); // 1% funding fee deducted
         
         // Get current profile to get ID for credit function
         const { data: userProfile } = await supabase
@@ -1334,6 +1340,7 @@ Deno.serve(async (req) => {
       for (const t of transfers) {
         const reference = String(t.reference);
         const amount = Number(t.amount) / 100;
+        const amountNet = netDeposit(amount);
 
         const { data: existing } = await supabaseAdmin
           .from("transactions")
@@ -1345,7 +1352,7 @@ Deno.serve(async (req) => {
 
         const { error: creditError } = await supabaseAdmin.rpc("credit_wallet", {
           p_profile_id: profile.id,
-          p_amount: amount,
+          p_amount: amountNet,
         });
 
         if (creditError) {
@@ -1363,7 +1370,7 @@ Deno.serve(async (req) => {
         });
 
         credited += 1;
-        totalAmount += amount;
+        totalAmount += amountNet;
       }
 
       return new Response(

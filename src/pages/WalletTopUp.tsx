@@ -14,6 +14,7 @@ import BrandLogo from "@/components/BrandLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useSignupBonus } from "@/hooks/useSignupBonus";
+import { depositFee, netDeposit } from "@/lib/pricing";
 
 const quickAmounts = [500, 1000, 2000, 5000, 10000, 20000];
 
@@ -611,6 +612,14 @@ const WalletTopUp = () => {
                 />
               </div>
               <p className="text-xs text-muted-foreground">{t("wallet.minimum")}: {formatCurrency(100)}</p>
+              {amount && parseFloat(amount) >= 100 && (
+                <p className="text-xs text-muted-foreground">
+                  1% funding fee: {formatCurrency(depositFee(parseFloat(amount)))} — you receive{" "}
+                  <span className="font-semibold text-foreground">
+                    {formatCurrency(netDeposit(parseFloat(amount)))}
+                  </span>
+                </p>
+              )}
             </div>
 
             {/* Email Input for phone-based accounts */}
