@@ -1,0 +1,114 @@
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+export default function AdminBonus() {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [id, setId] = useState<string | null>(null);
+  const [enabled, setEnabled] = useState(true);
+  const [amount, setAmount] = useState("2000");
+
+  const load = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("app_settings")
+      .select("id, registration_bonus_enabled, registration_bonus_amount")
+      .limit(1)
+      .maybeSingle();
+    if (error) {
+      toast({ title: "Could not load settings", description: error.message, variant: "destructive" });
+    } else if (data) {
+      setId(data.id);
+      setEnabled(data.registration_bonus_enabled);
+      setAmount(String(Number(data.registration_bonus_amount)));
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
+
+  const save = async () => {
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value < 0) {
+      toast({ title: "Invalid amount", description: "Enter a valid bonus amount.", variant: "destructive" });
+      return;
+    }
+    if (!id) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("app_settings")
+      .update({ registration_bonus_enabled: enabled, registration_bonus_amount: value })
+      .eq("id", id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Saved", description: "Registration bonus settings updated." });
+    load();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <CardTitle className="text-base">New User Registration Bonus</CardTitle>
+            <CardDescription>Applies only to accounts created after you save.</CardDescription>
+          </div>
+          {!loading && (
+            <Badge variant={enabled ? "default" : "secondary"}>{enabled ? "ON" : "OFF"}</Badge>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between rounded-md border p-3">
+              <div>
+                <Label htmlFor="bonus-toggle">Registration Bonus</Label>
+                <p className="text-xs text-muted-foreground">
+                  {enabled ? "New users receive the bonus below." : "New users receive ₦0."}
+                </p>
+              </div>
+              <Switch id="bonus-toggle" checked={enabled} onCheckedChange={setEnabled} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="bonus-amount">Bonus Amount (₦)</Label>
+              <Input
+                id="bonus-amount"
+                type="number"
+                min={0}
+                step={50}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                disabled={!enabled}
+              />
+            </div>
+            <Button onClick={save} disabled={saving}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save Changes
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Referral bonuses are separate and are not affected by this setting.
+            </p>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
