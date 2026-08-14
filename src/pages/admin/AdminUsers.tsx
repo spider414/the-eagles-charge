@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Search, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { formatNaira } from "@/lib/format";
+const formatNaira = (v: number) =>
+  "\u20a6" + Number(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 type Row = {
   id: string;
