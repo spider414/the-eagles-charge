@@ -39,6 +39,8 @@ import AdminEmail from "./pages/admin/AdminEmail";
 import AdminOtp from "./pages/admin/AdminOtp";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminRoles from "./pages/admin/AdminRoles";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminBilling from "./pages/admin/AdminBilling";
 import AdminBonus from "./pages/admin/AdminBonus";
 import AdminBonusLog from "./pages/admin/AdminBonusLog";
@@ -89,6 +91,8 @@ const App = () => {
                     <Route path="otp" element={<AdminOtp />} />
                     <Route path="activity" element={<AdminActivity />} />
                     <Route path="roles" element={<AdminRoles />} />
+                    <Route path="users" element={<AdminUsers />} />
+                    <Route path="users/:id" element={<AdminUserDetail />} />
                     <Route path="billing" element={<AdminBilling />} />
                     <Route path="bonus" element={<AdminBonus />} />
                     <Route path="bonus-log" element={<AdminBonusLog />} />
