@@ -1,10 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ActivitySquare, CreditCard, Gift, Mail, ShieldCheck, Users } from "lucide-react";
+import { ActivitySquare, CreditCard, Gift, Mail, ShieldCheck, UserCog, Users } from "lucide-react";
 
 export default function AdminOverview() {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Users</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <Link to="/admin/users" className="flex items-center gap-2 text-primary hover:underline">
+            <Users className="h-4 w-4" /> View registered users, balances and top up wallets
+          </Link>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Email branding & logs</CardTitle>
@@ -41,7 +51,7 @@ export default function AdminOverview() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground">
           <Link to="/admin/roles" className="flex items-center gap-2 text-primary hover:underline">
-            <Users className="h-4 w-4" /> Grant or revoke admin access
+            <UserCog className="h-4 w-4" /> Grant or revoke admin access
           </Link>
         </CardContent>
       </Card>
