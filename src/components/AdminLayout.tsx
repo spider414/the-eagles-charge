@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
-import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, Loader2, LogIn, LogOut, Mail, Percent, ShieldAlert, ShieldCheck, Users, XCircle, History } from "lucide-react";
+import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, Loader2, LogIn, LogOut, Mail, Percent, ShieldAlert, ShieldCheck, UserCog, Users, XCircle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,10 +24,11 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const items = [
   { title: "Overview", url: "/admin", icon: LayoutDashboard, end: true },
+  { title: "Users", url: "/admin/users", icon: Users },
   { title: "Email branding", url: "/admin/email", icon: Mail },
   { title: "OTP audit log", url: "/admin/otp", icon: ShieldCheck },
   { title: "Activity log", url: "/admin/activity", icon: ActivitySquare },
-  { title: "Roles", url: "/admin/roles", icon: Users },
+  { title: "Roles", url: "/admin/roles", icon: UserCog },
   { title: "Billing", url: "/admin/billing", icon: CreditCard },
   { title: "Registration bonus", url: "/admin/bonus", icon: Gift },
   { title: "Deposit fee", url: "/admin/deposit-fee", icon: Percent },
