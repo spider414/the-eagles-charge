@@ -118,5 +118,6 @@ export const useWalletPayment = () => {
     canPayWithWallet,
     isLoading,
     walletBalance: profile?.wallet_balance || 0,
+    gate,
   };
 };
