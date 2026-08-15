@@ -75,9 +75,22 @@ export default function AdminProviderBalance() {
             )}
           </>
         )}
-        <Button asChild variant="outline" size="sm" className="w-full">
-          <a href="https://cheapdatahub.com/" target="_blank" rel="noopener noreferrer">
-            <ExternalLink className="mr-2 h-4 w-4" /> Fund CheapDataHub wallet
+        <Button asChild size="sm" variant={isLow ? "destructive" : "default"} className="w-full">
+          <a
+            href="https://www.cheapdatahub.ng/user/fund-wallet/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <ExternalLink className="mr-2 h-4 w-4" /> Top up CheapDataHub wallet
+          </a>
+        </Button>
+        <Button asChild variant="ghost" size="sm" className="w-full">
+          <a
+            href="https://www.cheapdatahub.ng/user/wallet/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View wallet history
           </a>
         </Button>
       </CardContent>
