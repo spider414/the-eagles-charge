@@ -1,4 +1,5 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const API_BASE = 'https://checkmyninbvn.com.ng/api';
 
