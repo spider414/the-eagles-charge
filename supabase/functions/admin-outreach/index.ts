@@ -169,6 +169,61 @@ Deno.serve(async (req) => {
     }
 
     if (action === "recovery") {
+      // handled below
+    }
+
+    if (action === "verify_reminder") {
+      const {
+        profile_id = null,
+        channel = "push",
+        title = "Verify your email to continue",
+        message =
+          "Your email address is not verified yet, so recharges and subscriptions are blocked. Open Settings > Email and verify your email to start transacting again.",
+      } = body ?? {};
+
+      let query = admin
+        .from("profiles")
+        .select("id, user_id, full_name, phone_number, contact_email, email")
+        .eq("contact_email_verified", false);
+      if (profile_id) query = query.eq("id", profile_id);
+      const { data: list, error } = await query.limit(2000);
+      if (error) return json({ error: error.message }, 400);
+
+      const recipients = (list ?? []) as Recipient[];
+      if (recipients.length === 0) {
+        return json({ error: "No unverified users to remind" }, 400);
+      }
+
+      let notified = 0;
+      let messaged = 0;
+      for (const r of recipients) {
+        const { error: insertError } = await admin.from("notifications").insert({
+          user_id: r.user_id,
+          title,
+          body: message,
+          type: "account",
+        });
+        if (!insertError) notified++;
+        await admin.functions
+          .invoke("send-notification", { body: { user_id: r.user_id, title, body: message } })
+          .catch(() => null);
+        if (channel !== "push") {
+          const sent = await deliver(admin, r, { channel, subject: title, message, promo: false });
+          if (sent) messaged++;
+        }
+        await admin.from("recovery_actions").insert({
+          user_id: r.user_id,
+          actor_user_id: gate.userId,
+          action: "verify_email_reminder",
+          channel,
+          message,
+        });
+      }
+
+      return json({ success: true, recipients: recipients.length, notified, messaged });
+    }
+
+    if (action === "recovery") {
       const {
         profile_id,
         transaction_id = null,
