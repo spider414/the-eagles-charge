@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getDeviceFingerprint } from "@/lib/deviceId";
 
 interface Profile {
   id: string;
@@ -189,7 +190,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // Create the account server-side, pre-confirmed, so no confirmation email is needed.
     const { data: fnData, error: fnError } = await supabase.functions.invoke("phone-signup", {
-      body: { phone_number: digits, password, full_name: fullName || null },
+      body: {
+        phone_number: digits,
+        password,
+        full_name: fullName || null,
+        device_fingerprint: getDeviceFingerprint(),
+      },
     });
 
     const apiError = (fnData as { error?: string } | null)?.error;
