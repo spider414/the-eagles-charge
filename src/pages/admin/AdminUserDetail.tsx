@@ -188,10 +188,6 @@ export default function AdminUserDetail() {
       toast({ title: "Enter a message", variant: "destructive" });
       return;
     }
-    if (!winMessage.trim()) {
-      toast({ title: "Enter a message", variant: "destructive" });
-      return;
-    }
     setWinBusy(true);
     const { data, error } = await supabase.functions.invoke("admin-outreach", {
       body: {
