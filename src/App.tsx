@@ -45,6 +45,9 @@ import AdminUserDetail from "./pages/admin/AdminUserDetail";
 import AdminBilling from "./pages/admin/AdminBilling";
 import AdminBonus from "./pages/admin/AdminBonus";
 import AdminBonusLog from "./pages/admin/AdminBonusLog";
+import AdminFeatureFlags from "./pages/admin/AdminFeatureFlags";
+import AdminSettingsLog from "./pages/admin/AdminSettingsLog";
+import { AppSettingsProvider } from "./hooks/useAppSettings";
 import AdminDepositFee from "./pages/admin/AdminDepositFee";
 import AdminDepositFeeLog from "./pages/admin/AdminDepositFeeLog";
 import AdminReconcile from "./pages/admin/AdminReconcile";
@@ -59,6 +62,7 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <LanguageProvider>
       <AuthProvider>
+        <AppSettingsProvider>
         <WalletNotificationProvider>
           <TooltipProvider>
             <Toaster />
@@ -106,6 +110,8 @@ const App = () => {
                     <Route path="verification" element={<AdminVerification />} />
                     <Route path="bonus" element={<AdminBonus />} />
                     <Route path="bonus-log" element={<AdminBonusLog />} />
+                    <Route path="feature-flags" element={<AdminFeatureFlags />} />
+                    <Route path="settings-log" element={<AdminSettingsLog />} />
                     <Route path="deposit-fee" element={<AdminDepositFee />} />
                     <Route path="deposit-fee-log" element={<AdminDepositFeeLog />} />
                     <Route path="*" element={<AdminOverview />} />
@@ -116,6 +122,7 @@ const App = () => {
             </BrowserRouter>
           </TooltipProvider>
         </WalletNotificationProvider>
+        </AppSettingsProvider>
       </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
