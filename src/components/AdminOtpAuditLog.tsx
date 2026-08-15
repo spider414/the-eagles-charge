@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, RefreshCw, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import RecordDetailDialog from "@/components/admin/RecordDetailDialog";
 
 type AuditRow = {
   id: string;
@@ -13,6 +14,7 @@ type AuditRow = {
   phone_hint: string | null;
   purpose: string | null;
   reason: string | null;
+  metadata?: unknown;
   created_at: string;
 };
 
@@ -27,6 +29,7 @@ export default function AdminOtpAuditLog() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [detail, setDetail] = useState<AuditRow | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -85,7 +88,11 @@ export default function AdminOtpAuditLog() {
           <p className="text-sm text-muted-foreground">No OTP events recorded yet.</p>
         )}
         {rows.map((row) => (
-          <div key={row.id} className="rounded-md border p-3 text-sm">
+          <button
+            key={row.id}
+            onClick={() => setDetail(row)}
+            className="w-full rounded-md border p-3 text-left text-sm hover:bg-muted/50"
+          >
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant={
@@ -107,9 +114,31 @@ export default function AdminOtpAuditLog() {
               {row.phone_hint || "***"} · {row.phone_hash.slice(0, 12)}…
             </p>
             {row.reason && <p className="mt-1 break-words text-xs">{row.reason}</p>}
-          </div>
+          </button>
         ))}
       </CardContent>
+      <RecordDetailDialog
+        open={!!detail}
+        onOpenChange={(o) => !o && setDetail(null)}
+        title={detail ? EVENT_LABELS[detail.event_type] ?? detail.event_type : ""}
+        description={detail ? new Date(detail.created_at).toLocaleString() : undefined}
+        raw={detail}
+        fields={
+          detail
+            ? [
+                { label: "Event", value: EVENT_LABELS[detail.event_type] ?? detail.event_type },
+                { label: "Outcome", value: detail.event_type === "verify_failure" ? "Failed" : detail.event_type === "verify_success" ? "Verified" : "Code sent" },
+                { label: "Purpose", value: detail.purpose },
+                { label: "Phone hint", value: detail.phone_hint },
+                { label: "Phone hash", value: detail.phone_hash },
+                { label: "Reason", value: detail.reason },
+                { label: "Metadata", value: detail.metadata },
+                { label: "Recorded at", value: new Date(detail.created_at).toLocaleString() },
+                { label: "Log id", value: detail.id },
+              ]
+            : []
+        }
+      />
     </Card>
   );
 }

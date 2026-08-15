@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import RecordDetailDialog from "@/components/admin/RecordDetailDialog";
 
 type Tx = {
   id: string;
@@ -33,6 +34,7 @@ export default function AdminBilling() {
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("paystack");
   const [status, setStatus] = useState<(typeof STATUSES)[number]>("all");
   const [q, setQ] = useState("");
+  const [detail, setDetail] = useState<Tx | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -147,7 +149,11 @@ export default function AdminBilling() {
           ) : (
             <div className="space-y-2">
               {rows.map((t) => (
-                <div key={t.id} className="rounded-md border border-border p-2.5 text-xs">
+                <button
+                  key={t.id}
+                  onClick={() => setDetail(t)}
+                  className="w-full rounded-md border border-border p-2.5 text-left text-xs hover:bg-muted/50"
+                >
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium">{ngn(Number(t.amount))}</span>
                     <Badge variant={t.status === "completed" ? "secondary" : "outline"} className="capitalize">
@@ -162,12 +168,34 @@ export default function AdminBilling() {
                     {t.paystack_reference ? ` · ref ${t.paystack_reference}` : ""}
                   </p>
                   <p className="break-all text-muted-foreground">user: {t.user_id}</p>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <RecordDetailDialog
+        open={!!detail}
+        onOpenChange={(o) => !o && setDetail(null)}
+        title={detail ? `${ngn(Number(detail.amount))} · ${detail.status}` : ""}
+        description={detail ? new Date(detail.created_at).toLocaleString() : undefined}
+        raw={detail}
+        fields={
+          detail
+            ? [
+                { label: "Amount", value: ngn(Number(detail.amount)) },
+                { label: "Status", value: detail.status },
+                { label: "Type", value: detail.transaction_type },
+                { label: "Description", value: detail.description },
+                { label: "Paystack reference", value: detail.paystack_reference },
+                { label: "User id", value: detail.user_id },
+                { label: "Transaction id", value: detail.id },
+                { label: "Created", value: new Date(detail.created_at).toLocaleString() },
+              ]
+            : []
+        }
+      />
     </div>
   );
 }
