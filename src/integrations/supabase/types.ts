@@ -95,6 +95,27 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_scopes: {
+        Row: {
+          created_at: string
+          id: string
+          scope: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          scope: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          scope?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           bonus_popup_enabled: boolean
@@ -979,6 +1000,10 @@ export type Database = {
         Returns: number
       }
       admin_exists: { Args: never; Returns: boolean }
+      admin_set_scopes: {
+        Args: { _scopes: string[]; _user_id: string }
+        Returns: undefined
+      }
       can_transact: {
         Args: { _user_id: string }
         Returns: {
@@ -1000,6 +1025,10 @@ export type Database = {
         }[]
       }
       generate_referral_code: { Args: never; Returns: string }
+      has_admin_scope: {
+        Args: { _scope: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1007,6 +1036,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
       resolve_referral_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
