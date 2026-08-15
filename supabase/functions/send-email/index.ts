@@ -39,6 +39,7 @@ const NON_ESSENTIAL: Record<string, keyof {
   email_product_updates_opt_in: boolean;
 }> = {
   welcome: "email_marketing_opt_in",
+  admin_promo: "email_promotions_opt_in",
 };
 
 const ngn = (n: number) =>
