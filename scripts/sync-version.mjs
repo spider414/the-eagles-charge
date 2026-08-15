@@ -24,6 +24,8 @@ const pkg = JSON.parse(readFileSync(pkgPath, "utf8"));
 
 const version = process.env.APP_VERSION || pkg.version || "1.0.0";
 const build = String(process.env.APP_BUILD || process.env.GITHUB_RUN_NUMBER || "1");
+// single source of truth for the native package / bundle identifier
+const APP_ID = process.env.APP_ID || "com.FkOxDWUKYCSg.natively";
 
 // keep package.json in sync (only version, not build)
 if (pkg.version !== version) {
