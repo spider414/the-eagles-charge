@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
-import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, LifeBuoy, Loader2, LogIn, LogOut, Mail, Megaphone, Percent, Scale, ScanFace, ShieldAlert, ShieldCheck, UserCog, Users, XCircle, History } from "lucide-react";
+import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, LifeBuoy, Loader2, LogIn, LogOut, Mail, Megaphone, Percent, Scale, ScanFace, ShieldAlert, ShieldCheck, ToggleLeft, UserCog, Users, XCircle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -39,6 +39,8 @@ const items = [
   { title: "Deposit fee", url: "/admin/deposit-fee", icon: Percent, scope: "finance" },
   { title: "Deposit fee log", url: "/admin/deposit-fee-log", icon: History, scope: "finance" },
   { title: "Bonus change log", url: "/admin/bonus-log", icon: History, scope: "logs" },
+  { title: "Feature flags", url: "/admin/feature-flags", icon: ToggleLeft, scope: "super" },
+  { title: "Settings change log", url: "/admin/settings-log", icon: History, scope: "logs" },
 ];
 
 function AdminSidebar() {
