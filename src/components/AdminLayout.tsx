@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
-import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, Loader2, LogIn, LogOut, Mail, Percent, ShieldAlert, ShieldCheck, UserCog, Users, XCircle, History } from "lucide-react";
+import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, Loader2, LogIn, LogOut, Mail, Percent, Scale, ShieldAlert, ShieldCheck, UserCog, Users, XCircle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -30,6 +30,7 @@ const items = [
   { title: "Activity log", url: "/admin/activity", icon: ActivitySquare },
   { title: "Roles", url: "/admin/roles", icon: UserCog },
   { title: "Billing", url: "/admin/billing", icon: CreditCard },
+  { title: "Reconciliation", url: "/admin/reconcile", icon: Scale },
   { title: "Registration bonus", url: "/admin/bonus", icon: Gift },
   { title: "Deposit fee", url: "/admin/deposit-fee", icon: Percent },
   { title: "Deposit fee log", url: "/admin/deposit-fee-log", icon: History },
