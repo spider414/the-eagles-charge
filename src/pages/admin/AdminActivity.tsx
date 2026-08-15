@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import RecordDetailDialog from "@/components/admin/RecordDetailDialog";
 
 type Entry = {
   id: string;
@@ -14,6 +15,7 @@ type Entry = {
   actor: string | null;
   target: string | null;
   detail: string;
+  raw: Record<string, unknown>;
 };
 
 const SOURCES: { key: "all" | Entry["source"]; label: string }[] = [
@@ -28,6 +30,7 @@ export default function AdminActivity() {
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<"all" | Entry["source"]>("all");
   const [q, setQ] = useState("");
+  const [detail, setDetail] = useState<Entry | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -46,6 +49,7 @@ export default function AdminActivity() {
         actor: r.actor_user_id,
         target: r.target_user_id,
         detail: JSON.stringify(r.details ?? {}),
+        raw: r as unknown as Record<string, unknown>,
       })),
       ...(emails.data ?? []).map((r) => ({
         id: `email-${r.id}`,
@@ -55,6 +59,7 @@ export default function AdminActivity() {
         actor: null,
         target: r.recipient_email,
         detail: [r.template_type, r.subject, r.skipped_reason, r.error_message].filter(Boolean).join(" · "),
+        raw: r as unknown as Record<string, unknown>,
       })),
       ...(otps.data ?? []).map((r) => ({
         id: `otp-${r.id}`,
@@ -64,6 +69,7 @@ export default function AdminActivity() {
         actor: null,
         target: r.phone_hint ?? r.phone_hash.slice(0, 10),
         detail: [r.purpose, r.reason].filter(Boolean).join(" · "),
+        raw: r as unknown as Record<string, unknown>,
       })),
     ].sort((a, b) => (a.at < b.at ? 1 : -1));
 
