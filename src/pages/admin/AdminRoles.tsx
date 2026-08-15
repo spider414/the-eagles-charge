@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, ShieldCheck, ShieldOff, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Loader2, ShieldCheck, ShieldOff, UserPlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,38 @@ export default function AdminRoles() {
   const [target, setTarget] = useState<Row | null>(null);
   const [draft, setDraft] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ full_name: "", phone_number: "", contact_email: "", password: "" });
+  const [formScopes, setFormScopes] = useState<string[]>(["users"]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  const toggleFormScope = (key: string, checked: boolean) => {
+    setFormScopes((prev) => {
+      if (key === "all") return checked ? ["all"] : [];
+      const next = checked ? [...prev.filter((s) => s !== "all"), key] : prev.filter((s) => s !== key);
+      return Array.from(new Set(next));
+    });
+  };
+
+  const createAdmin = async () => {
+    setCreating(true);
+    const { data, error } = await supabase.functions.invoke("admin-create-admin", {
+      body: { ...form, scopes: formScopes },
+    });
+    setCreating(false);
+    const message = (data as any)?.error || error?.message;
+    if (message) {
+      toast({ title: "Could not register admin", description: message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: (data as any)?.created ? "Admin account created" : "Existing user promoted to admin",
+      description: `They can now log in with ${form.phone_number} and the password you set.`,
+    });
+    setForm({ full_name: "", phone_number: "", contact_email: "", password: "" });
+    setFormScopes(["users"]);
+    load();
+  };
 
   const load = async () => {
     setLoading(true);
