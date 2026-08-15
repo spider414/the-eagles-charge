@@ -69,7 +69,11 @@ const gradle = resolve(root, "android/app/build.gradle");
 patch(gradle, (s) =>
   s
     .replace(/versionName\s+"[^"]*"/, `versionName "${version}"`)
-    .replace(/versionCode\s+\d+/, `versionCode ${build}`),
+    .replace(/versionName\s*=\s*"[^"]*"/, `versionName = "${version}"`)
+    .replace(/versionCode\s+\d+/, `versionCode ${build}`)
+    .replace(/versionCode\s*=\s*\d+/, `versionCode = ${build}`)
+    .replace(/applicationId\s*=?\s*"[^"]*"/, `applicationId "${APP_ID}"`)
+    .replace(/namespace\s*=?\s*"[^"]*"/, `namespace "${APP_ID}"`),
 );
 
 console.log(`✓ Synced version=${version} build=${build}`);
