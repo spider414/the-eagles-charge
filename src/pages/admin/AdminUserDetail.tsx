@@ -262,8 +262,17 @@ export default function AdminUserDetail() {
     });
     setVerifyBusy(false);
     setVerifyConfirmOpen(false);
-    if (error || data?.error) {
-      toast({ title: "Could not send reminder", description: error?.message || data?.error, variant: "destructive" });
+    let serverError: string | null = data?.error ?? null;
+    if (error) {
+      try {
+        const body = await (error as unknown as { context?: Response }).context?.json();
+        serverError = body?.error ?? error.message;
+      } catch {
+        serverError = error.message;
+      }
+    }
+    if (serverError) {
+      toast({ title: "Could not send reminder", description: serverError, variant: "destructive" });
       return;
     }
     toast({
