@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, ArrowLeft, Clock, Loader2, MailWarning, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, History, Loader2, MailCheck, MailWarning, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -59,7 +59,26 @@ type Txn = {
 type Activity = {
   last_sign_in_at: string | null;
   last_transaction_at: string | null;
+  gate_allowed: boolean | null;
+  gate_reason: string | null;
+  last_verify_reminder_at: string | null;
 };
+
+type ReminderLog = {
+  id: string;
+  action: string;
+  channel: string | null;
+  message: string | null;
+  created_at: string;
+  actor_user_id: string | null;
+};
+
+/** Minutes an admin must wait before re-sending a verification reminder to the same user. */
+const REMINDER_COOLDOWN_MINUTES = 60;
+
+const VERIFY_TITLE_DEFAULT = "Verify your email to continue";
+const VERIFY_MESSAGE_DEFAULT =
+  "Your email address is not verified yet, so recharges and subscriptions are blocked. Open Settings > Email and verify your email to start transacting again.";
 
 const daysSince = (iso: string | null) =>
   iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null;
@@ -89,6 +108,10 @@ export default function AdminUserDetail() {
   const [winBusy, setWinBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyChannel, setVerifyChannel] = useState<"push" | "email" | "sms" | "both">("push");
+  const [verifyTitle, setVerifyTitle] = useState(VERIFY_TITLE_DEFAULT);
+  const [verifyMessage, setVerifyMessage] = useState(VERIFY_MESSAGE_DEFAULT);
+  const [verifyConfirmOpen, setVerifyConfirmOpen] = useState(false);
+  const [outreachLog, setOutreachLog] = useState<ReminderLog[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -108,7 +131,23 @@ export default function AdminUserDetail() {
     const { data: act } = await supabase.functions.invoke("admin-outreach", {
       body: { action: "user_activity", profile_id: id },
     });
-    if (act?.success) setActivity({ last_sign_in_at: act.last_sign_in_at, last_transaction_at: act.last_transaction_at });
+    if (act?.success)
+      setActivity({
+        last_sign_in_at: act.last_sign_in_at,
+        last_transaction_at: act.last_transaction_at,
+        gate_allowed: act.gate_allowed ?? null,
+        gate_reason: act.gate_reason ?? null,
+        last_verify_reminder_at: act.last_verify_reminder_at ?? null,
+      });
+    if (p?.user_id) {
+      const { data: logs } = await supabase
+        .from("recovery_actions")
+        .select("id, action, channel, message, created_at, actor_user_id")
+        .eq("user_id", p.user_id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      setOutreachLog((logs ?? []) as ReminderLog[]);
+    }
   };
 
   useEffect(() => {
@@ -213,17 +252,34 @@ export default function AdminUserDetail() {
   const sendVerifyReminder = async () => {
     setVerifyBusy(true);
     const { data, error } = await supabase.functions.invoke("admin-outreach", {
-      body: { action: "verify_reminder", profile_id: id, channel: verifyChannel },
+      body: {
+        action: "verify_reminder",
+        profile_id: id,
+        channel: verifyChannel,
+        title: verifyTitle.trim() || VERIFY_TITLE_DEFAULT,
+        message: verifyMessage.trim() || VERIFY_MESSAGE_DEFAULT,
+      },
     });
     setVerifyBusy(false);
-    if (error || data?.error) {
-      toast({ title: "Could not send reminder", description: error?.message || data?.error, variant: "destructive" });
+    setVerifyConfirmOpen(false);
+    let serverError: string | null = data?.error ?? null;
+    if (error) {
+      try {
+        const body = await (error as unknown as { context?: Response }).context?.json();
+        serverError = body?.error ?? error.message;
+      } catch {
+        serverError = error.message;
+      }
+    }
+    if (serverError) {
+      toast({ title: "Could not send reminder", description: serverError, variant: "destructive" });
       return;
     }
     toast({
       title: "Reminder sent",
       description: "The user got an app notification to verify their email.",
     });
+    load();
   };
 
   if (loading) {
@@ -261,6 +317,14 @@ export default function AdminUserDetail() {
 
   const idleDays = daysSince(activity?.last_sign_in_at ?? null);
   const isIdle = idleDays === null || idleDays >= 14;
+  const lastReminderAt = activity?.last_verify_reminder_at ?? null;
+  const minutesSinceReminder = lastReminderAt
+    ? Math.floor((Date.now() - new Date(lastReminderAt).getTime()) / 60000)
+    : null;
+  const cooldownLeft =
+    minutesSinceReminder !== null && minutesSinceReminder < REMINDER_COOLDOWN_MINUTES
+      ? REMINDER_COOLDOWN_MINUTES - minutesSinceReminder
+      : 0;
 
   return (
     <div className="space-y-3">
@@ -270,7 +334,18 @@ export default function AdminUserDetail() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">{profile.full_name || profile.phone_number || "User"}</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2 text-sm">
+            {profile.full_name || profile.phone_number || "User"}
+            {profile.contact_email_verified ? (
+              <Badge variant="secondary" className="gap-1 text-[10px]">
+                <MailCheck className="h-3 w-3" /> Email verified
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="gap-1 text-[10px]">
+                <MailWarning className="h-3 w-3" /> Email not verified
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2 rounded-md border border-border p-3">
@@ -304,6 +379,16 @@ export default function AdminUserDetail() {
               This user is blocked from recharges, subscriptions and wallet spending until they verify their email
               address in Settings.
             </p>
+            <div className="rounded-md border border-border p-2 text-[11px]">
+              <p className="text-muted-foreground">Exact server response when they try to transact</p>
+              <p className="mt-1 break-words font-mono text-[11px] font-medium">
+                {activity
+                  ? activity.gate_allowed
+                    ? "allowed — the server currently permits transactions"
+                    : activity.gate_reason || "blocked (no reason returned)"
+                  : "Checking…"}
+              </p>
+            </div>
             <div className="flex flex-wrap gap-2">
               {(["push", "email", "sms", "both"] as const).map((c) => (
                 <Button
@@ -312,17 +397,74 @@ export default function AdminUserDetail() {
                   variant={verifyChannel === c ? "default" : "outline"}
                   onClick={() => setVerifyChannel(c)}
                 >
-                  {c === "push" ? "App notification only" : c === "both" ? "Email + SMS" : c.toUpperCase()}
+                  {c === "push" ? "App only" : c === "both" ? "All available (app + email + SMS)" : c.toUpperCase()}
                 </Button>
               ))}
             </div>
-            <Button size="sm" disabled={verifyBusy} onClick={sendVerifyReminder}>
+            <div className="space-y-2">
+              <Label className="text-xs">Reminder title</Label>
+              <Input value={verifyTitle} onChange={(e) => setVerifyTitle(e.target.value)} className="h-9" />
+              <Label className="text-xs">Reminder message</Label>
+              <Textarea
+                value={verifyMessage}
+                onChange={(e) => setVerifyMessage(e.target.value)}
+                rows={4}
+                className="text-xs"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setVerifyTitle(VERIFY_TITLE_DEFAULT);
+                  setVerifyMessage(VERIFY_MESSAGE_DEFAULT);
+                }}
+              >
+                Reset to default wording
+              </Button>
+            </div>
+            {lastReminderAt && (
+              <p className="text-[11px] text-muted-foreground">
+                Last reminder sent {new Date(lastReminderAt).toLocaleString()}
+                {cooldownLeft > 0 && ` — you can send another in ${cooldownLeft} minute(s).`}
+              </p>
+            )}
+            <Button
+              size="sm"
+              disabled={verifyBusy || cooldownLeft > 0}
+              onClick={() => setVerifyConfirmOpen(true)}
+            >
               {verifyBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
               Send verification reminder
             </Button>
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <History className="h-4 w-4" /> Admin outreach history
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {outreachLog.length === 0 && (
+            <p className="py-4 text-center text-xs text-muted-foreground">No reminders or messages sent yet.</p>
+          )}
+          {outreachLog.map((l) => (
+            <div key={l.id} className="rounded-md border border-border p-2.5 text-[11px]">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="text-[10px]">
+                  {l.action.replace(/_/g, " ")}
+                </Badge>
+                {l.channel && <Badge variant="secondary" className="text-[10px]">{l.channel}</Badge>}
+                <span className="text-muted-foreground">{new Date(l.created_at).toLocaleString()}</span>
+              </div>
+              {l.message && <p className="mt-1 line-clamp-3 text-muted-foreground">{l.message}</p>}
+              <p className="mt-1 break-all text-muted-foreground">Sent by admin: {l.actor_user_id ?? "system"}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3">
@@ -494,6 +636,36 @@ export default function AdminUserDetail() {
           ))}
         </CardContent>
       </Card>
+
+      <AlertDialog open={verifyConfirmOpen} onOpenChange={setVerifyConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send verification reminder?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              {verifyChannel === "push"
+                ? "An in-app notification"
+                : verifyChannel === "both"
+                  ? "An in-app notification, an email and an SMS"
+                  : `An in-app notification and ${verifyChannel.toUpperCase()}`}{" "}
+              will be sent to {profile.full_name || profile.phone_number || "this user"}. You can only send another
+              reminder after {REMINDER_COOLDOWN_MINUTES} minutes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={verifyBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                sendVerifyReminder();
+              }}
+            >
+              {verifyBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              Send reminder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

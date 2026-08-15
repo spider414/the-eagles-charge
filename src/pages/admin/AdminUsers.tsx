@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MailWarning, Search, Send, Users } from "lucide-react";
+import { Loader2, MailCheck, MailWarning, Search, Send, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -128,9 +128,13 @@ export default function AdminUsers() {
                       {r.phone_number || r.contact_email || r.email || r.user_id}
                     </p>
                   </div>
-                  {!r.contact_email_verified && (
-                    <Badge variant="outline" className="text-[10px] text-destructive">
-                      Email unverified
+                  {r.contact_email_verified ? (
+                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                      <MailCheck className="h-3 w-3" /> Verified
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="gap-1 text-[10px]">
+                      <MailWarning className="h-3 w-3" /> Unverified
                     </Badge>
                   )}
                   <Badge variant="secondary">{formatNaira(Number(r.wallet_balance ?? 0))}</Badge>

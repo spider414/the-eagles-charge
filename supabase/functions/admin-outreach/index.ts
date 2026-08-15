@@ -112,11 +112,24 @@ Deno.serve(async (req) => {
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+      const { data: gate } = await admin.rpc("can_transact", { _user_id: profile.user_id });
+      const gateRow = Array.isArray(gate) ? gate[0] : gate;
+      const { data: lastReminder } = await admin
+        .from("recovery_actions")
+        .select("created_at")
+        .eq("user_id", profile.user_id)
+        .eq("action", "verify_email_reminder")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
       return json({
         success: true,
         last_sign_in_at: authUser?.user?.last_sign_in_at ?? null,
         created_at: authUser?.user?.created_at ?? null,
         last_transaction_at: lastTxn?.created_at ?? null,
+        gate_allowed: gateRow?.allowed ?? null,
+        gate_reason: gateRow?.reason ?? null,
+        last_verify_reminder_at: lastReminder?.created_at ?? null,
       });
     }
 
@@ -176,6 +189,37 @@ Deno.serve(async (req) => {
         message =
           "Your email address is not verified yet, so recharges and subscriptions are blocked. Open Settings > Email and verify your email to start transacting again.",
       } = body ?? {};
+
+      const COOLDOWN_MINUTES = 60;
+      if (profile_id) {
+        const { data: target } = await admin
+          .from("profiles")
+          .select("user_id")
+          .eq("id", profile_id)
+          .maybeSingle();
+        if (target?.user_id) {
+          const since = new Date(Date.now() - COOLDOWN_MINUTES * 60000).toISOString();
+          const { data: recent } = await admin
+            .from("recovery_actions")
+            .select("created_at")
+            .eq("user_id", target.user_id)
+            .eq("action", "verify_email_reminder")
+            .gte("created_at", since)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (recent?.created_at) {
+            const mins = Math.max(
+              1,
+              COOLDOWN_MINUTES - Math.floor((Date.now() - new Date(recent.created_at).getTime()) / 60000),
+            );
+            return json(
+              { error: `A reminder was already sent recently. Please wait ${mins} more minute(s).` },
+              429,
+            );
+          }
+        }
+      }
 
       let query = admin
         .from("profiles")
