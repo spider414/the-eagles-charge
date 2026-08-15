@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import BrandLogo from "@/components/BrandLogo";
-import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, Loader2, LogIn, LogOut, Mail, Percent, Scale, ShieldAlert, ShieldCheck, UserCog, Users, XCircle, History } from "lucide-react";
+import { ActivitySquare, ArrowLeft, CheckCircle2, CreditCard, Gift, LayoutDashboard, LifeBuoy, Loader2, LogIn, LogOut, Mail, Megaphone, Percent, Scale, ShieldAlert, ShieldCheck, UserCog, Users, XCircle, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -25,6 +25,8 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 const items = [
   { title: "Overview", url: "/admin", icon: LayoutDashboard, end: true },
   { title: "Users", url: "/admin/users", icon: Users },
+  { title: "Recovery", url: "/admin/recovery", icon: LifeBuoy },
+  { title: "Campaigns", url: "/admin/campaigns", icon: Megaphone },
   { title: "Email branding", url: "/admin/email", icon: Mail },
   { title: "OTP audit log", url: "/admin/otp", icon: ShieldCheck },
   { title: "Activity log", url: "/admin/activity", icon: ActivitySquare },
