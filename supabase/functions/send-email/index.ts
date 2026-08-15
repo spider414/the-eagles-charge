@@ -150,6 +150,7 @@ interface AdminTransactionFailedPayload {
 type Payload =
   | AdminNewRegistrationPayload
   | AdminTransactionFailedPayload
+  | AdminMessagePayload
   | WelcomePayload
   | ReceiptPayload
   | PasswordResetPayload
@@ -157,6 +158,17 @@ type Payload =
   | DeletionConfirmedPayload
   | AccountDeletedPayload
   | EmailVerificationPayload;
+
+interface AdminMessagePayload {
+  type: "admin_message" | "admin_promo";
+  to: string;
+  name?: string | null;
+  subject: string;
+  heading?: string;
+  message: string;
+  cta_label?: string | null;
+  cta_url?: string | null;
+}
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
