@@ -218,7 +218,99 @@ export default function AdminRoles() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">Register a new admin</CardTitle>
+          <CardTitle className="text-sm">Create a brand new admin account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            Use this when the person does not have the app yet. You create the account for them and give them the
+            login details.
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Full name</Label>
+              <Input
+                value={form.full_name}
+                onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
+                placeholder="e.g. Chidi Okeke"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Phone number (their login)</Label>
+              <Input
+                value={form.phone_number}
+                onChange={(e) => setForm((f) => ({ ...f, phone_number: e.target.value }))}
+                placeholder="08012345678"
+                inputMode="tel"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Email (optional, we send the details there)</Label>
+              <Input
+                value={form.contact_email}
+                onChange={(e) => setForm((f) => ({ ...f, contact_email: e.target.value }))}
+                placeholder="name@example.com"
+                type="email"
+                className="h-9"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Temporary password</Label>
+              <div className="relative">
+                <Input
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  placeholder="At least 8 characters"
+                  type={showPassword ? "text" : "password"}
+                  className="h-9 pr-9"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">What will they be in charge of?</Label>
+            <div className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+              {ADMIN_SCOPES.map((s) => (
+                <label key={s.key} className="flex items-center gap-2 rounded-md border border-border p-2 text-xs">
+                  <Checkbox
+                    checked={formScopes.includes(s.key)}
+                    onCheckedChange={(v) => toggleFormScope(s.key, v === true)}
+                  />
+                  <Label className="cursor-pointer text-xs font-normal">{s.label}</Label>
+                </label>
+              ))}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="w-full"
+            disabled={
+              creating ||
+              formScopes.length === 0 ||
+              form.full_name.trim().length < 2 ||
+              form.phone_number.replace(/\D/g, "").length < 10 ||
+              form.password.length < 8
+            }
+            onClick={createAdmin}
+          >
+            {creating ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <UserPlus className="mr-1 h-3.5 w-3.5" />}
+            Create admin account
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm">Make an existing user an admin</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">
