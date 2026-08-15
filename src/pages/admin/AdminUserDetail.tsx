@@ -637,6 +637,36 @@ export default function AdminUserDetail() {
         </CardContent>
       </Card>
 
+      <AlertDialog open={verifyConfirmOpen} onOpenChange={setVerifyConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send verification reminder?</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              {verifyChannel === "push"
+                ? "An in-app notification"
+                : verifyChannel === "both"
+                  ? "An in-app notification, an email and an SMS"
+                  : `An in-app notification and ${verifyChannel.toUpperCase()}`}{" "}
+              will be sent to {profile.full_name || profile.phone_number || "this user"}. You can only send another
+              reminder after {REMINDER_COOLDOWN_MINUTES} minutes.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={verifyBusy}
+              onClick={(e) => {
+                e.preventDefault();
+                sendVerifyReminder();
+              }}
+            >
+              {verifyBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
+              Send reminder
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
