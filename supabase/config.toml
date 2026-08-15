@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.deposit-fee]
 verify_jwt = false
+
+[functions.admin-outreach]
+verify_jwt = false

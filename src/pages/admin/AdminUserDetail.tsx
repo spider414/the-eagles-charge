@@ -5,12 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, MinusCircle, PlusCircle, Wallet } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Loader2, MinusCircle, PlusCircle, ShieldOff, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const naira = (v: number) =>
   "\u20a6" + Number(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Adjustments at or above this value need an extra typed confirmation. */
+const LARGE_ADJUSTMENT = 20000;
 
 type Profile = {
   id: string;
@@ -23,6 +37,10 @@ type Profile = {
   referral_code: string | null;
   total_referral_earnings: number | null;
   phone_verified: boolean | null;
+  contact_email_verified: boolean | null;
+  suspended: boolean | null;
+  suspended_reason: string | null;
+  suspended_at: string | null;
   dva_account_number: string | null;
   dva_bank_name: string | null;
   created_at: string;
@@ -47,6 +65,11 @@ export default function AdminUserDetail() {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingSign, setPendingSign] = useState<1 | -1>(1);
+  const [confirmText, setConfirmText] = useState("");
+  const [suspendReason, setSuspendReason] = useState("");
+  const [suspendBusy, setSuspendBusy] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -70,7 +93,7 @@ export default function AdminUserDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const adjust = async (sign: 1 | -1) => {
+  const requestAdjust = (sign: 1 | -1) => {
     const value = Number(amount);
     if (!value || value <= 0) {
       toast({ title: "Enter a valid amount", variant: "destructive" });
@@ -80,6 +103,14 @@ export default function AdminUserDetail() {
       toast({ title: "Enter a reason", description: "A reason is required for the audit log.", variant: "destructive" });
       return;
     }
+    setPendingSign(sign);
+    setConfirmText("");
+    setConfirmOpen(true);
+  };
+
+  const adjust = async () => {
+    const sign = pendingSign;
+    const value = Number(amount);
     setBusy(true);
     const { data, error } = await supabase.rpc("admin_adjust_wallet", {
       p_profile_id: id!,
@@ -87,6 +118,7 @@ export default function AdminUserDetail() {
       p_reason: reason.trim(),
     });
     setBusy(false);
+    setConfirmOpen(false);
     if (error) {
       toast({ title: "Adjustment failed", description: error.message, variant: "destructive" });
       return;
@@ -97,6 +129,34 @@ export default function AdminUserDetail() {
     });
     setAmount("");
     setReason("");
+    load();
+  };
+
+  const toggleSuspend = async (next: boolean) => {
+    if (!id) return;
+    if (next && !suspendReason.trim()) {
+      toast({ title: "Enter a suspension reason", variant: "destructive" });
+      return;
+    }
+    setSuspendBusy(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        suspended: next,
+        suspended_reason: next ? suspendReason.trim() : null,
+        suspended_at: next ? new Date().toISOString() : null,
+      })
+      .eq("id", id);
+    setSuspendBusy(false);
+    if (error) {
+      toast({ title: "Could not update account", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: next ? "Account suspended" : "Account restored",
+      description: next ? "This user can no longer transact." : "This user can transact again.",
+    });
+    setSuspendReason("");
     load();
   };
 
@@ -126,6 +186,8 @@ export default function AdminUserDetail() {
     ["Referral code", profile.referral_code || "—"],
     ["Referral earnings", naira(Number(profile.total_referral_earnings ?? 0))],
     ["Phone verified", profile.phone_verified ? "Yes" : "No"],
+    ["Email verified", profile.contact_email_verified ? "Yes" : "No"],
+    ["Account status", profile.suspended ? `Suspended — ${profile.suspended_reason ?? "no reason"}` : "Active"],
     ["Virtual account", profile.dva_account_number ? `${profile.dva_account_number} (${profile.dva_bank_name ?? ""})` : "—"],
     ["Registered", new Date(profile.created_at).toLocaleString()],
     ["User id", profile.user_id],
@@ -188,17 +250,57 @@ export default function AdminUserDetail() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" disabled={busy} onClick={() => adjust(1)}>
+            <Button size="sm" disabled={busy} onClick={() => requestAdjust(1)}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-1 h-4 w-4" />}
               Credit wallet
             </Button>
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => adjust(-1)}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => requestAdjust(-1)}>
               <MinusCircle className="mr-1 h-4 w-4" /> Debit wallet
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
             Every adjustment creates a transaction, notifies the user and is recorded in the admin activity log.
+            Adjustments of {naira(LARGE_ADJUSTMENT)} or more need a typed confirmation.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ShieldOff className="h-4 w-4" /> Account access
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between rounded-md border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">{profile.suspended ? "Suspended" : "Active"}</p>
+              <p className="text-xs text-muted-foreground">
+                Suspended users cannot recharge, subscribe or fund their wallet.
+              </p>
+            </div>
+            <Switch
+              checked={!!profile.suspended}
+              disabled={suspendBusy}
+              onCheckedChange={(v) => toggleSuspend(v)}
+            />
+          </div>
+          {!profile.suspended && (
+            <div className="space-y-1">
+              <Label className="text-xs">Suspension reason (required to suspend)</Label>
+              <Input
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                placeholder="e.g. Multiple accounts on one device"
+                className="h-9"
+              />
+            </div>
+          )}
+          {profile.suspended && profile.suspended_at && (
+            <p className="text-[11px] text-muted-foreground">
+              Suspended on {new Date(profile.suspended_at).toLocaleString()}
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -220,6 +322,38 @@ export default function AdminUserDetail() {
           ))}
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingSign > 0 ? "Credit" : "Debit"} {naira(Number(amount))}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              {pendingSign > 0 ? "Credit" : "Debit"} {naira(Number(amount))}{" "}
+              {pendingSign > 0 ? "to" : "from"} {profile.full_name || profile.phone_number || "this user"}. Reason: {reason}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {Number(amount) >= LARGE_ADJUSTMENT && (
+            <div className="space-y-1">
+              <Label className="text-xs">Type CONFIRM to approve this large adjustment</Label>
+              <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className="h-9" />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy || (Number(amount) >= LARGE_ADJUSTMENT && confirmText.trim().toUpperCase() !== "CONFIRM")}
+              onClick={(e) => {
+                e.preventDefault();
+                adjust();
+              }}
+            >
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Yes, {pendingSign > 0 ? "credit" : "debit"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

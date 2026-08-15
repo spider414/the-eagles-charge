@@ -15,6 +15,8 @@ import NotificationCenter from "@/components/NotificationCenter";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import BrandLogo from "@/components/BrandLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import BonusPopup from "@/components/BonusPopup";
+import TransactionGateBanner from "@/components/TransactionGateBanner";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface DVADetails {
@@ -168,6 +170,8 @@ const Dashboard = () => {
       </header>, document.body)}
 
       <main className="container pt-20 pb-6 pb-20 md:pb-6">
+        <BonusPopup />
+        <TransactionGateBanner />
         {/* Welcome Card */}
         <Card className="mb-3 gradient-hero text-primary-foreground">
           <CardContent className="p-2.5">

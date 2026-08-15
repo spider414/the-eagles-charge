@@ -39,6 +39,7 @@ const NON_ESSENTIAL: Record<string, keyof {
   email_product_updates_opt_in: boolean;
 }> = {
   welcome: "email_marketing_opt_in",
+  admin_promo: "email_promotions_opt_in",
 };
 
 const ngn = (n: number) =>
@@ -149,6 +150,7 @@ interface AdminTransactionFailedPayload {
 type Payload =
   | AdminNewRegistrationPayload
   | AdminTransactionFailedPayload
+  | AdminMessagePayload
   | WelcomePayload
   | ReceiptPayload
   | PasswordResetPayload
@@ -156,6 +158,17 @@ type Payload =
   | DeletionConfirmedPayload
   | AccountDeletedPayload
   | EmailVerificationPayload;
+
+interface AdminMessagePayload {
+  type: "admin_message" | "admin_promo";
+  to: string;
+  name?: string | null;
+  subject: string;
+  heading?: string;
+  message: string;
+  cta_label?: string | null;
+  cta_url?: string | null;
+}
 
 const isValidEmail = (email: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !email.match(/@(eagles\.local|phone\.harmicglobal\.com)$/);
@@ -427,6 +440,24 @@ const emailVerificationHtml = (b: Branding, t: TemplateCopy, p: EmailVerificatio
   );
 
 async function sendResend(from: string, to: string, subject: string, html: string) {
+const adminMessageHtml = (b: Branding, p: AdminMessagePayload, unsubUrl?: string) =>
+  shell(
+    b,
+    p.heading || p.subject,
+    `
+    <p style="font-size:15px;line-height:1.6;">Hi <strong>${escape(p.name || "there")}</strong>,</p>
+    <div style="font-size:15px;line-height:1.7;">${escape(p.message).replace(/\n/g, "<br/>")}</div>
+    ${
+      p.cta_url
+        ? `<p style="margin:24px 0 0;"><a href="${escape(p.cta_url)}" style="display:inline-block;background:${b.primary_color};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;">${escape(p.cta_label || "Open app")}</a></p>`
+        : ""
+    }
+    <p style="margin-top:22px;font-size:14px;">— <strong>${escape(b.brand_name)} Team</strong></p>
+  `,
+    unsubUrl,
+  );
+
+async function sendResend(from: string, to: string, subject: string, html: string) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -680,6 +711,9 @@ Deno.serve(async (req) => {
       html = accountDeletedHtml(branding, tpl, payload);
     } else if (payload.type === "email_verification") {
       html = emailVerificationHtml(branding, tpl, payload);
+    } else if (payload.type === "admin_message" || payload.type === "admin_promo") {
+      subject = payload.subject || tpl.subject;
+      html = adminMessageHtml(branding, payload, unsubUrl);
     } else {
       return new Response(JSON.stringify({ error: "Unknown email type" }), {
         status: 400,
