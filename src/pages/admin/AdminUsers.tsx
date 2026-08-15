@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Search, Users } from "lucide-react";
+import { Loader2, MailWarning, Search, Send, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 const formatNaira = (v: number) =>
   "\u20a6" + Number(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -17,20 +18,25 @@ type Row = {
   contact_email: string | null;
   email: string | null;
   wallet_balance: number | null;
+  contact_email_verified: boolean | null;
   created_at: string;
 };
 
 export default function AdminUsers() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [remindBusy, setRemindBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, user_id, full_name, phone_number, contact_email, email, wallet_balance, created_at")
+        .select(
+          "id, user_id, full_name, phone_number, contact_email, email, wallet_balance, contact_email_verified, created_at",
+        )
         .order("created_at", { ascending: false })
         .limit(1000);
       setRows((data ?? []) as Row[]);
@@ -52,6 +58,23 @@ export default function AdminUsers() {
   );
 
   const totalBalance = rows.reduce((s, r) => s + Number(r.wallet_balance ?? 0), 0);
+  const unverified = rows.filter((r) => !r.contact_email_verified);
+
+  const remindUnverified = async () => {
+    setRemindBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-outreach", {
+      body: { action: "verify_reminder", channel: "push" },
+    });
+    setRemindBusy(false);
+    if (error || data?.error) {
+      toast({ title: "Could not send reminders", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Reminders sent",
+      description: `${data?.notified ?? 0} user(s) got an app notification to verify their email.`,
+    });
+  };
 
   return (
     <div className="space-y-3">
@@ -65,6 +88,19 @@ export default function AdminUsers() {
           <p className="text-xs text-muted-foreground">
             Combined wallet balance: <span className="font-medium">{formatNaira(totalBalance)}</span>
           </p>
+          {unverified.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-destructive/40 bg-muted/40 p-2.5">
+              <MailWarning className="h-4 w-4 text-destructive" />
+              <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">
+                {unverified.length} user(s) have not verified their email — they cannot recharge or subscribe until
+                they do.
+              </p>
+              <Button size="sm" disabled={remindBusy} onClick={remindUnverified}>
+                {remindBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+                Remind them all
+              </Button>
+            </div>
+          )}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -92,6 +128,11 @@ export default function AdminUsers() {
                       {r.phone_number || r.contact_email || r.email || r.user_id}
                     </p>
                   </div>
+                  {!r.contact_email_verified && (
+                    <Badge variant="outline" className="text-[10px] text-destructive">
+                      Email unverified
+                    </Badge>
+                  )}
                   <Badge variant="secondary">{formatNaira(Number(r.wallet_balance ?? 0))}</Badge>
                 </button>
               ))}
