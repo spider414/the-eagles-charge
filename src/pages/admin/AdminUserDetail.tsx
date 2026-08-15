@@ -291,14 +291,45 @@ export default function AdminUserDetail() {
         </CardContent>
       </Card>
 
+      {!profile.contact_email_verified && (
+        <Card className="border-destructive/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <MailWarning className="h-4 w-4 text-destructive" /> Email not verified
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-2 text-[11px] text-muted-foreground">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              This user is blocked from recharges, subscriptions and wallet spending until they verify their email
+              address in Settings.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(["push", "email", "sms", "both"] as const).map((c) => (
+                <Button
+                  key={c}
+                  size="sm"
+                  variant={verifyChannel === c ? "default" : "outline"}
+                  onClick={() => setVerifyChannel(c)}
+                >
+                  {c === "push" ? "App notification only" : c === "both" ? "Email + SMS" : c.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+            <Button size="sm" disabled={verifyBusy} onClick={sendVerifyReminder}>
+              {verifyBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+              Send verification reminder
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-sm">
             <Clock className="h-4 w-4" /> Activity
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="grid gap-2 sm:grid-cols-2">
         <CardContent className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-2">
             <div className="rounded-md border border-border p-2 text-xs">
