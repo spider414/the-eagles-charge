@@ -471,6 +471,26 @@ Deno.serve(async (req) => {
     if (body.action === "wallet_payment") {
       const { amount, metadata } = body;
 
+      // Server-side gate: suspended accounts and unverified emails may not transact.
+      const { data: gate } = await supabase.rpc("can_transact", { _user_id: userId });
+      const gateRow = Array.isArray(gate) ? gate[0] : gate;
+      if (gateRow && gateRow.allowed === false) {
+        const reason = gateRow.reason as string;
+        return new Response(
+          JSON.stringify({
+            success: false,
+            code: reason,
+            error:
+              reason === "account_suspended"
+                ? "Your account is suspended. Please contact support."
+                : reason === "email_unverified"
+                  ? "Please verify your email address in Settings before making any transaction."
+                  : "Your profile is incomplete. Please contact support.",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       // Server-authoritative 2% service fee (not applied to airtime / wallet top-ups).
       // `amount` stays the base value sent to the VTU provider; `chargeAmount` is what the user pays.
       const serviceFee = computeServiceFee(metadata.transaction_type, amount);
