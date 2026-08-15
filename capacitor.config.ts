@@ -5,7 +5,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // and copy changes reach installed devices without a new Play Store release.
 // Only native changes (icons, plugins, permissions) require a rebuild.
 const config: CapacitorConfig = {
-  appId: 'app.lovable.theeaglescharge',
+  appId: 'com.FkOxDWUKYCSg.natively',
   appName: 'HARMIC RECHARGE',
   webDir: 'dist',
   server: {
