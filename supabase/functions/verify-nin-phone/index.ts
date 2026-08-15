@@ -78,6 +78,28 @@ Deno.serve(async (req) => {
       .replace(/\s+/g, ' ')
       .trim();
 
+    // Cache the verified identity server-side so signup can enforce a name
+    // match that a client cannot fake.
+    try {
+      const admin = createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+        { auth: { persistSession: false } },
+      );
+      await admin.from('nin_verifications').upsert(
+        {
+          phone_number: phone,
+          nin: String(d.nin ?? ''),
+          full_name: fullName,
+          expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: 'phone_number' },
+      );
+    } catch (cacheErr) {
+      console.error('Failed to cache NIN verification', cacheErr);
+    }
+
     return json({
       success: true,
       data: {
