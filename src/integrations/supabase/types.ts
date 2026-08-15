@@ -124,6 +124,7 @@ export type Database = {
           created_at: string
           deposit_fee_enabled: boolean
           deposit_fee_percent: number
+          feature_flags: Json
           id: string
           nin_verification_required: boolean
           registration_bonus_amount: number
@@ -138,6 +139,7 @@ export type Database = {
           created_at?: string
           deposit_fee_enabled?: boolean
           deposit_fee_percent?: number
+          feature_flags?: Json
           id?: string
           nin_verification_required?: boolean
           registration_bonus_amount?: number
@@ -152,6 +154,7 @@ export type Database = {
           created_at?: string
           deposit_fee_enabled?: boolean
           deposit_fee_percent?: number
+          feature_flags?: Json
           id?: string
           nin_verification_required?: boolean
           registration_bonus_amount?: number
