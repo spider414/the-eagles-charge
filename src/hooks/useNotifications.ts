@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { playRing } from "@/hooks/useSoundEffects";
 
 export interface AppNotification {
   id: string;
@@ -34,10 +35,13 @@ export const useNotifications = () => {
       .then(({ data }) => setIsAdmin(!!data));
   }, [user]);
 
-  const isAdminOnlyNotification = useCallback((n: { title?: string; body?: string }) => {
+  const isAdminOnlyNotification = useCallback((n: { title?: string; body?: string; type?: string }) => {
+    if ((n.type ?? "").startsWith("admin_")) return true;
     const t = `${n.title ?? ""} ${n.body ?? ""}`.toLowerCase();
     return (
       t.includes("cheapdatahub") ||
+      t.includes("reseller") ||
+      t.includes("provider wallet") ||
       t.includes("reseller wallet") ||
       t.includes("low provider balance") ||
       t.includes("vtu provider")
@@ -129,10 +133,8 @@ export const useNotifications = () => {
           setNotifications((prev) => [newNotif, ...prev]);
           setUnreadCount((prev) => prev + 1);
 
-          // Vibrate on mobile
-          try {
-            if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
-          } catch {}
+          // Ring + vibrate like an incoming call
+          playRing();
         }
       )
       .subscribe();
