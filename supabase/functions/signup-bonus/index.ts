@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const FALLBACK = { enabled: false, amount: 0 };
+const FALLBACK = { enabled: false, amount: 0, nin_verification_required: true };
 
 // Public, read-only endpoint so web + Android clients can display the current
 // signup bonus without hard-coding an amount.
@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     );
     const { data, error } = await admin
       .from("app_settings")
-      .select("registration_bonus_enabled, registration_bonus_amount")
+      .select("registration_bonus_enabled, registration_bonus_amount, nin_verification_required")
       .limit(1)
       .maybeSingle();
 
@@ -34,7 +34,12 @@ Deno.serve(async (req) => {
 
     const amount = Number(data.registration_bonus_amount) || 0;
     const enabled = data.registration_bonus_enabled === true && amount > 0;
-    return json({ enabled, amount: enabled ? amount : 0, currency: "NGN" });
+    return json({
+      enabled,
+      amount: enabled ? amount : 0,
+      currency: "NGN",
+      nin_verification_required: data.nin_verification_required !== false,
+    });
   } catch (e) {
     console.error("signup-bonus error", e);
     return json(FALLBACK);
