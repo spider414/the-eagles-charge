@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { AlertTriangle, ArrowLeft, Clock, Loader2, MailWarning, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, History, Loader2, MailCheck, MailWarning, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -59,7 +59,26 @@ type Txn = {
 type Activity = {
   last_sign_in_at: string | null;
   last_transaction_at: string | null;
+  gate_allowed: boolean | null;
+  gate_reason: string | null;
+  last_verify_reminder_at: string | null;
 };
+
+type ReminderLog = {
+  id: string;
+  action: string;
+  channel: string | null;
+  message: string | null;
+  created_at: string;
+  actor_user_id: string | null;
+};
+
+/** Minutes an admin must wait before re-sending a verification reminder to the same user. */
+const REMINDER_COOLDOWN_MINUTES = 60;
+
+const VERIFY_TITLE_DEFAULT = "Verify your email to continue";
+const VERIFY_MESSAGE_DEFAULT =
+  "Your email address is not verified yet, so recharges and subscriptions are blocked. Open Settings > Email and verify your email to start transacting again.";
 
 const daysSince = (iso: string | null) =>
   iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null;
@@ -89,6 +108,10 @@ export default function AdminUserDetail() {
   const [winBusy, setWinBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyChannel, setVerifyChannel] = useState<"push" | "email" | "sms" | "both">("push");
+  const [verifyTitle, setVerifyTitle] = useState(VERIFY_TITLE_DEFAULT);
+  const [verifyMessage, setVerifyMessage] = useState(VERIFY_MESSAGE_DEFAULT);
+  const [verifyConfirmOpen, setVerifyConfirmOpen] = useState(false);
+  const [outreachLog, setOutreachLog] = useState<ReminderLog[]>([]);
 
   const load = async () => {
     if (!id) return;
@@ -108,7 +131,23 @@ export default function AdminUserDetail() {
     const { data: act } = await supabase.functions.invoke("admin-outreach", {
       body: { action: "user_activity", profile_id: id },
     });
-    if (act?.success) setActivity({ last_sign_in_at: act.last_sign_in_at, last_transaction_at: act.last_transaction_at });
+    if (act?.success)
+      setActivity({
+        last_sign_in_at: act.last_sign_in_at,
+        last_transaction_at: act.last_transaction_at,
+        gate_allowed: act.gate_allowed ?? null,
+        gate_reason: act.gate_reason ?? null,
+        last_verify_reminder_at: act.last_verify_reminder_at ?? null,
+      });
+    if (p?.user_id) {
+      const { data: logs } = await supabase
+        .from("recovery_actions")
+        .select("id, action, channel, message, created_at, actor_user_id")
+        .eq("user_id", p.user_id)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      setOutreachLog((logs ?? []) as ReminderLog[]);
+    }
   };
 
   useEffect(() => {
@@ -213,9 +252,16 @@ export default function AdminUserDetail() {
   const sendVerifyReminder = async () => {
     setVerifyBusy(true);
     const { data, error } = await supabase.functions.invoke("admin-outreach", {
-      body: { action: "verify_reminder", profile_id: id, channel: verifyChannel },
+      body: {
+        action: "verify_reminder",
+        profile_id: id,
+        channel: verifyChannel,
+        title: verifyTitle.trim() || VERIFY_TITLE_DEFAULT,
+        message: verifyMessage.trim() || VERIFY_MESSAGE_DEFAULT,
+      },
     });
     setVerifyBusy(false);
+    setVerifyConfirmOpen(false);
     if (error || data?.error) {
       toast({ title: "Could not send reminder", description: error?.message || data?.error, variant: "destructive" });
       return;
@@ -224,6 +270,7 @@ export default function AdminUserDetail() {
       title: "Reminder sent",
       description: "The user got an app notification to verify their email.",
     });
+    load();
   };
 
   if (loading) {
