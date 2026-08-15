@@ -16,7 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ArrowLeft, Loader2, MinusCircle, PlusCircle, ShieldOff, Wallet } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { ArrowLeft, Clock, Loader2, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -55,6 +56,17 @@ type Txn = {
   created_at: string;
 };
 
+type Activity = {
+  last_sign_in_at: string | null;
+  last_transaction_at: string | null;
+};
+
+const daysSince = (iso: string | null) =>
+  iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : null;
+
+const WINBACK_DEFAULT =
+  "We miss you! \uD83D\uDD25 Hot deals are live on HARMIC RECHARGE right now \u2014 cheap data, instant airtime, cable TV and electricity in seconds. Log in today and enjoy them before they end.";
+
 export default function AdminUserDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -70,6 +82,11 @@ export default function AdminUserDetail() {
   const [confirmText, setConfirmText] = useState("");
   const [suspendReason, setSuspendReason] = useState("");
   const [suspendBusy, setSuspendBusy] = useState(false);
+  const [activity, setActivity] = useState<Activity | null>(null);
+  const [winChannel, setWinChannel] = useState<"email" | "sms" | "both" | "push">("email");
+  const [winSubject, setWinSubject] = useState("We miss you \u2014 hot deals are waiting \uD83D\uDD25");
+  const [winMessage, setWinMessage] = useState(WINBACK_DEFAULT);
+  const [winBusy, setWinBusy] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -86,6 +103,10 @@ export default function AdminUserDetail() {
       setTxns((t ?? []) as Txn[]);
     }
     setLoading(false);
+    const { data: act } = await supabase.functions.invoke("admin-outreach", {
+      body: { action: "user_activity", profile_id: id },
+    });
+    if (act?.success) setActivity({ last_sign_in_at: act.last_sign_in_at, last_transaction_at: act.last_transaction_at });
   };
 
   useEffect(() => {
@@ -158,6 +179,33 @@ export default function AdminUserDetail() {
     });
     setSuspendReason("");
     load();
+  };
+
+  const sendWinback = async () => {
+    if (!winMessage.trim()) {
+      toast({ title: "Enter a message", variant: "destructive" });
+      return;
+    }
+    setWinBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-outreach", {
+      body: {
+        action: "winback",
+        profile_id: id,
+        channel: winChannel,
+        subject: winSubject.trim() || "We miss you",
+        message: winMessage.trim(),
+        push: true,
+      },
+    });
+    setWinBusy(false);
+    if (error || data?.error) {
+      toast({ title: "Could not send", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Message sent",
+      description: "In-app notification delivered" + (data?.sent ? " and message sent." : "."),
+    });
   };
 
   if (loading) {
