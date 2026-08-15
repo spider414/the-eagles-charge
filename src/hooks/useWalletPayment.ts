@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { chargeTotal } from "@/lib/pricing";
+import { useCanTransact, gateMessage } from "@/hooks/useCanTransact";
 
 interface WalletPaymentMetadata {
   transaction_type: "airtime" | "data" | "electricity" | "cable_tv" | "internet" | "exam_pin";
@@ -31,12 +32,22 @@ export const useWalletPayment = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user, profile, refreshProfile } = useAuth();
+  const { gate, refresh: refreshGate } = useCanTransact();
 
   const payWithWallet = async ({ amount, metadata }: WalletPaymentParams): Promise<boolean> => {
     if (!user || !profile) {
       toast({
         title: "Authentication Required",
         description: "Please login to make a payment",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (gate && !gate.allowed) {
+      toast({
+        title: gate.reason === "account_suspended" ? "Account suspended" : "Verification required",
+        description: gateMessage(gate.reason),
         variant: "destructive",
       });
       return false;
@@ -71,6 +82,9 @@ export const useWalletPayment = () => {
       }
 
       if (!data.success) {
+        if (data.code === "account_suspended" || data.code === "email_unverified") {
+          await refreshGate();
+        }
         throw new Error(data.error || "Payment processing failed");
       }
 
