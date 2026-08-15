@@ -41,8 +41,65 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_campaigns: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          failed_count: number
+          id: string
+          recipient_count: number
+          segment: string
+          sent_count: number
+          status: string
+          subject: string | null
+          target_user_ids: string[] | null
+          template_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          recipient_count?: number
+          segment?: string
+          sent_count?: number
+          status?: string
+          subject?: string | null
+          target_user_ids?: string[] | null
+          template_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          recipient_count?: number
+          segment?: string
+          sent_count?: number
+          status?: string
+          subject?: string | null
+          target_user_ids?: string[] | null
+          template_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
+          bonus_popup_enabled: boolean
+          bonus_popup_message: string | null
+          bonus_popup_version: number
           created_at: string
           deposit_fee_enabled: boolean
           deposit_fee_percent: number
@@ -53,6 +110,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bonus_popup_enabled?: boolean
+          bonus_popup_message?: string | null
+          bonus_popup_version?: number
           created_at?: string
           deposit_fee_enabled?: boolean
           deposit_fee_percent?: number
@@ -63,6 +123,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bonus_popup_enabled?: boolean
+          bonus_popup_message?: string | null
+          bonus_popup_version?: number
           created_at?: string
           deposit_fee_enabled?: boolean
           deposit_fee_percent?: number
@@ -123,6 +186,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      device_registrations: {
+        Row: {
+          attempts: number
+          blocked: boolean
+          blocked_reason: string | null
+          created_at: string
+          fingerprint: string
+          id: string
+          ip_address: string | null
+          last_attempt_at: string
+          phone_number: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          blocked?: boolean
+          blocked_reason?: string | null
+          created_at?: string
+          fingerprint: string
+          id?: string
+          ip_address?: string | null
+          last_attempt_at?: string
+          phone_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          blocked?: boolean
+          blocked_reason?: string | null
+          created_at?: string
+          fingerprint?: string
+          id?: string
+          ip_address?: string | null
+          last_attempt_at?: string
+          phone_number?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       email_change_requests: {
         Row: {
@@ -406,6 +511,30 @@ export type Database = {
         }
         Relationships: []
       }
+      popup_dismissals: {
+        Row: {
+          created_at: string
+          id: string
+          popup_key: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          popup_key: string
+          user_id: string
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          popup_key?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -434,6 +563,9 @@ export type Database = {
           referred_by: string | null
           security_answer: string | null
           security_question: string | null
+          suspended: boolean
+          suspended_at: string | null
+          suspended_reason: string | null
           total_referral_earnings: number | null
           unsubscribe_token: string | null
           updated_at: string
@@ -467,6 +599,9 @@ export type Database = {
           referred_by?: string | null
           security_answer?: string | null
           security_question?: string | null
+          suspended?: boolean
+          suspended_at?: string | null
+          suspended_reason?: string | null
           total_referral_earnings?: number | null
           unsubscribe_token?: string | null
           updated_at?: string
@@ -500,6 +635,9 @@ export type Database = {
           referred_by?: string | null
           security_answer?: string | null
           security_question?: string | null
+          suspended?: boolean
+          suspended_at?: string | null
+          suspended_reason?: string | null
           total_referral_earnings?: number | null
           unsubscribe_token?: string | null
           updated_at?: string
@@ -572,6 +710,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      recovery_actions: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          amount: number | null
+          channel: string | null
+          created_at: string
+          id: string
+          message: string | null
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          amount?: number | null
+          channel?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          amount?: number | null
+          channel?: string | null
+          created_at?: string
+          id?: string
+          message?: string | null
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recovery_actions_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_rewards: {
         Row: {
@@ -737,6 +919,13 @@ export type Database = {
         Returns: number
       }
       admin_exists: { Args: never; Returns: boolean }
+      can_transact: {
+        Args: { _user_id: string }
+        Returns: {
+          allowed: boolean
+          reason: string
+        }[]
+      }
       claim_admin: { Args: never; Returns: boolean }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       credit_wallet: {
