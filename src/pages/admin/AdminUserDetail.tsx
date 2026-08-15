@@ -317,6 +317,14 @@ export default function AdminUserDetail() {
 
   const idleDays = daysSince(activity?.last_sign_in_at ?? null);
   const isIdle = idleDays === null || idleDays >= 14;
+  const lastReminderAt = activity?.last_verify_reminder_at ?? null;
+  const minutesSinceReminder = lastReminderAt
+    ? Math.floor((Date.now() - new Date(lastReminderAt).getTime()) / 60000)
+    : null;
+  const cooldownLeft =
+    minutesSinceReminder !== null && minutesSinceReminder < REMINDER_COOLDOWN_MINUTES
+      ? REMINDER_COOLDOWN_MINUTES - minutesSinceReminder
+      : 0;
 
   return (
     <div className="space-y-3">
@@ -326,7 +334,18 @@ export default function AdminUserDetail() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm">{profile.full_name || profile.phone_number || "User"}</CardTitle>
+          <CardTitle className="flex flex-wrap items-center gap-2 text-sm">
+            {profile.full_name || profile.phone_number || "User"}
+            {profile.contact_email_verified ? (
+              <Badge variant="secondary" className="gap-1 text-[10px]">
+                <MailCheck className="h-3 w-3" /> Email verified
+              </Badge>
+            ) : (
+              <Badge variant="destructive" className="gap-1 text-[10px]">
+                <MailWarning className="h-3 w-3" /> Email not verified
+              </Badge>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2 rounded-md border border-border p-3">
@@ -360,6 +379,16 @@ export default function AdminUserDetail() {
               This user is blocked from recharges, subscriptions and wallet spending until they verify their email
               address in Settings.
             </p>
+            <div className="rounded-md border border-border p-2 text-[11px]">
+              <p className="text-muted-foreground">Exact server response when they try to transact</p>
+              <p className="mt-1 break-words font-mono text-[11px] font-medium">
+                {activity
+                  ? activity.gate_allowed
+                    ? "allowed — the server currently permits transactions"
+                    : activity.gate_reason || "blocked (no reason returned)"
+                  : "Checking…"}
+              </p>
+            </div>
             <div className="flex flex-wrap gap-2">
               {(["push", "email", "sms", "both"] as const).map((c) => (
                 <Button
@@ -368,17 +397,74 @@ export default function AdminUserDetail() {
                   variant={verifyChannel === c ? "default" : "outline"}
                   onClick={() => setVerifyChannel(c)}
                 >
-                  {c === "push" ? "App notification only" : c === "both" ? "Email + SMS" : c.toUpperCase()}
+                  {c === "push" ? "App only" : c === "both" ? "All available (app + email + SMS)" : c.toUpperCase()}
                 </Button>
               ))}
             </div>
-            <Button size="sm" disabled={verifyBusy} onClick={sendVerifyReminder}>
+            <div className="space-y-2">
+              <Label className="text-xs">Reminder title</Label>
+              <Input value={verifyTitle} onChange={(e) => setVerifyTitle(e.target.value)} className="h-9" />
+              <Label className="text-xs">Reminder message</Label>
+              <Textarea
+                value={verifyMessage}
+                onChange={(e) => setVerifyMessage(e.target.value)}
+                rows={4}
+                className="text-xs"
+              />
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setVerifyTitle(VERIFY_TITLE_DEFAULT);
+                  setVerifyMessage(VERIFY_MESSAGE_DEFAULT);
+                }}
+              >
+                Reset to default wording
+              </Button>
+            </div>
+            {lastReminderAt && (
+              <p className="text-[11px] text-muted-foreground">
+                Last reminder sent {new Date(lastReminderAt).toLocaleString()}
+                {cooldownLeft > 0 && ` — you can send another in ${cooldownLeft} minute(s).`}
+              </p>
+            )}
+            <Button
+              size="sm"
+              disabled={verifyBusy || cooldownLeft > 0}
+              onClick={() => setVerifyConfirmOpen(true)}
+            >
               {verifyBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
               Send verification reminder
             </Button>
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <History className="h-4 w-4" /> Admin outreach history
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {outreachLog.length === 0 && (
+            <p className="py-4 text-center text-xs text-muted-foreground">No reminders or messages sent yet.</p>
+          )}
+          {outreachLog.map((l) => (
+            <div key={l.id} className="rounded-md border border-border p-2.5 text-[11px]">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="text-[10px]">
+                  {l.action.replace(/_/g, " ")}
+                </Badge>
+                {l.channel && <Badge variant="secondary" className="text-[10px]">{l.channel}</Badge>}
+                <span className="text-muted-foreground">{new Date(l.created_at).toLocaleString()}</span>
+              </div>
+              {l.message && <p className="mt-1 line-clamp-3 text-muted-foreground">{l.message}</p>}
+              <p className="mt-1 break-all text-muted-foreground">Sent by admin: {l.actor_user_id ?? "system"}</p>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="pb-3">
