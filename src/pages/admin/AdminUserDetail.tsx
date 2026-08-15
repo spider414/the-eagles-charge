@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Clock, Loader2, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, Loader2, MailWarning, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,6 +87,8 @@ export default function AdminUserDetail() {
   const [winSubject, setWinSubject] = useState("We miss you \u2014 hot deals are waiting \uD83D\uDD25");
   const [winMessage, setWinMessage] = useState(WINBACK_DEFAULT);
   const [winBusy, setWinBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyChannel, setVerifyChannel] = useState<"push" | "email" | "sms" | "both">("push");
 
   const load = async () => {
     if (!id) return;
@@ -182,6 +184,10 @@ export default function AdminUserDetail() {
   };
 
   const sendWinback = async () => {
+    if (!winMessage.trim()) {
+      toast({ title: "Enter a message", variant: "destructive" });
+      return;
+    }
     if (!winMessage.trim()) {
       toast({ title: "Enter a message", variant: "destructive" });
       return;
