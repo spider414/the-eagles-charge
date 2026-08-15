@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, ExternalLink, Loader2, RefreshCw, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatCurrency } from "@/lib/format";
 
 const LOW_BALANCE = 5000;
+
+const naira = (v: number) => `₦${v.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
 
 /** Live CheapDataHub reseller wallet balance, admin only. */
 export default function AdminProviderBalance() {
@@ -59,7 +60,7 @@ export default function AdminProviderBalance() {
         ) : (
           <>
             <p className="text-2xl font-bold">
-              {balance === null ? "—" : formatCurrency(balance)}
+              {balance === null ? "—" : naira(balance)}
             </p>
             <p className="text-xs text-muted-foreground">
               {updatedAt ? `Updated ${updatedAt.toLocaleTimeString()} · auto-refreshes every 60s` : "Loading…"}
@@ -68,7 +69,7 @@ export default function AdminProviderBalance() {
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription className="text-xs">
-                  Balance is below {formatCurrency(LOW_BALANCE)}. Top up now to avoid failed recharges.
+                  Balance is below {naira(LOW_BALANCE)}. Top up now to avoid failed recharges.
                 </AlertDescription>
               </Alert>
             )}
