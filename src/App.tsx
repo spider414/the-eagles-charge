@@ -122,6 +122,7 @@ const App = () => {
             </BrowserRouter>
           </TooltipProvider>
         </WalletNotificationProvider>
+        </AppSettingsProvider>
       </AuthProvider>
       </LanguageProvider>
     </QueryClientProvider>
