@@ -241,6 +241,9 @@ export default function AdminUserDetail() {
     ["User id", profile.user_id],
   ];
 
+  const idleDays = daysSince(activity?.last_sign_in_at ?? null);
+  const isIdle = idleDays === null || idleDays >= 14;
+
   return (
     <div className="space-y-3">
       <Button size="sm" variant="outline" onClick={() => navigate("/admin/users")}>
@@ -266,6 +269,76 @@ export default function AdminUserDetail() {
                 <p className="break-all font-medium">{v}</p>
               </div>
             ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Clock className="h-4 w-4" /> Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="rounded-md border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Last login</p>
+              <p className="font-medium">
+                {activity?.last_sign_in_at ? new Date(activity.last_sign_in_at).toLocaleString() : "Never signed in"}
+                {idleDays !== null && (
+                  <span className="ml-1 text-muted-foreground">
+                    ({idleDays === 0 ? "today" : `${idleDays} day${idleDays === 1 ? "" : "s"} ago`})
+                  </span>
+                )}
+              </p>
+            </div>
+            <div className="rounded-md border border-border p-2 text-xs">
+              <p className="text-muted-foreground">Last transaction</p>
+              <p className="font-medium">
+                {activity?.last_transaction_at
+                  ? new Date(activity.last_transaction_at).toLocaleString()
+                  : "No transactions yet"}
+              </p>
+            </div>
+          </div>
+          {isIdle && (
+            <p className="rounded-md border border-border bg-muted/40 p-2 text-[11px] text-muted-foreground">
+              This user has been away for a while — send them a “we miss you” message with your hot deals.
+            </p>
+          )}
+          <div className="space-y-2">
+            <Label className="text-xs">Send a “we miss you” message</Label>
+            <div className="flex flex-wrap gap-2">
+              {(["email", "sms", "both", "push"] as const).map((c) => (
+                <Button
+                  key={c}
+                  size="sm"
+                  variant={winChannel === c ? "default" : "outline"}
+                  onClick={() => setWinChannel(c)}
+                >
+                  {c === "push" ? "App notification only" : c === "both" ? "Email + SMS" : c.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+            <Input
+              value={winSubject}
+              onChange={(e) => setWinSubject(e.target.value)}
+              placeholder="Subject / title"
+              className="h-9"
+            />
+            <Textarea
+              value={winMessage}
+              onChange={(e) => setWinMessage(e.target.value)}
+              rows={4}
+              className="text-xs"
+            />
+            <Button size="sm" disabled={winBusy} onClick={sendWinback}>
+              {winBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+              Send message
+            </Button>
+            <p className="text-[11px] text-muted-foreground">
+              An in-app notification is always created so the user sees it when they open the app.
+            </p>
           </div>
         </CardContent>
       </Card>
