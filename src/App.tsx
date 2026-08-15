@@ -47,6 +47,8 @@ import AdminBonusLog from "./pages/admin/AdminBonusLog";
 import AdminDepositFee from "./pages/admin/AdminDepositFee";
 import AdminDepositFeeLog from "./pages/admin/AdminDepositFeeLog";
 import AdminReconcile from "./pages/admin/AdminReconcile";
+import AdminRecovery from "./pages/admin/AdminRecovery";
+import AdminCampaigns from "./pages/admin/AdminCampaigns";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -96,6 +98,8 @@ const App = () => {
                     <Route path="users/:id" element={<AdminUserDetail />} />
                     <Route path="billing" element={<AdminBilling />} />
                     <Route path="reconcile" element={<AdminReconcile />} />
+                    <Route path="recovery" element={<AdminRecovery />} />
+                    <Route path="campaigns" element={<AdminCampaigns />} />
                     <Route path="bonus" element={<AdminBonus />} />
                     <Route path="bonus-log" element={<AdminBonusLog />} />
                     <Route path="deposit-fee" element={<AdminDepositFee />} />
