@@ -186,6 +186,8 @@ export default function AdminUserDetail() {
     ["Referral code", profile.referral_code || "—"],
     ["Referral earnings", naira(Number(profile.total_referral_earnings ?? 0))],
     ["Phone verified", profile.phone_verified ? "Yes" : "No"],
+    ["Email verified", profile.contact_email_verified ? "Yes" : "No"],
+    ["Account status", profile.suspended ? `Suspended — ${profile.suspended_reason ?? "no reason"}` : "Active"],
     ["Virtual account", profile.dva_account_number ? `${profile.dva_account_number} (${profile.dva_bank_name ?? ""})` : "—"],
     ["Registered", new Date(profile.created_at).toLocaleString()],
     ["User id", profile.user_id],
@@ -248,17 +250,57 @@ export default function AdminUserDetail() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" disabled={busy} onClick={() => adjust(1)}>
+            <Button size="sm" disabled={busy} onClick={() => requestAdjust(1)}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-1 h-4 w-4" />}
               Credit wallet
             </Button>
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => adjust(-1)}>
+            <Button size="sm" variant="outline" disabled={busy} onClick={() => requestAdjust(-1)}>
               <MinusCircle className="mr-1 h-4 w-4" /> Debit wallet
             </Button>
           </div>
           <p className="text-[11px] text-muted-foreground">
             Every adjustment creates a transaction, notifies the user and is recorded in the admin activity log.
+            Adjustments of {naira(LARGE_ADJUSTMENT)} or more need a typed confirmation.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ShieldOff className="h-4 w-4" /> Account access
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between rounded-md border border-border p-3">
+            <div>
+              <p className="text-sm font-medium">{profile.suspended ? "Suspended" : "Active"}</p>
+              <p className="text-xs text-muted-foreground">
+                Suspended users cannot recharge, subscribe or fund their wallet.
+              </p>
+            </div>
+            <Switch
+              checked={!!profile.suspended}
+              disabled={suspendBusy}
+              onCheckedChange={(v) => toggleSuspend(v)}
+            />
+          </div>
+          {!profile.suspended && (
+            <div className="space-y-1">
+              <Label className="text-xs">Suspension reason (required to suspend)</Label>
+              <Input
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+                placeholder="e.g. Multiple accounts on one device"
+                className="h-9"
+              />
+            </div>
+          )}
+          {profile.suspended && profile.suspended_at && (
+            <p className="text-[11px] text-muted-foreground">
+              Suspended on {new Date(profile.suspended_at).toLocaleString()}
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -280,6 +322,38 @@ export default function AdminUserDetail() {
           ))}
         </CardContent>
       </Card>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingSign > 0 ? "Credit" : "Debit"} {naira(Number(amount))}?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs">
+              {pendingSign > 0 ? "Credit" : "Debit"} {naira(Number(amount))}{" "}
+              {pendingSign > 0 ? "to" : "from"} {profile.full_name || profile.phone_number || "this user"}. Reason: {reason}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {Number(amount) >= LARGE_ADJUSTMENT && (
+            <div className="space-y-1">
+              <Label className="text-xs">Type CONFIRM to approve this large adjustment</Label>
+              <Input value={confirmText} onChange={(e) => setConfirmText(e.target.value)} className="h-9" />
+            </div>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy || (Number(amount) >= LARGE_ADJUSTMENT && confirmText.trim().toUpperCase() !== "CONFIRM")}
+              onClick={(e) => {
+                e.preventDefault();
+                adjust();
+              }}
+            >
+              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Yes, {pendingSign > 0 ? "credit" : "debit"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
