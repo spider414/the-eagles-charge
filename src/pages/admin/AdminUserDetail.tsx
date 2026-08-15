@@ -299,6 +299,8 @@ export default function AdminUserDetail() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid gap-2 sm:grid-cols-2">
+        <CardContent className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div className="rounded-md border border-border p-2 text-xs">
               <p className="text-muted-foreground">Last login</p>
               <p className="font-medium">
