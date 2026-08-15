@@ -440,6 +440,24 @@ const emailVerificationHtml = (b: Branding, t: TemplateCopy, p: EmailVerificatio
   );
 
 async function sendResend(from: string, to: string, subject: string, html: string) {
+const adminMessageHtml = (b: Branding, p: AdminMessagePayload, unsubUrl?: string) =>
+  shell(
+    b,
+    p.heading || p.subject,
+    `
+    <p style="font-size:15px;line-height:1.6;">Hi <strong>${escape(p.name || "there")}</strong>,</p>
+    <div style="font-size:15px;line-height:1.7;">${escape(p.message).replace(/\n/g, "<br/>")}</div>
+    ${
+      p.cta_url
+        ? `<p style="margin:24px 0 0;"><a href="${escape(p.cta_url)}" style="display:inline-block;background:${b.primary_color};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;">${escape(p.cta_label || "Open app")}</a></p>`
+        : ""
+    }
+    <p style="margin-top:22px;font-size:14px;">— <strong>${escape(b.brand_name)} Team</strong></p>
+  `,
+    unsubUrl,
+  );
+
+async function sendResend(from: string, to: string, subject: string, html: string) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
   if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
