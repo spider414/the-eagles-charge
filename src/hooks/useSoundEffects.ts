@@ -69,6 +69,7 @@ const playSynthSound = (type: SoundType) => {
 };
 
 export const useSoundEffects = () => {
+  const playRingtone = useCallback(() => playRing(), []);
   const playClick = useCallback(() => playSynthSound("click"), []);
   const playSuccess = useCallback(() => playSynthSound("success"), []);
   const playError = useCallback(() => playSynthSound("error"), []);
@@ -90,6 +91,7 @@ export const useSoundEffects = () => {
     playError,
     playNotification,
     playToggle,
+    playRingtone,
     testSound,
     isEnabled,
   };
@@ -97,3 +99,35 @@ export const useSoundEffects = () => {
 
 // Export for direct use without hook
 export const playSound = playSynthSound;
+
+/** Phone-style ringing tone (two-tone warble, repeated) + device vibration. */
+export const playRing = () => {
+  try {
+    if ("vibrate" in navigator) navigator.vibrate([400, 200, 400, 200, 400]);
+  } catch {}
+  if (!isSoundEnabled()) return;
+  try {
+    const ctx = getAudioContext();
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    const burst = (start: number) => {
+      [440, 480].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + start + 0.02);
+        gain.gain.setValueAtTime(0.14, ctx.currentTime + start + 0.7);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + start + 0.8);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + 0.85);
+      });
+    };
+    burst(0);
+    burst(1.2);
+  } catch (error) {
+    console.error("Ringtone playback error:", error);
+  }
+};
