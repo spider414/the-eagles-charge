@@ -17,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Clock, Loader2, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Clock, Loader2, MailWarning, MinusCircle, PlusCircle, Send, ShieldOff, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -87,6 +87,8 @@ export default function AdminUserDetail() {
   const [winSubject, setWinSubject] = useState("We miss you \u2014 hot deals are waiting \uD83D\uDD25");
   const [winMessage, setWinMessage] = useState(WINBACK_DEFAULT);
   const [winBusy, setWinBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyChannel, setVerifyChannel] = useState<"push" | "email" | "sms" | "both">("push");
 
   const load = async () => {
     if (!id) return;
@@ -208,6 +210,22 @@ export default function AdminUserDetail() {
     });
   };
 
+  const sendVerifyReminder = async () => {
+    setVerifyBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-outreach", {
+      body: { action: "verify_reminder", profile_id: id, channel: verifyChannel },
+    });
+    setVerifyBusy(false);
+    if (error || data?.error) {
+      toast({ title: "Could not send reminder", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Reminder sent",
+      description: "The user got an app notification to verify their email.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
@@ -272,6 +290,39 @@ export default function AdminUserDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {!profile.contact_email_verified && (
+        <Card className="border-destructive/40">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <MailWarning className="h-4 w-4 text-destructive" /> Email not verified
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="flex items-start gap-2 rounded-md border border-border bg-muted/40 p-2 text-[11px] text-muted-foreground">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              This user is blocked from recharges, subscriptions and wallet spending until they verify their email
+              address in Settings.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {(["push", "email", "sms", "both"] as const).map((c) => (
+                <Button
+                  key={c}
+                  size="sm"
+                  variant={verifyChannel === c ? "default" : "outline"}
+                  onClick={() => setVerifyChannel(c)}
+                >
+                  {c === "push" ? "App notification only" : c === "both" ? "Email + SMS" : c.toUpperCase()}
+                </Button>
+              ))}
+            </div>
+            <Button size="sm" disabled={verifyBusy} onClick={sendVerifyReminder}>
+              {verifyBusy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+              Send verification reminder
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader className="pb-3">
