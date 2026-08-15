@@ -105,7 +105,7 @@ const Privacy = () => {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground">
-          HARMIC RECHARGE v1.0.0
+          HARMIC RECHARGE v5.5.0
         </p>
       </main>
     </div>
