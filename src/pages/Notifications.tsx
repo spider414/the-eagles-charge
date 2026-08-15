@@ -30,7 +30,7 @@ const categoryOf = (n: { type: string; title: string; body: string }): Filter | 
 export default function Notifications() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { notifications, isLoading, markAllAsRead, refresh } = useNotifications();
+  const { notifications, isLoading, markAllAsRead, refetch } = useNotifications();
   const [filter, setFilter] = useState<Filter>("all");
   const [dismissals, setDismissals] = useState<{ popup_key: string; version: number; created_at: string }[]>([]);
 
@@ -115,7 +115,7 @@ export default function Notifications() {
           );
         })}
 
-        <Button variant="outline" size="sm" className="w-full" onClick={refresh}>
+        <Button variant="outline" size="sm" className="w-full" onClick={refetch}>
           Refresh
         </Button>
       </main>
