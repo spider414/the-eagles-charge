@@ -126,7 +126,11 @@ export default function AdminActivity() {
         ) : (
           <div className="space-y-2">
             {visible.map((e) => (
-              <div key={e.id} className="rounded-md border border-border p-2.5 text-xs">
+              <button
+                key={e.id}
+                onClick={() => setDetail(e)}
+                className="w-full rounded-md border border-border p-2.5 text-left text-xs hover:bg-muted/50"
+              >
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline" className="capitalize">{e.source}</Badge>
                   <span className="font-medium">{e.action}</span>
@@ -139,11 +143,23 @@ export default function AdminActivity() {
                   {e.target ? `target: ${e.target}` : ""}
                 </p>
                 {e.detail && <p className="mt-0.5 break-all text-muted-foreground">{e.detail}</p>}
-              </div>
+              </button>
             ))}
           </div>
         )}
       </CardContent>
+      <RecordDetailDialog
+        open={!!detail}
+        onOpenChange={(o) => !o && setDetail(null)}
+        title={detail?.action ?? ""}
+        description={detail ? `${detail.source} log entry · ${new Date(detail.at).toLocaleString()}` : undefined}
+        raw={detail?.raw}
+        fields={
+          detail
+            ? Object.entries(detail.raw).map(([label, value]) => ({ label, value }))
+            : []
+        }
+      />
     </Card>
   );
 }
