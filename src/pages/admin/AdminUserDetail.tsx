@@ -210,6 +210,22 @@ export default function AdminUserDetail() {
     });
   };
 
+  const sendVerifyReminder = async () => {
+    setVerifyBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-outreach", {
+      body: { action: "verify_reminder", profile_id: id, channel: verifyChannel },
+    });
+    setVerifyBusy(false);
+    if (error || data?.error) {
+      toast({ title: "Could not send reminder", description: error?.message || data?.error, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Reminder sent",
+      description: "The user got an app notification to verify their email.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-16">
