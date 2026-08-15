@@ -168,10 +168,6 @@ Deno.serve(async (req) => {
       return json({ success: true, sent });
     }
 
-    if (action === "recovery") {
-      // handled below
-    }
-
     if (action === "verify_reminder") {
       const {
         profile_id = null,
