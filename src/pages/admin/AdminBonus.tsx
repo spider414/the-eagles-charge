@@ -93,6 +93,7 @@ export default function AdminBonus() {
   };
 
   return (
+    <div className="space-y-3">
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-2">
@@ -143,5 +144,50 @@ export default function AdminBonus() {
         )}
       </CardContent>
     </Card>
+
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <CardTitle className="text-base">Welcome bonus popup</CardTitle>
+            <CardDescription>
+              Shown once per user in the app. Dismissed popups never repeat unless you announce again.
+            </CardDescription>
+          </div>
+          <Badge variant={popupEnabled ? "default" : "secondary"}>{popupEnabled ? "ON" : "OFF"}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <Label htmlFor="popup-toggle">Show popup to users</Label>
+            <p className="text-xs text-muted-foreground">
+              Turn off to immediately stop the popup for everyone.
+            </p>
+          </div>
+          <Switch id="popup-toggle" checked={popupEnabled} onCheckedChange={setPopupEnabled} />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="popup-message">Message</Label>
+          <Textarea
+            id="popup-message"
+            rows={4}
+            value={popupMessage}
+            onChange={(e) => setPopupMessage(e.target.value)}
+            placeholder={`Leave empty to auto-generate from the bonus setting (e.g. "welcome bonus is still ₦${Number(amount) || 0}" or "the bonus has ended").`}
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => savePopup(false)} disabled={saving} variant="outline">
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Save popup
+          </Button>
+          <Button onClick={() => savePopup(true)} disabled={saving}>
+            Save & announce to everyone again
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Announcement version: {popupVersion}</p>
+      </CardContent>
+    </Card>
+    </div>
   );
 }
