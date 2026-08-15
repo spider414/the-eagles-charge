@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { phone_number, password, full_name } = await req.json();
+    const { phone_number, password, full_name, device_fingerprint } = await req.json();
     const digits = String(phone_number ?? "").replace(/\D/g, "");
 
     if (digits.length < 10 || digits.length > 15) {
@@ -34,6 +34,57 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { persistSession: false } }
     );
+
+    // ---- One account per device / IP -------------------------------------
+    const ip =
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      req.headers.get("cf-connecting-ip") ||
+      null;
+    const fingerprint = String(device_fingerprint ?? "").slice(0, 128) || (ip ? `ip:${ip}` : null);
+
+    if (fingerprint) {
+      const { data: device } = await admin
+        .from("device_registrations")
+        .select("*")
+        .eq("fingerprint", fingerprint)
+        .maybeSingle();
+
+      if (device?.blocked) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "This device has been blocked from creating new accounts. Please contact support if you believe this is a mistake.",
+            code: "device_blocked",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      if (device && device.user_id && device.phone_number !== digits) {
+        const attempts = (device.attempts ?? 0) + 1;
+        const shouldBlock = attempts >= 3;
+        await admin
+          .from("device_registrations")
+          .update({
+            attempts,
+            last_attempt_at: new Date().toISOString(),
+            ip_address: ip,
+            blocked: shouldBlock,
+            blocked_reason: shouldBlock ? "Repeated multi-account attempts from one device" : null,
+          })
+          .eq("id", device.id);
+
+        return new Response(
+          JSON.stringify({
+            error: shouldBlock
+              ? "This device has been blocked after repeated attempts to open multiple accounts."
+              : "Only one account is allowed per device. Please log in with the account already registered on this phone.",
+            code: shouldBlock ? "device_blocked" : "device_limit",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
 
     const email = `${digits}@${PRIMARY_DOMAIN}`;
     const legacyEmail = `${digits}@${LEGACY_DOMAIN}`;
@@ -83,6 +134,19 @@ Deno.serve(async (req) => {
       phone_number: digits,
       full_name: full_name ?? null,
     });
+
+    if (fingerprint) {
+      await admin.from("device_registrations").upsert(
+        {
+          fingerprint,
+          ip_address: ip,
+          user_id: data.user.id,
+          phone_number: digits,
+          last_attempt_at: new Date().toISOString(),
+        },
+        { onConflict: "fingerprint" },
+      );
+    }
 
     return new Response(JSON.stringify({ success: true, user_id: data.user.id, email }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
