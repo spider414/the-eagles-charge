@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,12 +17,15 @@ export default function AdminBonus() {
   const [id, setId] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(true);
   const [amount, setAmount] = useState("2000");
+  const [popupEnabled, setPopupEnabled] = useState(true);
+  const [popupMessage, setPopupMessage] = useState("");
+  const [popupVersion, setPopupVersion] = useState(1);
 
   const load = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("app_settings")
-      .select("id, registration_bonus_enabled, registration_bonus_amount")
+      .select("id, registration_bonus_enabled, registration_bonus_amount, bonus_popup_enabled, bonus_popup_message, bonus_popup_version")
       .limit(1)
       .maybeSingle();
     if (error) {
@@ -30,6 +34,9 @@ export default function AdminBonus() {
       setId(data.id);
       setEnabled(data.registration_bonus_enabled);
       setAmount(String(Number(data.registration_bonus_amount)));
+      setPopupEnabled(!!data.bonus_popup_enabled);
+      setPopupMessage(data.bonus_popup_message ?? "");
+      setPopupVersion(Number(data.bonus_popup_version ?? 1));
     }
     setLoading(false);
   };
@@ -37,6 +44,32 @@ export default function AdminBonus() {
   useEffect(() => {
     load();
   }, []);
+
+  const savePopup = async (announceAgain: boolean) => {
+    if (!id) return;
+    setSaving(true);
+    const nextVersion = announceAgain ? popupVersion + 1 : popupVersion;
+    const { error } = await supabase
+      .from("app_settings")
+      .update({
+        bonus_popup_enabled: popupEnabled,
+        bonus_popup_message: popupMessage.trim() || null,
+        bonus_popup_version: nextVersion,
+      })
+      .eq("id", id);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Save failed", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: "Popup updated",
+      description: announceAgain
+        ? "Every user will see this announcement once more."
+        : "Popup settings saved.",
+    });
+    load();
+  };
 
   const save = async () => {
     const value = Number(amount);
