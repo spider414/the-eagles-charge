@@ -711,6 +711,9 @@ Deno.serve(async (req) => {
       html = accountDeletedHtml(branding, tpl, payload);
     } else if (payload.type === "email_verification") {
       html = emailVerificationHtml(branding, tpl, payload);
+    } else if (payload.type === "admin_message" || payload.type === "admin_promo") {
+      subject = payload.subject || tpl.subject;
+      html = adminMessageHtml(branding, payload, unsubUrl);
     } else {
       return new Response(JSON.stringify({ error: "Unknown email type" }), {
         status: 400,
