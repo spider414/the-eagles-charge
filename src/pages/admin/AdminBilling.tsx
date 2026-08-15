@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import RecordDetailDialog from "@/components/admin/RecordDetailDialog";
-import { useNavigate } from "react-router-dom";
 
 type Tx = {
   id: string;
@@ -30,7 +29,6 @@ const ngn = (n: number) =>
   new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 2 }).format(n);
 
 export default function AdminBilling() {
-  const navigate = useNavigate();
   const [tx, setTx] = useState<Tx[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<(typeof TABS)[number]["key"]>("paystack");
