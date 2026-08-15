@@ -48,7 +48,7 @@ Commit the `resources/` folder; the generated native folders are recreated on de
 
 ## 3. iOS — App Store submission
 
-**Bundle identifier** is already set to `app.lovable.theeaglescharge` in
+**Bundle identifier** is already set to `com.FkOxDWUKYCSg.natively` in
 `capacitor.config.ts` and propagates to Xcode on `cap sync`.
 
 In Xcode (`npx cap open ios`):
@@ -60,7 +60,7 @@ In Xcode (`npx cap open ios`):
    and an **App Store** provisioning profile from Apple Developer portal.
 3. **General** tab:
    - Display Name: `The Eagles Charge`
-   - Bundle Identifier: `app.lovable.theeaglescharge`
+   - Bundle Identifier: `com.FkOxDWUKYCSg.natively`
    - Version: `1.0.0`, Build: `1` (bump Build for every TestFlight upload)
    - Deployment target: iOS 14.0
    - Device orientation: **Portrait** only (matches manifest)
@@ -75,7 +75,7 @@ the app privacy questionnaire filled out.
 
 ## 4. Android — Play Store signed AAB
 
-**Package name** is `app.lovable.theeaglescharge` (matches
+**Package name** is `com.FkOxDWUKYCSg.natively` (matches
 `public/.well-known/assetlinks.json`). Do not change it after the first
 Play Store upload — Google locks it.
 
@@ -135,7 +135,7 @@ In `android/app/build.gradle` also confirm:
 
 ```gradle
 defaultConfig {
-    applicationId "app.lovable.theeaglescharge"
+    applicationId "com.FkOxDWUKYCSg.natively"
     minSdkVersion 23
     targetSdkVersion 34
     versionCode 1
