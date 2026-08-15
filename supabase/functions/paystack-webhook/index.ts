@@ -66,6 +66,31 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ---- Idempotency key -------------------------------------------------
+    // Claim the event once. A duplicate delivery (Paystack retries, manual
+    // replays) hits the unique constraint and exits before any wallet math.
+    const eventKey = [
+      event.event ?? "unknown",
+      event.data?.id ?? event.data?.reference ?? "no-ref",
+      event.data?.status ?? "",
+    ].join(":");
+
+    const { error: claimError } = await supabase.from("payment_events").insert({
+      event_key: eventKey,
+      event_type: event.event ?? "unknown",
+      reference: event.data?.reference ?? null,
+      amount: typeof event.data?.amount === "number" ? event.data.amount / 100 : null,
+      payload: event.data ?? null,
+    });
+
+    if (claimError) {
+      if ((claimError as { code?: string }).code === "23505") {
+        console.log("Duplicate Paystack event ignored:", eventKey);
+        return new Response("OK", { status: 200 });
+      }
+      console.error("Failed to record payment event:", claimError);
+    }
+
     // Handle dedicated account transfer (DVA credit)
     if (event.event === "dedicatedaccount.assign.success") {
       console.log("DVA assigned successfully:", event.data);

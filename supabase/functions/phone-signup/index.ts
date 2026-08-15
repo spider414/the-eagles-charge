@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { notifyAdminNewRegistration } from "../_shared/notify-admin.ts";
+import { namesMatch } from "../_shared/nameMatch.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,6 +9,12 @@ const corsHeaders = {
 
 const PRIMARY_DOMAIN = "phone.harmicglobal.com";
 const LEGACY_DOMAIN = "eagles.local";
+
+function localPhone(digits: string): string {
+  if (digits.length === 13 && digits.startsWith("234")) return "0" + digits.slice(3);
+  if (digits.length === 10) return "0" + digits;
+  return digits;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -34,6 +41,42 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
       { auth: { persistSession: false } }
     );
+
+    // ---- NIN identity check (admin-toggleable) ---------------------------
+    const { data: settings } = await admin
+      .from("app_settings")
+      .select("nin_verification_required")
+      .limit(1)
+      .maybeSingle();
+
+    if (settings?.nin_verification_required) {
+      const { data: ninRecord } = await admin
+        .from("nin_verifications")
+        .select("full_name, expires_at")
+        .eq("phone_number", localPhone(digits))
+        .maybeSingle();
+
+      if (!ninRecord || new Date(ninRecord.expires_at as string).getTime() < Date.now()) {
+        return new Response(
+          JSON.stringify({
+            error: "Please verify the NIN linked to this phone number before creating your account.",
+            code: "nin_required",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      if (!namesMatch(String(full_name ?? ""), String(ninRecord.full_name ?? ""))) {
+        return new Response(
+          JSON.stringify({
+            error:
+              "The name you entered does not match the name on the NIN linked to this phone number. Please use your NIN name.",
+            code: "nin_name_mismatch",
+          }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+    }
 
     // ---- One account per device / IP -------------------------------------
     const ip =

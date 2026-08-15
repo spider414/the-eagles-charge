@@ -1,10 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ActivitySquare, CreditCard, Gift, LifeBuoy, Mail, Megaphone, ShieldCheck, UserCog, Users } from "lucide-react";
+import { ActivitySquare, CreditCard, Gift, LifeBuoy, Mail, Megaphone, ScanFace, ShieldCheck, UserCog, Users } from "lucide-react";
+import AdminProviderBalance from "@/components/AdminProviderBalance";
 
 export default function AdminOverview() {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
+      <AdminProviderBalance />
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm">Users</CardTitle>
@@ -82,6 +84,16 @@ export default function AdminOverview() {
         <CardContent className="text-sm text-muted-foreground">
           <Link to="/admin/billing" className="flex items-center gap-2 text-primary hover:underline">
             <CreditCard className="h-4 w-4" /> Paystack payments and credit purchases
+          </Link>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">NIN verification</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <Link to="/admin/verification" className="flex items-center gap-2 text-primary hover:underline">
+            <ScanFace className="h-4 w-4" /> Require or relax NIN identity checks at signup
           </Link>
         </CardContent>
       </Card>

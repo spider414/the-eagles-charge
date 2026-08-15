@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Bell, Check, CheckCheck, Trash2, X, BellOff, Wallet, ShoppingCart, FileText, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -140,6 +141,14 @@ const NotificationCenter = () => {
             </div>
           </ScrollArea>
         )}
+        <div className="border-t p-2">
+          <Link
+            to="/notifications"
+            className="block w-full rounded-md px-2 py-1.5 text-center text-xs font-medium text-primary hover:bg-muted"
+          >
+            View message history
+          </Link>
+        </div>
       </PopoverContent>
     </Popover>
   );

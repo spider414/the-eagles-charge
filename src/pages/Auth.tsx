@@ -66,6 +66,7 @@ const Auth = () => {
   const [ninVerified, setNinVerified] = useState(false);
   const [ninData, setNinData] = useState<{ full_name: string; nin: string; photo?: string | null } | null>(null);
   const [isVerifyingNin, setIsVerifyingNin] = useState(false);
+  const [ninRequired, setNinRequired] = useState(true);
   
   // Forgot password state
   const [forgotPhone, setForgotPhone] = useState("");
@@ -335,6 +336,30 @@ const Auth = () => {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    supabase.functions
+      .invoke("signup-bonus")
+      .then(({ data }) => {
+        if (!cancelled && data) setNinRequired(data.nin_verification_required !== false);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const nameTokens = (raw: string) =>
+    (raw || "").toLowerCase().replace(/[^a-z\s]/g, " ").split(/\s+/).filter((t) => t.length > 1);
+
+  const ninNameMatches = (typed: string, official: string) => {
+    const a = nameTokens(typed);
+    const b = nameTokens(official);
+    if (!a.length || !b.length) return false;
+    const overlap = a.filter((t) => b.includes(t));
+    return overlap.length >= Math.min(2, Math.min(a.length, b.length));
+  };
+
   const handleVerifyNin = async () => {
     setIsVerifyingNin(true);
     try {
@@ -401,6 +426,25 @@ const Auth = () => {
         });
         return;
       }
+    }
+
+    if (ninRequired && !ninVerified) {
+      toast({
+        title: "NIN Verification Required",
+        description: "Please verify the NIN linked to your phone number before continuing.",
+        variant: "destructive",
+      });
+      setStep("signup-nin");
+      return;
+    }
+
+    if (ninRequired && ninData && !ninNameMatches(signupName, ninData.full_name)) {
+      toast({
+        title: "Name does not match your NIN",
+        description: `Please enter the exact name on your NIN: ${ninData.full_name}`,
+        variant: "destructive",
+      });
+      return;
     }
 
     if (!securityQuestion || !securityAnswer) {
@@ -917,13 +961,20 @@ const Auth = () => {
                       )}
                     </Button>
 
-                    <Button 
-                      variant="ghost" 
-                      className="w-full text-muted-foreground" 
-                      onClick={() => setStep("signup-details")}
-                    >
-                      Skip for now
-                    </Button>
+                    {!ninRequired && (
+                      <Button
+                        variant="ghost"
+                        className="w-full text-muted-foreground"
+                        onClick={() => setStep("signup-details")}
+                      >
+                        Skip for now
+                      </Button>
+                    )}
+                    {ninRequired && (
+                      <p className="text-center text-xs text-muted-foreground">
+                        NIN verification is required. The name on your NIN must match the name you register with.
+                      </p>
+                    )}
                   </>
                 ) : (
                   <>

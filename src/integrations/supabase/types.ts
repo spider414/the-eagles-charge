@@ -104,6 +104,7 @@ export type Database = {
           deposit_fee_enabled: boolean
           deposit_fee_percent: number
           id: string
+          nin_verification_required: boolean
           registration_bonus_amount: number
           registration_bonus_enabled: boolean
           singleton: boolean
@@ -117,6 +118,7 @@ export type Database = {
           deposit_fee_enabled?: boolean
           deposit_fee_percent?: number
           id?: string
+          nin_verification_required?: boolean
           registration_bonus_amount?: number
           registration_bonus_enabled?: boolean
           singleton?: boolean
@@ -130,6 +132,7 @@ export type Database = {
           deposit_fee_enabled?: boolean
           deposit_fee_percent?: number
           id?: string
+          nin_verification_required?: boolean
           registration_bonus_amount?: number
           registration_bonus_enabled?: boolean
           singleton?: boolean
@@ -415,6 +418,33 @@ export type Database = {
         }
         Relationships: []
       }
+      nin_verifications: {
+        Row: {
+          created_at: string
+          expires_at: string
+          full_name: string
+          id: string
+          nin: string
+          phone_number: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          full_name: string
+          id?: string
+          nin: string
+          phone_number: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          full_name?: string
+          id?: string
+          nin?: string
+          phone_number?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string
@@ -508,6 +538,36 @@ export type Database = {
           phone_number?: string
           purpose?: string
           verified?: boolean | null
+        }
+        Relationships: []
+      }
+      payment_events: {
+        Row: {
+          amount: number | null
+          created_at: string
+          event_key: string
+          event_type: string
+          id: string
+          payload: Json | null
+          reference: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          event_key: string
+          event_type: string
+          id?: string
+          payload?: Json | null
+          reference?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          event_key?: string
+          event_type?: string
+          id?: string
+          payload?: Json | null
+          reference?: string | null
         }
         Relationships: []
       }

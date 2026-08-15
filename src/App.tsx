@@ -33,6 +33,7 @@ import ExamPin from "./pages/ExamPin";
 import TransactionDetail from "./pages/TransactionDetail";
 import NotFound from "./pages/NotFound";
 import Unsubscribe from "./pages/Unsubscribe";
+import Notifications from "./pages/Notifications";
 import AdminLayout from "@/components/AdminLayout";
 import AdminOverview from "./pages/admin/AdminOverview";
 import AdminEmail from "./pages/admin/AdminEmail";
@@ -49,6 +50,7 @@ import AdminDepositFeeLog from "./pages/admin/AdminDepositFeeLog";
 import AdminReconcile from "./pages/admin/AdminReconcile";
 import AdminRecovery from "./pages/admin/AdminRecovery";
 import AdminCampaigns from "./pages/admin/AdminCampaigns";
+import AdminVerification from "./pages/admin/AdminVerification";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -88,6 +90,7 @@ const App = () => {
                   <Route path="/exam-pin" element={<ExamPin />} />
                   <Route path="/transaction/:id" element={<TransactionDetail />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />
+                  <Route path="/notifications" element={<Notifications />} />
                   <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<AdminOverview />} />
                     <Route path="email" element={<AdminEmail />} />
@@ -100,6 +103,7 @@ const App = () => {
                     <Route path="reconcile" element={<AdminReconcile />} />
                     <Route path="recovery" element={<AdminRecovery />} />
                     <Route path="campaigns" element={<AdminCampaigns />} />
+                    <Route path="verification" element={<AdminVerification />} />
                     <Route path="bonus" element={<AdminBonus />} />
                     <Route path="bonus-log" element={<AdminBonusLog />} />
                     <Route path="deposit-fee" element={<AdminDepositFee />} />
