@@ -5,12 +5,26 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Loader2, MinusCircle, PlusCircle, Wallet } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { ArrowLeft, Loader2, MinusCircle, PlusCircle, ShieldOff, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 const naira = (v: number) =>
   "\u20a6" + Number(v || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+/** Adjustments at or above this value need an extra typed confirmation. */
+const LARGE_ADJUSTMENT = 20000;
 
 type Profile = {
   id: string;
@@ -23,6 +37,10 @@ type Profile = {
   referral_code: string | null;
   total_referral_earnings: number | null;
   phone_verified: boolean | null;
+  contact_email_verified: boolean | null;
+  suspended: boolean | null;
+  suspended_reason: string | null;
+  suspended_at: string | null;
   dva_account_number: string | null;
   dva_bank_name: string | null;
   created_at: string;
@@ -47,6 +65,11 @@ export default function AdminUserDetail() {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingSign, setPendingSign] = useState<1 | -1>(1);
+  const [confirmText, setConfirmText] = useState("");
+  const [suspendReason, setSuspendReason] = useState("");
+  const [suspendBusy, setSuspendBusy] = useState(false);
 
   const load = async () => {
     if (!id) return;
@@ -70,7 +93,7 @@ export default function AdminUserDetail() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const adjust = async (sign: 1 | -1) => {
+  const requestAdjust = (sign: 1 | -1) => {
     const value = Number(amount);
     if (!value || value <= 0) {
       toast({ title: "Enter a valid amount", variant: "destructive" });
@@ -80,6 +103,14 @@ export default function AdminUserDetail() {
       toast({ title: "Enter a reason", description: "A reason is required for the audit log.", variant: "destructive" });
       return;
     }
+    setPendingSign(sign);
+    setConfirmText("");
+    setConfirmOpen(true);
+  };
+
+  const adjust = async () => {
+    const sign = pendingSign;
+    const value = Number(amount);
     setBusy(true);
     const { data, error } = await supabase.rpc("admin_adjust_wallet", {
       p_profile_id: id!,
@@ -87,6 +118,7 @@ export default function AdminUserDetail() {
       p_reason: reason.trim(),
     });
     setBusy(false);
+    setConfirmOpen(false);
     if (error) {
       toast({ title: "Adjustment failed", description: error.message, variant: "destructive" });
       return;
@@ -97,6 +129,34 @@ export default function AdminUserDetail() {
     });
     setAmount("");
     setReason("");
+    load();
+  };
+
+  const toggleSuspend = async (next: boolean) => {
+    if (!id) return;
+    if (next && !suspendReason.trim()) {
+      toast({ title: "Enter a suspension reason", variant: "destructive" });
+      return;
+    }
+    setSuspendBusy(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        suspended: next,
+        suspended_reason: next ? suspendReason.trim() : null,
+        suspended_at: next ? new Date().toISOString() : null,
+      })
+      .eq("id", id);
+    setSuspendBusy(false);
+    if (error) {
+      toast({ title: "Could not update account", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({
+      title: next ? "Account suspended" : "Account restored",
+      description: next ? "This user can no longer transact." : "This user can transact again.",
+    });
+    setSuspendReason("");
     load();
   };
 
