@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { ActivitySquare, CreditCard, Gift, Mail, ShieldCheck, UserCog, Users } from "lucide-react";
+import { ActivitySquare, CreditCard, Gift, LifeBuoy, Mail, Megaphone, ShieldCheck, UserCog, Users } from "lucide-react";
 
 export default function AdminOverview() {
   return (
@@ -12,6 +12,26 @@ export default function AdminOverview() {
         <CardContent className="text-sm text-muted-foreground">
           <Link to="/admin/users" className="flex items-center gap-2 text-primary hover:underline">
             <Users className="h-4 w-4" /> View registered users, balances and top up wallets
+          </Link>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Failed transaction recovery</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <Link to="/admin/recovery" className="flex items-center gap-2 text-primary hover:underline">
+            <LifeBuoy className="h-4 w-4" /> Apologise, refund and let users retry failed purchases
+          </Link>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Promo campaigns</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+          <Link to="/admin/campaigns" className="flex items-center gap-2 text-primary hover:underline">
+            <Megaphone className="h-4 w-4" /> Send email or SMS offers to all or selected users
           </Link>
         </CardContent>
       </Card>
