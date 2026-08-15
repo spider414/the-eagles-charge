@@ -21,26 +21,31 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useAdminScopes } from "@/hooks/useAdminScopes";
 
 const items = [
-  { title: "Overview", url: "/admin", icon: LayoutDashboard, end: true },
-  { title: "Users", url: "/admin/users", icon: Users },
-  { title: "Recovery", url: "/admin/recovery", icon: LifeBuoy },
-  { title: "Campaigns", url: "/admin/campaigns", icon: Megaphone },
-  { title: "Email branding", url: "/admin/email", icon: Mail },
-  { title: "OTP audit log", url: "/admin/otp", icon: ShieldCheck },
-  { title: "Activity log", url: "/admin/activity", icon: ActivitySquare },
-  { title: "Roles", url: "/admin/roles", icon: UserCog },
-  { title: "Billing", url: "/admin/billing", icon: CreditCard },
-  { title: "Reconciliation", url: "/admin/reconcile", icon: Scale },
-  { title: "Registration bonus", url: "/admin/bonus", icon: Gift },
-  { title: "NIN verification", url: "/admin/verification", icon: ScanFace },
-  { title: "Deposit fee", url: "/admin/deposit-fee", icon: Percent },
-  { title: "Deposit fee log", url: "/admin/deposit-fee-log", icon: History },
-  { title: "Bonus change log", url: "/admin/bonus-log", icon: History },
+  { title: "Overview", url: "/admin", icon: LayoutDashboard, end: true, scope: null },
+  { title: "Users", url: "/admin/users", icon: Users, scope: "users" },
+  { title: "Recovery", url: "/admin/recovery", icon: LifeBuoy, scope: "recovery" },
+  { title: "Campaigns", url: "/admin/campaigns", icon: Megaphone, scope: "campaigns" },
+  { title: "Email branding", url: "/admin/email", icon: Mail, scope: "email" },
+  { title: "OTP audit log", url: "/admin/otp", icon: ShieldCheck, scope: "logs" },
+  { title: "Activity log", url: "/admin/activity", icon: ActivitySquare, scope: "logs" },
+  { title: "Roles", url: "/admin/roles", icon: UserCog, scope: "super" },
+  { title: "Billing", url: "/admin/billing", icon: CreditCard, scope: "finance" },
+  { title: "Reconciliation", url: "/admin/reconcile", icon: Scale, scope: "finance" },
+  { title: "Registration bonus", url: "/admin/bonus", icon: Gift, scope: "finance" },
+  { title: "NIN verification", url: "/admin/verification", icon: ScanFace, scope: "verification" },
+  { title: "Deposit fee", url: "/admin/deposit-fee", icon: Percent, scope: "finance" },
+  { title: "Deposit fee log", url: "/admin/deposit-fee-log", icon: History, scope: "finance" },
+  { title: "Bonus change log", url: "/admin/bonus-log", icon: History, scope: "logs" },
 ];
 
 function AdminSidebar() {
+  const { can, isSuper } = useAdminScopes();
+  const visible = items.filter(
+    (item) => !item.scope || (item.scope === "super" ? isSuper : can(item.scope)),
+  );
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
@@ -48,7 +53,7 @@ function AdminSidebar() {
           <SidebarGroupLabel>Admin</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {visible.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild>
                     <NavLink
