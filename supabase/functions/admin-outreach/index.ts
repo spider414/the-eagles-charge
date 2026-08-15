@@ -94,6 +94,80 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const action = String(body?.action ?? "");
 
+    if (action === "user_activity") {
+      const { profile_id } = body ?? {};
+      if (!profile_id) return json({ error: "profile_id is required" }, 400);
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("user_id")
+        .eq("id", profile_id)
+        .maybeSingle();
+      if (!profile) return json({ error: "User not found" }, 404);
+      const { data: authUser, error } = await admin.auth.admin.getUserById(profile.user_id);
+      if (error) return json({ error: error.message }, 400);
+      const { data: lastTxn } = await admin
+        .from("transactions")
+        .select("created_at")
+        .eq("user_id", profile.user_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return json({
+        success: true,
+        last_sign_in_at: authUser?.user?.last_sign_in_at ?? null,
+        created_at: authUser?.user?.created_at ?? null,
+        last_transaction_at: lastTxn?.created_at ?? null,
+      });
+    }
+
+    if (action === "winback") {
+      const {
+        profile_id,
+        channel = "email",
+        subject = "We miss you \u2014 hot deals are waiting",
+        message = "",
+        push = true,
+      } = body ?? {};
+      if (!profile_id || !String(message).trim())
+        return json({ error: "profile_id and message are required" }, 400);
+
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id, user_id, full_name, phone_number, contact_email, email")
+        .eq("id", profile_id)
+        .maybeSingle();
+      if (!profile) return json({ error: "User not found" }, 404);
+
+      const sent =
+        channel === "push"
+          ? false
+          : await deliver(admin, profile as Recipient, { channel, subject, message, promo: true });
+
+      if (push || channel === "push") {
+        await admin.from("notifications").insert({
+          user_id: profile.user_id,
+          title: subject,
+          body: message,
+          type: "promo",
+        });
+        await admin.functions
+          .invoke("send-notification", {
+            body: { user_id: profile.user_id, title: subject, body: message },
+          })
+          .catch(() => null);
+      }
+
+      await admin.from("recovery_actions").insert({
+        user_id: profile.user_id,
+        actor_user_id: gate.userId,
+        action: "winback",
+        channel,
+        message,
+      });
+
+      return json({ success: true, sent });
+    }
+
     if (action === "recovery") {
       const {
         profile_id,
