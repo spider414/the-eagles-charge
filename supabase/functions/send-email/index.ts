@@ -439,7 +439,6 @@ const emailVerificationHtml = (b: Branding, t: TemplateCopy, p: EmailVerificatio
   `,
   );
 
-async function sendResend(from: string, to: string, subject: string, html: string) {
 const adminMessageHtml = (b: Branding, p: AdminMessagePayload, unsubUrl?: string) =>
   shell(
     b,
