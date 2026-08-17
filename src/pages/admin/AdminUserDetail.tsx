@@ -201,22 +201,29 @@ export default function AdminUserDetail() {
       return;
     }
     setSuspendBusy(true);
-    const { error } = await supabase
-      .from("profiles")
-      .update({
+    const { data, error } = await supabase.functions.invoke("admin-outreach", {
+      body: {
+        action: "suspend",
+        profile_id: id,
         suspended: next,
-        suspended_reason: next ? suspendReason.trim() : null,
-        suspended_at: next ? new Date().toISOString() : null,
-      })
-      .eq("id", id);
+        reason: suspendReason.trim(),
+        notify: true,
+      },
+    });
     setSuspendBusy(false);
-    if (error) {
-      toast({ title: "Could not update account", description: error.message, variant: "destructive" });
+    if (error || (data as { error?: string } | null)?.error) {
+      toast({
+        title: "Could not update account",
+        description: (data as { error?: string } | null)?.error ?? error?.message,
+        variant: "destructive",
+      });
       return;
     }
     toast({
       title: next ? "Account suspended" : "Account restored",
-      description: next ? "This user can no longer transact." : "This user can transact again.",
+      description: next
+        ? "The user has been notified in the app and by email."
+        : "The user can transact again and has been notified.",
     });
     setSuspendReason("");
     load();

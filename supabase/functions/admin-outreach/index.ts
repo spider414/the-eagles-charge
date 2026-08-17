@@ -23,6 +23,44 @@ const toE164 = (raw: string | null | undefined) => {
 const isRealEmail = (e: string | null | undefined) =>
   !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !/@(eagles\.local|phone\.harmicglobal\.com)$/.test(e);
 
+/**
+ * Calls the send-email function directly over HTTP with the service role key.
+ * supabase-js `functions.invoke` swallows non-2xx bodies and was failing silently,
+ * so admin emails never reached Resend.
+ */
+async function sendEmail(payload: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return { ok: false, error: "Email service not configured" };
+  try {
+    const res = await fetch(`${url}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        apikey: key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      console.error("send-email failed", res.status, text);
+      return { ok: false, error: text || `HTTP ${res.status}` };
+    }
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      // non-JSON success body
+    }
+    if (parsed.skipped) return { ok: false, error: `skipped: ${parsed.skipped}` };
+    return { ok: true };
+  } catch (e) {
+    console.error("send-email network error", e);
+    return { ok: false, error: e instanceof Error ? e.message : "Email request failed" };
+  }
+}
+
 async function sendSms(to: string, body: string) {
   const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
   const token = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -40,6 +78,26 @@ async function sendSms(to: string, body: string) {
   if (!res.ok) throw new Error(out?.message || "SMS delivery failed");
 }
 
+/** Fires a web push for a notification row that was already inserted. */
+async function pushOnly(userId: string, title: string, body: string, type = "general") {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return;
+  try {
+    await fetch(`${url}/functions/v1/send-notification`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        apikey: key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "push", user_id: userId, title, body, type }),
+    });
+  } catch (e) {
+    console.error("push failed", userId, e);
+  }
+}
+
 type Recipient = {
   id: string;
   user_id: string;
@@ -55,19 +113,21 @@ async function deliver(
   opts: { channel: string; subject: string; message: string; promo: boolean },
 ) {
   let sent = false;
+  let lastError: string | undefined;
   const email = isRealEmail(r.contact_email) ? r.contact_email : isRealEmail(r.email) ? r.email : null;
   if ((opts.channel === "email" || opts.channel === "both") && email) {
-    const { error } = await admin.functions.invoke("send-email", {
-      body: {
-        type: opts.promo ? "admin_promo" : "admin_message",
-        to: email,
-        name: r.full_name,
-        subject: opts.subject,
-        heading: opts.subject,
-        message: opts.message,
-      },
+    const res = await sendEmail({
+      type: opts.promo ? "admin_promo" : "admin_message",
+      to: email,
+      name: r.full_name,
+      subject: opts.subject,
+      heading: opts.subject,
+      message: opts.message,
     });
-    if (!error) sent = true;
+    if (res.ok) sent = true;
+    else lastError = res.error;
+  } else if ((opts.channel === "email" || opts.channel === "both") && !email) {
+    lastError = "no_valid_email_address";
   }
   if (opts.channel === "sms" || opts.channel === "both") {
     const phone = toE164(r.phone_number);
@@ -77,9 +137,13 @@ async function deliver(
         sent = true;
       } catch (e) {
         console.error("sms failed", r.id, e);
+        lastError = e instanceof Error ? e.message : "SMS failed";
       }
+    } else {
+      lastError = lastError ?? "no_valid_phone_number";
     }
   }
+  if (!sent && lastError) console.error("deliver failed", r.id, lastError);
   return sent;
 }
 
@@ -163,11 +227,7 @@ Deno.serve(async (req) => {
           body: message,
           type: "promo",
         });
-        await admin.functions
-          .invoke("send-notification", {
-            body: { user_id: profile.user_id, title: subject, body: message },
-          })
-          .catch(() => null);
+        await pushOnly(profile.user_id, subject, message, "promo");
       }
 
       await admin.from("recovery_actions").insert({
@@ -244,9 +304,7 @@ Deno.serve(async (req) => {
           type: "account",
         });
         if (!insertError) notified++;
-        await admin.functions
-          .invoke("send-notification", { body: { user_id: r.user_id, title, body: message } })
-          .catch(() => null);
+        await pushOnly(r.user_id, title, message, "account");
         if (channel !== "push") {
           const sent = await deliver(admin, r, { channel, subject: title, message, promo: false });
           if (sent) messaged++;
@@ -323,6 +381,63 @@ Deno.serve(async (req) => {
       });
 
       return json({ success: true, sent, refunded });
+    }
+
+    if (action === "suspend") {
+      const { profile_id, suspended, reason = "", notify = true } = body ?? {};
+      if (!profile_id || typeof suspended !== "boolean")
+        return json({ error: "profile_id and suspended are required" }, 400);
+      if (suspended && !String(reason).trim())
+        return json({ error: "A suspension reason is required" }, 400);
+
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id, user_id, full_name, phone_number, contact_email, email")
+        .eq("id", profile_id)
+        .maybeSingle();
+      if (!profile) return json({ error: "User not found" }, 404);
+
+      const { error: updateError } = await admin
+        .from("profiles")
+        .update({
+          suspended,
+          suspended_reason: suspended ? String(reason).trim() : null,
+          suspended_at: suspended ? new Date().toISOString() : null,
+        })
+        .eq("id", profile_id);
+      if (updateError) return json({ error: updateError.message }, 400);
+
+      const title = suspended ? "Your account has been suspended" : "Your account has been restored";
+      const message = suspended
+        ? `Your HARMIC RECHARGE account has been suspended. Reason: ${String(reason).trim()}. You cannot recharge, subscribe or fund your wallet until this is resolved. Contact support if you believe this is a mistake.`
+        : "Your HARMIC RECHARGE account has been restored. You can now recharge, subscribe and fund your wallet again.";
+
+      let emailed = false;
+      if (notify) {
+        await admin.from("notifications").insert({
+          user_id: profile.user_id,
+          title,
+          body: message,
+          type: "account",
+        });
+        await pushOnly(profile.user_id, title, message, "account");
+        emailed = await deliver(admin, profile as Recipient, {
+          channel: "email",
+          subject: title,
+          message,
+          promo: false,
+        });
+      }
+
+      await admin.from("recovery_actions").insert({
+        user_id: profile.user_id,
+        actor_user_id: gate.userId,
+        action: suspended ? "account_suspended" : "account_restored",
+        channel: "app",
+        message,
+      });
+
+      return json({ success: true, suspended, notified: notify, emailed });
     }
 
     if (action === "campaign") {
