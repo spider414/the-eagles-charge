@@ -369,10 +369,6 @@ Deno.serve(async (req) => {
       return json({ success: true, sent, refunded });
     }
 
-    if (action === "campaign") {
-      // handled below
-    }
-
     if (action === "suspend") {
       const { profile_id, suspended, reason = "", notify = true } = body ?? {};
       if (!profile_id || typeof suspended !== "boolean")
