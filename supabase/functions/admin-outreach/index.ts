@@ -78,6 +78,43 @@ async function sendSms(to: string, body: string) {
   if (!res.ok) throw new Error(out?.message || "SMS delivery failed");
 }
 
+/** Fires a web push for a notification row that was already inserted. */
+async function pushOnly(userId: string, title: string, body: string, type = "general") {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return;
+  try {
+    await fetch(`${url}/functions/v1/send-notification`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        apikey: key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action: "push", user_id: userId, title, body, type }),
+    });
+  } catch (e) {
+    console.error("push failed", userId, e);
+  }
+}
+
+async function sendSmsLegacy(to: string, body: string) {
+  const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
+  const token = Deno.env.get("TWILIO_AUTH_TOKEN");
+  const from = Deno.env.get("TWILIO_PHONE_NUMBER");
+  if (!sid || !token || !from) throw new Error("SMS service not configured");
+  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${btoa(`${sid}:${token}`)}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({ To: to, From: from, Body: body }),
+  });
+  const out = await res.json();
+  if (!res.ok) throw new Error(out?.message || "SMS delivery failed");
+}
+
 type Recipient = {
   id: string;
   user_id: string;
