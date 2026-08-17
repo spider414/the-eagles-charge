@@ -23,6 +23,44 @@ const toE164 = (raw: string | null | undefined) => {
 const isRealEmail = (e: string | null | undefined) =>
   !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !/@(eagles\.local|phone\.harmicglobal\.com)$/.test(e);
 
+/**
+ * Calls the send-email function directly over HTTP with the service role key.
+ * supabase-js `functions.invoke` swallows non-2xx bodies and was failing silently,
+ * so admin emails never reached Resend.
+ */
+async function sendEmail(payload: Record<string, unknown>): Promise<{ ok: boolean; error?: string }> {
+  const url = Deno.env.get("SUPABASE_URL");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!url || !key) return { ok: false, error: "Email service not configured" };
+  try {
+    const res = await fetch(`${url}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        apikey: key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const text = await res.text();
+    if (!res.ok) {
+      console.error("send-email failed", res.status, text);
+      return { ok: false, error: text || `HTTP ${res.status}` };
+    }
+    let parsed: Record<string, unknown> = {};
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      // non-JSON success body
+    }
+    if (parsed.skipped) return { ok: false, error: `skipped: ${parsed.skipped}` };
+    return { ok: true };
+  } catch (e) {
+    console.error("send-email network error", e);
+    return { ok: false, error: e instanceof Error ? e.message : "Email request failed" };
+  }
+}
+
 async function sendSms(to: string, body: string) {
   const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
   const token = Deno.env.get("TWILIO_AUTH_TOKEN");
@@ -55,19 +93,21 @@ async function deliver(
   opts: { channel: string; subject: string; message: string; promo: boolean },
 ) {
   let sent = false;
+  let lastError: string | undefined;
   const email = isRealEmail(r.contact_email) ? r.contact_email : isRealEmail(r.email) ? r.email : null;
   if ((opts.channel === "email" || opts.channel === "both") && email) {
-    const { error } = await admin.functions.invoke("send-email", {
-      body: {
-        type: opts.promo ? "admin_promo" : "admin_message",
-        to: email,
-        name: r.full_name,
-        subject: opts.subject,
-        heading: opts.subject,
-        message: opts.message,
-      },
+    const res = await sendEmail({
+      type: opts.promo ? "admin_promo" : "admin_message",
+      to: email,
+      name: r.full_name,
+      subject: opts.subject,
+      heading: opts.subject,
+      message: opts.message,
     });
-    if (!error) sent = true;
+    if (res.ok) sent = true;
+    else lastError = res.error;
+  } else if ((opts.channel === "email" || opts.channel === "both") && !email) {
+    lastError = "no_valid_email_address";
   }
   if (opts.channel === "sms" || opts.channel === "both") {
     const phone = toE164(r.phone_number);
@@ -77,9 +117,13 @@ async function deliver(
         sent = true;
       } catch (e) {
         console.error("sms failed", r.id, e);
+        lastError = e instanceof Error ? e.message : "SMS failed";
       }
+    } else {
+      lastError = lastError ?? "no_valid_phone_number";
     }
   }
+  if (!sent && lastError) console.error("deliver failed", r.id, lastError);
   return sent;
 }
 
