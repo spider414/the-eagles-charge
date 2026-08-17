@@ -216,7 +216,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Send notification to user(s) ──
-    if (action === "send") {
+    if (action === "send" || action === "push") {
       // This should only be called internally (service_role)
       const { user_id, user_ids, title, body, type, data } = params;
 
@@ -228,16 +228,17 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Store in-app notifications
-      const notifications = targetIds.map((uid: string) => ({
-        user_id: uid,
-        title,
-        body,
-        type: type || "general",
-        data: data || {},
-      }));
-
-      await supabase.from("notifications").insert(notifications);
+      // Store in-app notifications ("push" skips this — the caller already inserted the row)
+      if (action === "send") {
+        const notifications = targetIds.map((uid: string) => ({
+          user_id: uid,
+          title,
+          body,
+          type: type || "general",
+          data: data || {},
+        }));
+        await supabase.from("notifications").insert(notifications);
+      }
 
       // Send web push to all subscriptions
       const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
