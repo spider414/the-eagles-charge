@@ -98,23 +98,6 @@ async function pushOnly(userId: string, title: string, body: string, type = "gen
   }
 }
 
-async function sendSmsLegacy(to: string, body: string) {
-  const sid = Deno.env.get("TWILIO_ACCOUNT_SID");
-  const token = Deno.env.get("TWILIO_AUTH_TOKEN");
-  const from = Deno.env.get("TWILIO_PHONE_NUMBER");
-  if (!sid || !token || !from) throw new Error("SMS service not configured");
-  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${btoa(`${sid}:${token}`)}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: new URLSearchParams({ To: to, From: from, Body: body }),
-  });
-  const out = await res.json();
-  if (!res.ok) throw new Error(out?.message || "SMS delivery failed");
-}
-
 type Recipient = {
   id: string;
   user_id: string;
@@ -244,11 +227,7 @@ Deno.serve(async (req) => {
           body: message,
           type: "promo",
         });
-        await admin.functions
-          .invoke("send-notification", {
-            body: { user_id: profile.user_id, title: subject, body: message },
-          })
-          .catch(() => null);
+        await pushOnly(profile.user_id, subject, message, "promo");
       }
 
       await admin.from("recovery_actions").insert({
@@ -325,9 +304,7 @@ Deno.serve(async (req) => {
           type: "account",
         });
         if (!insertError) notified++;
-        await admin.functions
-          .invoke("send-notification", { body: { user_id: r.user_id, title, body: message } })
-          .catch(() => null);
+        await pushOnly(r.user_id, title, message, "account");
         if (channel !== "push") {
           const sent = await deliver(admin, r, { channel, subject: title, message, promo: false });
           if (sent) messaged++;
@@ -443,11 +420,7 @@ Deno.serve(async (req) => {
           body: message,
           type: "account",
         });
-        await admin.functions
-          .invoke("send-notification", {
-            body: { action: "send", user_id: profile.user_id, title, body: message, type: "account" },
-          })
-          .catch(() => null);
+        await pushOnly(profile.user_id, title, message, "account");
         emailed = await deliver(admin, profile as Recipient, {
           channel: "email",
           subject: title,
