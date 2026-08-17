@@ -370,6 +370,71 @@ Deno.serve(async (req) => {
     }
 
     if (action === "campaign") {
+      // handled below
+    }
+
+    if (action === "suspend") {
+      const { profile_id, suspended, reason = "", notify = true } = body ?? {};
+      if (!profile_id || typeof suspended !== "boolean")
+        return json({ error: "profile_id and suspended are required" }, 400);
+      if (suspended && !String(reason).trim())
+        return json({ error: "A suspension reason is required" }, 400);
+
+      const { data: profile } = await admin
+        .from("profiles")
+        .select("id, user_id, full_name, phone_number, contact_email, email")
+        .eq("id", profile_id)
+        .maybeSingle();
+      if (!profile) return json({ error: "User not found" }, 404);
+
+      const { error: updateError } = await admin
+        .from("profiles")
+        .update({
+          suspended,
+          suspended_reason: suspended ? String(reason).trim() : null,
+          suspended_at: suspended ? new Date().toISOString() : null,
+        })
+        .eq("id", profile_id);
+      if (updateError) return json({ error: updateError.message }, 400);
+
+      const title = suspended ? "Your account has been suspended" : "Your account has been restored";
+      const message = suspended
+        ? `Your HARMIC RECHARGE account has been suspended. Reason: ${String(reason).trim()}. You cannot recharge, subscribe or fund your wallet until this is resolved. Contact support if you believe this is a mistake.`
+        : "Your HARMIC RECHARGE account has been restored. You can now recharge, subscribe and fund your wallet again.";
+
+      let emailed = false;
+      if (notify) {
+        await admin.from("notifications").insert({
+          user_id: profile.user_id,
+          title,
+          body: message,
+          type: "account",
+        });
+        await admin.functions
+          .invoke("send-notification", {
+            body: { action: "send", user_id: profile.user_id, title, body: message, type: "account" },
+          })
+          .catch(() => null);
+        emailed = await deliver(admin, profile as Recipient, {
+          channel: "email",
+          subject: title,
+          message,
+          promo: false,
+        });
+      }
+
+      await admin.from("recovery_actions").insert({
+        user_id: profile.user_id,
+        actor_user_id: gate.userId,
+        action: suspended ? "account_suspended" : "account_restored",
+        channel: "app",
+        message,
+      });
+
+      return json({ success: true, suspended, notified: notify, emailed });
+    }
+
+    if (action === "campaign") {
       const {
         channel = "email",
         segment = "all",
