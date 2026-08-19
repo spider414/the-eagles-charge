@@ -104,18 +104,27 @@ async function sendWebPush(
 
     const jwt = await createJWT(audience, vapidSubject, vapidPrivateKey);
 
+    // Push services reject unencrypted payloads — encrypt with aes128gcm (RFC 8291).
+    const body = await encryptPayload(payload, subscription.p256dh, subscription.auth);
+
     const response = await fetch(subscription.endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/octet-stream",
+        "Content-Encoding": "aes128gcm",
         TTL: "86400",
+        Urgency: "high",
         Authorization: `vapid t=${jwt}, k=${vapidPublicKey}`,
       },
-      body: payload,
+      body,
     });
 
     if (response.status === 410 || response.status === 404) {
       return false; // Subscription expired
+    }
+
+    if (!response.ok) {
+      console.error("Push endpoint rejected:", response.status, await response.text());
     }
 
     return response.ok;
