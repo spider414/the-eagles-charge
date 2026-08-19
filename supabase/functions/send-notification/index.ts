@@ -97,7 +97,7 @@ async function sendWebPush(
   vapidPrivateKey: string,
   vapidPublicKey: string,
   vapidSubject: string
-): Promise<boolean> {
+): Promise<"ok" | "expired" | "error"> {
   return await sendWebPushImpl(subscription, payload, vapidPrivateKey, vapidPublicKey, vapidSubject);
 }
 
@@ -173,7 +173,7 @@ async function sendWebPushImpl(
   vapidPrivateKey: string,
   vapidPublicKey: string,
   vapidSubject: string
-): Promise<boolean> {
+): Promise<"ok" | "expired" | "error"> {
   try {
     const url = new URL(subscription.endpoint);
     const audience = `${url.protocol}//${url.host}`;
@@ -196,17 +196,18 @@ async function sendWebPushImpl(
     });
 
     if (response.status === 410 || response.status === 404) {
-      return false; // Subscription expired
+      return "expired";
     }
 
     if (!response.ok) {
       console.error("Push endpoint rejected:", response.status, await response.text());
+      return "error";
     }
 
-    return response.ok;
+    return "ok";
   } catch (e) {
     console.error("Web push error:", e);
-    return false;
+    return "error";
   }
 }
 
