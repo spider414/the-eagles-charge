@@ -98,6 +98,82 @@ async function sendWebPush(
   vapidPublicKey: string,
   vapidSubject: string
 ): Promise<boolean> {
+  return await sendWebPushImpl(subscription, payload, vapidPrivateKey, vapidPublicKey, vapidSubject);
+}
+
+// ── RFC 8291 aes128gcm payload encryption ──
+async function hmac(key: Uint8Array, data: Uint8Array): Promise<Uint8Array> {
+  const k = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return new Uint8Array(await crypto.subtle.sign("HMAC", k, data));
+}
+
+function concat(...arrays: Uint8Array[]): Uint8Array {
+  const total = arrays.reduce((n, a) => n + a.length, 0);
+  const out = new Uint8Array(total);
+  let offset = 0;
+  for (const a of arrays) {
+    out.set(a, offset);
+    offset += a.length;
+  }
+  return out;
+}
+
+async function encryptPayload(
+  payload: string,
+  p256dhBase64url: string,
+  authBase64url: string
+): Promise<Uint8Array> {
+  const enc = new TextEncoder();
+  const uaPublic = base64UrlToUint8Array(p256dhBase64url);
+  const authSecret = base64UrlToUint8Array(authBase64url);
+
+  // Ephemeral sender key pair
+  const asKeyPair = await crypto.subtle.generateKey(
+    { name: "ECDH", namedCurve: "P-256" },
+    true,
+    ["deriveBits"]
+  ) as CryptoKeyPair;
+  const asPublic = new Uint8Array(await crypto.subtle.exportKey("raw", asKeyPair.publicKey));
+
+  const uaKey = await crypto.subtle.importKey(
+    "raw",
+    uaPublic,
+    { name: "ECDH", namedCurve: "P-256" },
+    false,
+    []
+  );
+  const ecdhSecret = new Uint8Array(
+    await crypto.subtle.deriveBits({ name: "ECDH", public: uaKey }, asKeyPair.privateKey, 256)
+  );
+
+  const prkKey = await hmac(authSecret, ecdhSecret);
+  const keyInfo = concat(enc.encode("WebPush: info\0"), uaPublic, asPublic, new Uint8Array([1]));
+  const ikm = await hmac(prkKey, keyInfo);
+
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const prk = await hmac(salt, ikm);
+
+  const cek = (await hmac(prk, concat(enc.encode("Content-Encoding: aes128gcm\0"), new Uint8Array([1])))).slice(0, 16);
+  const nonce = (await hmac(prk, concat(enc.encode("Content-Encoding: nonce\0"), new Uint8Array([1])))).slice(0, 12);
+
+  const aesKey = await crypto.subtle.importKey("raw", cek, { name: "AES-GCM" }, false, ["encrypt"]);
+  const plaintext = concat(enc.encode(payload), new Uint8Array([2])); // 0x02 = last record delimiter
+  const ciphertext = new Uint8Array(
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, plaintext)
+  );
+
+  // header = salt(16) | record size(4) | key id length(1) | key id (as public key)
+  const recordSize = new Uint8Array([0, 0, 0x10, 0]); // 4096
+  return concat(salt, recordSize, new Uint8Array([asPublic.length]), asPublic, ciphertext);
+}
+
+async function sendWebPushImpl(
+  subscription: { endpoint: string; p256dh: string; auth: string },
+  payload: string,
+  vapidPrivateKey: string,
+  vapidPublicKey: string,
+  vapidSubject: string
+): Promise<boolean> {
   try {
     const url = new URL(subscription.endpoint);
     const audience = `${url.protocol}//${url.host}`;
