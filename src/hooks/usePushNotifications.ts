@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
+// Registers (or reuses) the push-only service worker. `serviceWorker.ready`
+// can hang forever when nothing is registered yet, so always register first.
+const getPushRegistration = async (): Promise<ServiceWorkerRegistration> =>
+  await navigator.serviceWorker.register("/sw-push.js", { scope: "/" });
+
 export const usePushNotifications = () => {
   const { user } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -23,7 +28,7 @@ export const usePushNotifications = () => {
 
   const checkExistingSubscription = async () => {
     try {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getPushRegistration();
       const sub = await (reg as any).pushManager?.getSubscription();
       setIsSubscribed(!!sub);
     } catch {
@@ -49,7 +54,7 @@ export const usePushNotifications = () => {
         return false;
       }
 
-      const reg = await navigator.serviceWorker.ready as any;
+      const reg = (await getPushRegistration()) as any;
 
       // Convert VAPID key
       const padding = "=".repeat((4 - (vapidData.publicKey.length % 4)) % 4);
@@ -87,7 +92,7 @@ export const usePushNotifications = () => {
 
   const unsubscribe = useCallback(async () => {
     try {
-      const reg = await navigator.serviceWorker.ready as any;
+      const reg = (await getPushRegistration()) as any;
       const sub = await reg.pushManager?.getSubscription();
       if (sub) {
         const json = sub.toJSON();
