@@ -339,7 +339,7 @@ Deno.serve(async (req) => {
 
           if (subs) {
             for (const sub of subs) {
-              const success = await sendWebPush(
+              const result = await sendWebPush(
                 { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
                 JSON.stringify({ title, body, type, data }),
                 vapidPrivateKey,
@@ -347,8 +347,8 @@ Deno.serve(async (req) => {
                 "mailto:harmicrecharge@harmicglobal.com"
               );
 
-              // Remove expired subscriptions
-              if (!success) {
+              // Remove only expired/gone subscriptions; keep them on transient errors
+              if (result === "expired") {
                 await supabase
                   .from("push_subscriptions")
                   .delete()
