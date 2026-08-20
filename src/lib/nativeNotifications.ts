@@ -66,6 +66,22 @@ export const ensureAlertChannel = (): Promise<void> => {
 };
 
 /** Requests OS notification permission (Android 13+ / iOS). */
+export type NativePermissionState = "granted" | "denied" | "prompt" | "unavailable";
+
+/** Reads the current OS notification permission without prompting. */
+export const getNativeNotificationPermission = async (): Promise<NativePermissionState> => {
+  if (!isNativeApp()) return "unavailable";
+  try {
+    const { LocalNotifications } = await import("@capacitor/local-notifications");
+    const current = await LocalNotifications.checkPermissions();
+    if (current.display === "granted") return "granted";
+    if (current.display === "denied") return "denied";
+    return "prompt";
+  } catch {
+    return "unavailable";
+  }
+};
+
 export const requestNativeNotificationPermission = async (): Promise<boolean> => {
   if (!isNativeApp()) return false;
   try {

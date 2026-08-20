@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ensureAlertChannel,
   isNativeApp,
-  requestNativeNotificationPermission,
+  getNativeNotificationPermission,
   showNativeAlert,
   ALERT_CHANNEL_ID,
 } from "@/lib/nativeNotifications";
@@ -12,13 +12,22 @@ import {
 /**
  * Native (Android/iOS) notification wiring:
  *  - creates the high-importance alert channel on startup
- *  - asks for OS notification permission once
+ *  - registers push only once permission is already granted (the friendly
+ *    in-app prompt in `NativeNotificationPrompt` owns asking for it)
  *  - registers the FCM token so the backend can push to the device
  *  - mirrors new `notifications` rows as heads-up alerts on that channel
  *    whenever the app is not in the foreground
  */
 export const useNativeNotificationChannel = () => {
   const { user } = useAuth();
+  const [grantTick, setGrantTick] = useState(0);
+
+  // The friendly prompt fires this once the user accepts the OS dialog.
+  useEffect(() => {
+    const onGranted = () => setGrantTick((t) => t + 1);
+    window.addEventListener("native-notifications-granted", onGranted);
+    return () => window.removeEventListener("native-notifications-granted", onGranted);
+  }, []);
 
   // Channel + permission + FCM token registration
   useEffect(() => {
@@ -27,8 +36,8 @@ export const useNativeNotificationChannel = () => {
 
     (async () => {
       await ensureAlertChannel();
-      const granted = await requestNativeNotificationPermission();
-      if (!granted || cancelled || !user) return;
+      const state = await getNativeNotificationPermission();
+      if (state !== "granted" || cancelled || !user) return;
 
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
@@ -67,7 +76,7 @@ export const useNativeNotificationChannel = () => {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, grantTick]);
 
   // Mirror realtime notifications to the OS while the app is backgrounded
   useEffect(() => {

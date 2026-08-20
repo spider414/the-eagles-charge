@@ -1,5 +1,6 @@
 import { useWalletNotifications } from "@/hooks/useWalletNotifications";
 import { useNativeNotificationChannel } from "@/hooks/useNativeNotificationChannel";
+import NativeNotificationPrompt from "@/components/NativeNotificationPrompt";
 
 /**
  * Component that initializes global wallet notifications
@@ -8,5 +9,10 @@ import { useNativeNotificationChannel } from "@/hooks/useNativeNotificationChann
 export const WalletNotificationProvider = ({ children }: { children: React.ReactNode }) => {
   useWalletNotifications();
   useNativeNotificationChannel();
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <NativeNotificationPrompt />
+    </>
+  );
 };
