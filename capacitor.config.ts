@@ -34,6 +34,14 @@ const config: CapacitorConfig = {
       style: 'DARK',
       backgroundColor: '#1a6b47',
     },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_icon_config_sample',
+      iconColor: '#1a6b47',
+      sound: 'beep.wav',
+    },
   },
 };
 

@@ -211,6 +211,124 @@ async function sendWebPushImpl(
   }
 }
 
+// ── FCM v1 (native Android/iOS via google-services.json) ──
+function pemToPkcs8(pem: string): Uint8Array {
+  const b64 = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, "")
+    .replace(/-----END PRIVATE KEY-----/, "")
+    .replace(/\s+/g, "");
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+
+let cachedFcmToken: { token: string; exp: number } | null = null;
+
+async function getFcmAccessToken(sa: {
+  client_email: string;
+  private_key: string;
+  token_uri?: string;
+}): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  if (cachedFcmToken && cachedFcmToken.exp > now + 60) return cachedFcmToken.token;
+
+  const enc = new TextEncoder();
+  const header = uint8ArrayToBase64Url(enc.encode(JSON.stringify({ alg: "RS256", typ: "JWT" })));
+  const claim = uint8ArrayToBase64Url(
+    enc.encode(
+      JSON.stringify({
+        iss: sa.client_email,
+        scope: "https://www.googleapis.com/auth/firebase.messaging",
+        aud: sa.token_uri || "https://oauth2.googleapis.com/token",
+        iat: now,
+        exp: now + 3600,
+      })
+    )
+  );
+  const key = await crypto.subtle.importKey(
+    "pkcs8",
+    pemToPkcs8(sa.private_key),
+    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = new Uint8Array(
+    await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, enc.encode(`${header}.${claim}`))
+  );
+  const jwt = `${header}.${claim}.${uint8ArrayToBase64Url(sig)}`;
+
+  const res = await fetch(sa.token_uri || "https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion: jwt,
+    }),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(`FCM token error: ${JSON.stringify(json)}`);
+  cachedFcmToken = { token: json.access_token, exp: now + (json.expires_in ?? 3600) };
+  return json.access_token;
+}
+
+async function sendFcm(
+  deviceToken: string,
+  title: string,
+  body: string,
+  data: Record<string, unknown>
+): Promise<"ok" | "expired" | "error"> {
+  const raw = Deno.env.get("FCM_SERVICE_ACCOUNT_JSON");
+  if (!raw) return "error";
+  try {
+    const sa = JSON.parse(raw);
+    const accessToken = await getFcmAccessToken(sa);
+    const res = await fetch(
+      `https://fcm.googleapis.com/v1/projects/${sa.project_id}/messages:send`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: {
+            token: deviceToken,
+            notification: { title, body },
+            android: {
+              priority: "HIGH",
+              notification: {
+                channel_id: "harmic_alerts",
+                sound: "default",
+                default_vibrate_timings: true,
+                notification_priority: "PRIORITY_MAX",
+              },
+            },
+            apns: {
+              headers: { "apns-priority": "10" },
+              payload: { aps: { sound: "default", badge: 1 } },
+            },
+            data: Object.fromEntries(
+              Object.entries({ ...data }).map(([k, v]) => [k, String(v ?? "")])
+            ),
+          },
+        }),
+      }
+    );
+    if (res.ok) return "ok";
+    const text = await res.text();
+    if (res.status === 404 || text.includes("UNREGISTERED") || text.includes("INVALID_ARGUMENT")) {
+      console.error("FCM token invalid:", text);
+      return "expired";
+    }
+    console.error("FCM send failed:", res.status, text);
+    return "error";
+  } catch (e) {
+    console.error("FCM error:", e);
+    return "error";
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -329,32 +447,42 @@ Deno.serve(async (req) => {
       // Send web push to all subscriptions
       const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
       const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+      const hasFcm = !!Deno.env.get("FCM_SERVICE_ACCOUNT_JSON");
 
-      if (vapidPrivateKey && vapidPublicKey) {
-        for (const uid of targetIds) {
-          const { data: subs } = await supabase
-            .from("push_subscriptions")
-            .select("*")
-            .eq("user_id", uid);
+      for (const uid of targetIds) {
+        const { data: subs } = await supabase
+          .from("push_subscriptions")
+          .select("*")
+          .eq("user_id", uid);
 
-          if (subs) {
-            for (const sub of subs) {
-              const result = await sendWebPush(
-                { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-                JSON.stringify({ title, body, type, data }),
-                vapidPrivateKey,
-                vapidPublicKey,
-                "mailto:harmicrecharge@harmicglobal.com"
-              );
+        if (!subs) continue;
 
-              // Remove only expired/gone subscriptions; keep them on transient errors
-              if (result === "expired") {
-                await supabase
-                  .from("push_subscriptions")
-                  .delete()
-                  .eq("id", sub.id);
-              }
-            }
+        for (const sub of subs) {
+          let result: "ok" | "expired" | "error" = "error";
+
+          if (String(sub.endpoint).startsWith("fcm:")) {
+            // Native Android/iOS device token — web push cannot handle these.
+            if (!hasFcm) continue;
+            result = await sendFcm(
+              String(sub.endpoint).slice(4),
+              title,
+              body,
+              { type: type || "general", ...(data || {}) }
+            );
+          } else {
+            if (!vapidPrivateKey || !vapidPublicKey) continue;
+            result = await sendWebPush(
+              { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+              JSON.stringify({ title, body, type, data }),
+              vapidPrivateKey,
+              vapidPublicKey,
+              "mailto:harmicrecharge@harmicglobal.com"
+            );
+          }
+
+          // Remove only expired/gone subscriptions; keep them on transient errors
+          if (result === "expired") {
+            await supabase.from("push_subscriptions").delete().eq("id", sub.id);
           }
         }
       }
