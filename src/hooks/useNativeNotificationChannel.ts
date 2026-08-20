@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -20,6 +20,14 @@ import {
  */
 export const useNativeNotificationChannel = () => {
   const { user } = useAuth();
+  const [grantTick, setGrantTick] = useState(0);
+
+  // The friendly prompt fires this once the user accepts the OS dialog.
+  useEffect(() => {
+    const onGranted = () => setGrantTick((t) => t + 1);
+    window.addEventListener("native-notifications-granted", onGranted);
+    return () => window.removeEventListener("native-notifications-granted", onGranted);
+  }, []);
 
   // Channel + permission + FCM token registration
   useEffect(() => {
@@ -68,7 +76,7 @@ export const useNativeNotificationChannel = () => {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, grantTick]);
 
   // Mirror realtime notifications to the OS while the app is backgrounded
   useEffect(() => {
