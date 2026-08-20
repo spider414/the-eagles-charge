@@ -82,22 +82,6 @@ export const getNativeNotificationPermission = async (): Promise<NativePermissio
   }
 };
 
-/** Opens the OS app-settings screen so a denied user can flip the switch. */
-export const openAppNotificationSettings = async (): Promise<boolean> => {
-  if (!isNativeApp()) return false;
-  try {
-    const { App } = await import("@capacitor/app");
-    const info = await App.getInfo();
-    const { Browser } = await import("@capacitor/browser");
-    // Android intent URIs are not openable from the webview; fall back to a no-op.
-    void info;
-    void Browser;
-    return false;
-  } catch {
-    return false;
-  }
-};
-
 export const requestNativeNotificationPermission = async (): Promise<boolean> => {
   if (!isNativeApp()) return false;
   try {
