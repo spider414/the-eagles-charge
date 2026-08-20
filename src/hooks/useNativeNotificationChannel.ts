@@ -4,7 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   ensureAlertChannel,
   isNativeApp,
-  requestNativeNotificationPermission,
+  getNativeNotificationPermission,
   showNativeAlert,
   ALERT_CHANNEL_ID,
 } from "@/lib/nativeNotifications";
@@ -12,7 +12,8 @@ import {
 /**
  * Native (Android/iOS) notification wiring:
  *  - creates the high-importance alert channel on startup
- *  - asks for OS notification permission once
+ *  - registers push only once permission is already granted (the friendly
+ *    in-app prompt in `NativeNotificationPrompt` owns asking for it)
  *  - registers the FCM token so the backend can push to the device
  *  - mirrors new `notifications` rows as heads-up alerts on that channel
  *    whenever the app is not in the foreground
@@ -27,8 +28,8 @@ export const useNativeNotificationChannel = () => {
 
     (async () => {
       await ensureAlertChannel();
-      const granted = await requestNativeNotificationPermission();
-      if (!granted || cancelled || !user) return;
+      const state = await getNativeNotificationPermission();
+      if (state !== "granted" || cancelled || !user) return;
 
       try {
         const { PushNotifications } = await import("@capacitor/push-notifications");
