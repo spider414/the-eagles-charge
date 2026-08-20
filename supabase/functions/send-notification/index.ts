@@ -447,32 +447,42 @@ Deno.serve(async (req) => {
       // Send web push to all subscriptions
       const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
       const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+      const hasFcm = !!Deno.env.get("FCM_SERVICE_ACCOUNT_JSON");
 
-      if (vapidPrivateKey && vapidPublicKey) {
-        for (const uid of targetIds) {
-          const { data: subs } = await supabase
-            .from("push_subscriptions")
-            .select("*")
-            .eq("user_id", uid);
+      for (const uid of targetIds) {
+        const { data: subs } = await supabase
+          .from("push_subscriptions")
+          .select("*")
+          .eq("user_id", uid);
 
-          if (subs) {
-            for (const sub of subs) {
-              const result = await sendWebPush(
-                { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
-                JSON.stringify({ title, body, type, data }),
-                vapidPrivateKey,
-                vapidPublicKey,
-                "mailto:harmicrecharge@harmicglobal.com"
-              );
+        if (!subs) continue;
 
-              // Remove only expired/gone subscriptions; keep them on transient errors
-              if (result === "expired") {
-                await supabase
-                  .from("push_subscriptions")
-                  .delete()
-                  .eq("id", sub.id);
-              }
-            }
+        for (const sub of subs) {
+          let result: "ok" | "expired" | "error" = "error";
+
+          if (String(sub.endpoint).startsWith("fcm:")) {
+            // Native Android/iOS device token — web push cannot handle these.
+            if (!hasFcm) continue;
+            result = await sendFcm(
+              String(sub.endpoint).slice(4),
+              title,
+              body,
+              { type: type || "general", ...(data || {}) }
+            );
+          } else {
+            if (!vapidPrivateKey || !vapidPublicKey) continue;
+            result = await sendWebPush(
+              { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+              JSON.stringify({ title, body, type, data }),
+              vapidPrivateKey,
+              vapidPublicKey,
+              "mailto:harmicrecharge@harmicglobal.com"
+            );
+          }
+
+          // Remove only expired/gone subscriptions; keep them on transient errors
+          if (result === "expired") {
+            await supabase.from("push_subscriptions").delete().eq("id", sub.id);
           }
         }
       }
