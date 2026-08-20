@@ -212,6 +212,7 @@ async function sendWebPushImpl(
 }
 
 Deno.serve(async (req) => {
+  // no-op marker
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
