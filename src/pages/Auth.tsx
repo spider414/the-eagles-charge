@@ -16,6 +16,7 @@ import { useBiometricAuth } from "@/hooks/useBiometricAuth";
 import { ToastAction } from "@/components/ui/toast";
 import BrandLogo from "@/components/BrandLogo";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const phoneSchema = z.string()
   .min(10, "Phone number must be at least 10 digits")
@@ -40,6 +41,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { user, signUp, signIn, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const { t } = useLanguage();
   const { authenticateWithBiometric, isBiometricEnabled, checkBiometricSupport } = useBiometricAuth();
   
   const [isLoading, setIsLoading] = useState(false);
@@ -713,7 +715,7 @@ const Auth = () => {
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-pulse-soft text-primary">Loading...</div>
+        <div className="animate-pulse-soft text-primary">{t("common.loading")}</div>
       </div>
     );
   }
@@ -753,21 +755,21 @@ const Auth = () => {
             <Tabs defaultValue="login" className="w-full">
               <CardHeader className="pb-4">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login</TabsTrigger>
-                  <TabsTrigger value="signup" onClick={() => setStep("signup-phone")}>Sign Up</TabsTrigger>
+                  <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
+                  <TabsTrigger value="signup" onClick={() => setStep("signup-phone")}>{t("auth.signup")}</TabsTrigger>
                 </TabsList>
               </CardHeader>
 
               <CardContent>
                 <TabsContent value="login" className="mt-0">
-                  <CardTitle className="text-xl mb-2">Welcome Back</CardTitle>
+                  <CardTitle className="text-xl mb-2">{t("auth.welcomeBack")}</CardTitle>
                   <CardDescription className="mb-6">
-                    Enter your credentials to access your account
+                    {t("auth.loginDesc")}
                   </CardDescription>
                   
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-phone">Phone Number</Label>
+                      <Label htmlFor="login-phone">{t("auth.phone")}</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -784,7 +786,7 @@ const Auth = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="login-password">Password</Label>
+                      <Label htmlFor="login-password">{t("auth.password")}</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -801,7 +803,7 @@ const Auth = () => {
                     </div>
 
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Logging in..." : "Login"}
+                      {isLoading ? t("auth.loggingIn") : t("auth.login")}
                     </Button>
 
                     {/* Biometric Login Button */}
@@ -814,7 +816,7 @@ const Auth = () => {
                         disabled={isBiometricAuthenticating}
                       >
                         <Fingerprint className="h-4 w-4 mr-2" />
-                        {isBiometricAuthenticating ? "Authenticating..." : "Login with Biometrics"}
+                        {isBiometricAuthenticating ? t("auth.authenticating") : t("auth.loginBiometric")}
                       </Button>
                     )}
                     
@@ -824,7 +826,7 @@ const Auth = () => {
                       className="w-full"
                       onClick={() => setStep("forgot-phone")}
                     >
-                      Forgot Password?
+                      {t("auth.forgot")}
                     </Button>
                   </form>
                 </TabsContent>
@@ -851,14 +853,14 @@ const Auth = () => {
           {step === "signup-phone" && (
             <CardContent className="pt-6">
               {renderBackButton("login")}
-              <CardTitle className="text-xl mb-2">Create Account</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.createAccount")}</CardTitle>
               <CardDescription className="mb-6">
                 Enter your phone number to get started
               </CardDescription>
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-phone">Phone Number</Label>
+                  <Label htmlFor="signup-phone">{t("auth.phone")}</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -884,7 +886,7 @@ const Auth = () => {
           {step === "signup-otp" && (
             <CardContent className="pt-6">
               {renderBackButton("signup-phone")}
-              <CardTitle className="text-xl mb-2">Verify Phone Number</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.verifyPhone")}</CardTitle>
               <CardDescription className="mb-6">
                 Enter the 6-digit code sent to {signupPhone}
               </CardDescription>
@@ -928,7 +930,7 @@ const Auth = () => {
                 <CheckCircle className="h-5 w-5 text-primary" />
                 <span className="text-sm text-primary">Phone verified: {signupPhone}</span>
               </div>
-              <CardTitle className="text-xl mb-2">Identity Verification</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.identityVerification")}</CardTitle>
               <CardDescription className="mb-6">
                 Verify your identity using NIN linked to your phone number
               </CardDescription>
@@ -994,7 +996,7 @@ const Auth = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle className="h-4 w-4 text-primary" />
-                        <span className="text-sm text-primary font-medium">Identity Verified</span>
+                        <span className="text-sm text-primary font-medium">{t("auth.identityVerified")}</span>
                       </div>
                     </div>
 
@@ -1024,14 +1026,14 @@ const Auth = () => {
                   <span className="text-sm text-primary">NIN verified: {ninData?.full_name}</span>
                 </div>
               )}
-              <CardTitle className="text-xl mb-2">Complete Your Profile</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.completeProfile")}</CardTitle>
               <CardDescription className="mb-6">
                 Fill in your details to create your account
               </CardDescription>
               
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="signup-name">Full Name</Label>
+                  <Label htmlFor="signup-name">{t("auth.fullName")}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1046,7 +1048,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-email">Email (optional)</Label>
+                  <Label htmlFor="signup-email">{t("auth.emailOptional")}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1064,7 +1066,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="signup-password">Password</Label>
+                  <Label htmlFor="signup-password">{t("auth.password")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1081,7 +1083,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="security-question">Security Question (for account recovery)</Label>
+                  <Label htmlFor="security-question">{t("auth.securityQuestion")}</Label>
                   <div className="relative">
                     <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1104,7 +1106,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="security-answer">Security Answer</Label>
+                  <Label htmlFor="security-answer">{t("auth.securityAnswer")}</Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1127,7 +1129,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="referral-code">Referral Code (Optional)</Label>
+                  <Label htmlFor="referral-code">{t("auth.referralOptional")}</Label>
                   <div className="relative">
                     <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1162,14 +1164,14 @@ const Auth = () => {
           {step === "forgot-phone" && (
             <CardContent className="pt-6">
               {renderBackButton("login")}
-              <CardTitle className="text-xl mb-2">Reset Password</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.resetPassword")}</CardTitle>
               <CardDescription className="mb-6">
                 Enter your phone number to recover your account
               </CardDescription>
               
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="forgot-phone">Phone Number</Label>
+                  <Label htmlFor="forgot-phone">{t("auth.phone")}</Label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1225,7 +1227,7 @@ const Auth = () => {
           {step === "forgot-otp" && (
             <CardContent className="pt-6">
               {renderBackButton("forgot-phone")}
-              <CardTitle className="text-xl mb-2">Verify Your Phone</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.verifyYourPhone")}</CardTitle>
               <CardDescription className="mb-6">
                 Enter the 6-digit code sent to {forgotPhone}
               </CardDescription>
@@ -1265,7 +1267,7 @@ const Auth = () => {
           {step === "forgot-security" && (
             <CardContent className="pt-6">
               {renderBackButton("forgot-phone")}
-              <CardTitle className="text-xl mb-2">Answer Security Question</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.answerSecurityQuestion")}</CardTitle>
               <CardDescription className="mb-6">
                 Please answer your security question
               </CardDescription>
@@ -1282,7 +1284,7 @@ const Auth = () => {
                 )}
                 
                 <div className="space-y-2">
-                  <Label htmlFor="security-answer-input">Your Answer</Label>
+                  <Label htmlFor="security-answer-input">{t("auth.yourAnswer")}</Label>
                   <div className="relative">
                     <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1339,14 +1341,14 @@ const Auth = () => {
           {step === "forgot-reset" && (
             <CardContent className="pt-6">
               {renderBackButton("forgot-phone")}
-              <CardTitle className="text-xl mb-2">Set New Password</CardTitle>
+              <CardTitle className="text-xl mb-2">{t("auth.setNewPassword")}</CardTitle>
               <CardDescription className="mb-6">
                 Create a new password for your account
               </CardDescription>
               
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-password">New Password</Label>
+                  <Label htmlFor="new-password">{t("auth.newPassword")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1363,7 +1365,7 @@ const Auth = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirm-password">Confirm Password</Label>
+                  <Label htmlFor="confirm-password">{t("auth.confirmPassword")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -1389,7 +1391,7 @@ const Auth = () => {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           <a href="/" className="hover:text-primary transition-colors">
-            ← Back to Home
+            ← {t("auth.backHome")}
           </a>
         </p>
       </div>
