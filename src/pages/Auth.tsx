@@ -764,7 +764,7 @@ const Auth = () => {
                 <TabsContent value="login" className="mt-0">
                   <CardTitle className="text-xl mb-2">{t("auth.welcomeBack")}</CardTitle>
                   <CardDescription className="mb-6">
-                    Enter your credentials to access your account
+                    {t("auth.loginDesc")}
                   </CardDescription>
                   
                   <form onSubmit={handleLogin} className="space-y-4">
@@ -803,7 +803,7 @@ const Auth = () => {
                     </div>
 
                     <Button type="submit" className="w-full" disabled={isLoading}>
-                      {isLoading ? "Logging in..." : "Login"}
+                      {isLoading ? t("auth.loggingIn") : t("auth.login")}
                     </Button>
 
                     {/* Biometric Login Button */}
@@ -816,7 +816,7 @@ const Auth = () => {
                         disabled={isBiometricAuthenticating}
                       >
                         <Fingerprint className="h-4 w-4 mr-2" />
-                        {isBiometricAuthenticating ? "Authenticating..." : "Login with Biometrics"}
+                        {isBiometricAuthenticating ? t("auth.authenticating") : t("auth.loginBiometric")}
                       </Button>
                     )}
                     
@@ -826,7 +826,7 @@ const Auth = () => {
                       className="w-full"
                       onClick={() => setStep("forgot-phone")}
                     >
-                      Forgot Password?
+                      {t("auth.forgot")}
                     </Button>
                   </form>
                 </TabsContent>
@@ -1391,7 +1391,7 @@ const Auth = () => {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           <a href="/" className="hover:text-primary transition-colors">
-            ← Back to Home
+            ← {t("auth.backHome")}
           </a>
         </p>
       </div>
